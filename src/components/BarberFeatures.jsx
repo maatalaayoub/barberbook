@@ -7,50 +7,71 @@ import {
   CreditCard, 
   BarChart3, 
   Users,
-  CheckCircle 
+  CheckCircle,
+  TrendingUp,
+  ArrowRight
 } from 'lucide-react';
 
 const features = [
   {
     icon: UserCircle,
     title: 'Professional Profile',
-    description: 'Create a stunning profile showcasing your skills, portfolio, and services to attract more clients.'
+    description: 'Showcase your skills, portfolio, services, and pricing to attract more clients.',
+    color: 'from-[#D4AF37] to-[#F4CF67]'
   },
   {
     icon: Calendar,
-    title: 'Digital Management',
-    description: 'Manage appointments and queues digitally. Say goodbye to paper schedules and missed bookings.'
+    title: 'Smart Scheduling',
+    description: 'Manage appointments and queues digitally. Reduce no-shows with automated reminders.',
+    color: 'from-[#14B8A6] to-[#5EEAD4]'
   },
   {
     icon: CreditCard,
-    title: 'Accept Online Bookings',
-    description: 'Let customers book and pay online. Reduce no-shows with automated reminders.'
+    title: 'Flexible Payments',
+    description: 'Accept online payments or cash. Get instant payouts to your bank account.',
+    color: 'from-[#8B5CF6] to-[#A78BFA]'
   },
   {
     icon: BarChart3,
-    title: 'Track Performance',
-    description: 'Monitor daily income, track metrics, and gain insights to grow your business.'
+    title: 'Business Analytics',
+    description: 'Track daily income, monitor metrics, and gain insights to grow your business.',
+    color: 'from-[#F59E0B] to-[#FBBF24]'
   },
   {
     icon: Users,
-    title: 'Grow Customer Base',
-    description: 'Get discovered by new customers in your area and build lasting relationships.'
+    title: 'Client Management',
+    description: 'Build lasting relationships with customers. Store preferences and booking history.',
+    color: 'from-[#EC4899] to-[#F472B6]'
+  },
+  {
+    icon: TrendingUp,
+    title: 'Marketing Tools',
+    description: 'Get discovered by new customers. Run promotions and build your brand.',
+    color: 'from-[#06B6D4] to-[#22D3EE]'
   }
 ];
 
 const benefits = [
-  'Free to join',
-  'No commission fees',
   'Instant payouts',
-  '24/7 Support'
+  'Full control',
+  'Secure platform',
+  'Premium features'
 ];
 
 export default function BarberFeatures() {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-[#0F172A] to-[#1E293B] py-24">
-      {/* Background decorations */}
-      <div className="absolute left-1/4 top-0 h-96 w-96 rounded-full bg-[#D4AF37]/5 blur-3xl" />
-      <div className="absolute bottom-0 right-1/4 h-96 w-96 rounded-full bg-[#14B8A6]/5 blur-3xl" />
+    <section className="relative overflow-hidden bg-[#0F172A] py-24">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 opacity-30">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `radial-gradient(circle at 1px 1px, rgba(212, 175, 55, 0.15) 1px, transparent 0)`,
+          backgroundSize: '40px 40px'
+        }} />
+      </div>
+      
+      {/* Gradient Orbs */}
+      <div className="absolute left-0 top-1/4 h-[500px] w-[500px] rounded-full bg-[#D4AF37]/10 blur-[100px]" />
+      <div className="absolute bottom-0 right-0 h-[500px] w-[500px] rounded-full bg-[#14B8A6]/10 blur-[100px]" />
       
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
@@ -61,119 +82,94 @@ export default function BarberFeatures() {
           transition={{ duration: 0.6 }}
           className="mx-auto mb-16 max-w-3xl text-center"
         >
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#14B8A6]/30 bg-[#14B8A6]/10 px-4 py-2">
-            <span className="text-sm font-medium text-[#14B8A6]">For Barbers</span>
-          </div>
-          <h2 className="mb-4 text-3xl font-bold text-white sm:text-4xl lg:text-5xl">
-            Grow Your Barbershop{' '}
-            <span className="bg-gradient-to-r from-[#14B8A6] to-[#5EEAD4] bg-clip-text text-transparent">
-              Digitally
+          <span className="mb-4 inline-block rounded-[5px] bg-[#D4AF37]/10 px-4 py-1.5 text-sm font-medium text-[#D4AF37]">
+            For Barbers & Salons
+          </span>
+          <h2 className="mb-6 text-3xl font-bold text-white sm:text-4xl lg:text-5xl">
+            Everything You Need to{' '}
+            <span className="bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] bg-clip-text text-transparent">
+              Grow Your Business
             </span>
           </h2>
           <p className="text-lg text-gray-400">
-            Join thousands of successful barbers who've transformed their business with BarberBook.
+            Join thousands of successful barbers who've transformed their business with BarberBook's powerful tools.
           </p>
         </motion.div>
 
-        <div className="grid items-center gap-12 lg:grid-cols-2">
-          {/* Left side - Features list */}
-          <motion.div 
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="space-y-6"
-          >
-            {features.map((feature, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: idx * 0.1 }}
-                className="group flex gap-5 rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm transition-all duration-300 hover:border-[#14B8A6]/30 hover:bg-white/10"
-              >
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#14B8A6] to-[#5EEAD4]">
-                  <feature.icon className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="mb-1 text-lg font-bold text-white">
-                    {feature.title}
-                  </h3>
-                  <p className="text-sm text-gray-400">
-                    {feature.description}
-                  </p>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-
-          {/* Right side - CTA Card */}
-          <motion.div 
-            initial={{ opacity: 0, x: 30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="relative"
-          >
-            <div className="overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-white/10 to-white/5 p-8 backdrop-blur-sm lg:p-10">
-              {/* Decorative gradient */}
-              <div className="absolute -right-20 -top-20 h-40 w-40 rounded-full bg-[#14B8A6]/20 blur-3xl" />
-              
-              <div className="relative">
-                <h3 className="mb-4 text-2xl font-bold text-white lg:text-3xl">
-                  Ready to Transform Your Business?
-                </h3>
-                <p className="mb-8 text-gray-400">
-                  Join BarberBook today and start accepting online bookings within minutes. 
-                  No technical skills required.
-                </p>
-                
-                {/* Benefits */}
-                <div className="mb-8 grid grid-cols-2 gap-4">
-                  {benefits.map((benefit, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <CheckCircle className="h-5 w-5 text-[#14B8A6]" />
-                      <span className="text-sm text-gray-300">{benefit}</span>
-                    </div>
-                  ))}
-                </div>
-                
-                {/* CTA Button */}
-                <button className="group w-full rounded-2xl bg-gradient-to-r from-[#14B8A6] to-[#5EEAD4] px-8 py-4 text-lg font-bold text-[#0F172A] transition-all hover:shadow-xl hover:shadow-[#14B8A6]/25">
-                  Register as Barber
-                  <span className="ml-2 inline-block transition-transform group-hover:translate-x-1">→</span>
-                </button>
-                
-                <p className="mt-4 text-center text-sm text-gray-500">
-                  Already registered?{' '}
-                  <a href="#" className="text-[#14B8A6] hover:underline">
-                    Login to dashboard
-                  </a>
-                </p>
-              </div>
-            </div>
-            
-            {/* Stats floating card */}
-            <motion.div 
+        {/* Features Grid */}
+        <div className="mb-16 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {features.map((feature, idx) => (
+            <motion.div
+              key={idx}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.6 }}
-              className="absolute -bottom-6 -left-6 rounded-2xl border border-white/10 bg-[#0F172A] p-4 shadow-xl lg:-left-12"
+              transition={{ duration: 0.4, delay: idx * 0.1 }}
+              className="group relative overflow-hidden rounded-[5px] border border-white/10 bg-white/5 p-6 backdrop-blur-sm transition-all duration-300 hover:border-[#D4AF37]/30 hover:bg-white/10"
             >
-              <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#14B8A6]/20">
-                  <BarChart3 className="h-6 w-6 text-[#14B8A6]" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-white">+150%</p>
-                  <p className="text-sm text-gray-400">Average Revenue Growth</p>
-                </div>
+              {/* Icon */}
+              <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-[5px] bg-gradient-to-br ${feature.color}`}>
+                <feature.icon className="h-6 w-6 text-white" />
               </div>
+              
+              {/* Content */}
+              <h3 className="mb-2 text-lg font-bold text-white">{feature.title}</h3>
+              <p className="text-sm text-gray-400 leading-relaxed">{feature.description}</p>
+              
+              {/* Hover effect */}
+              <div className={`absolute -right-20 -top-20 h-40 w-40 rounded-full bg-gradient-to-br ${feature.color} opacity-0 blur-3xl transition-opacity duration-300 group-hover:opacity-20`} />
             </motion.div>
-          </motion.div>
+          ))}
         </div>
+
+        {/* CTA Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+          className="relative overflow-hidden rounded-[5px] border border-[#D4AF37]/20 bg-gradient-to-r from-[#D4AF37]/10 to-[#F4CF67]/10 p-8 md:p-12"
+        >
+          <div className="flex flex-col items-center gap-8 lg:flex-row lg:justify-between">
+            {/* Left Content */}
+            <div className="text-center lg:text-left">
+              <h3 className="mb-4 text-2xl font-bold text-white md:text-3xl">
+                Ready to Transform Your Business?
+              </h3>
+              <p className="mb-6 max-w-xl text-gray-400">
+                Join BarberBook today and start accepting online bookings within minutes. No technical skills required.
+              </p>
+              
+              {/* Benefits Grid */}
+              <div className="flex flex-wrap justify-center gap-3 lg:justify-start">
+                {benefits.map((benefit, idx) => (
+                  <div key={idx} className="flex items-center gap-1.5 rounded-[5px] bg-white/5 px-3 py-1.5">
+                    <CheckCircle className="h-4 w-4 text-[#D4AF37]" />
+                    <span className="text-sm text-gray-300">{benefit}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* Right CTA */}
+            <div className="flex flex-col gap-4">
+              <button className="group flex items-center justify-center gap-2 rounded-[5px] bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] px-8 py-4 text-lg font-bold text-[#0F172A] transition-all hover:shadow-lg hover:shadow-[#D4AF37]/25">
+                Register as Barber
+                <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+              </button>
+              <p className="text-center text-sm text-gray-500">
+                Already registered?{' '}
+                <a href="#" className="text-[#D4AF37] hover:underline">
+                  Login to dashboard
+                </a>
+              </p>
+            </div>
+          </div>
+          
+          {/* Decorative Elements */}
+          <div className="absolute -bottom-10 -right-10 h-40 w-40 rounded-full bg-[#D4AF37]/20 blur-3xl" />
+          <div className="absolute -left-10 -top-10 h-40 w-40 rounded-full bg-[#F4CF67]/20 blur-3xl" />
+        </motion.div>
       </div>
     </section>
   );

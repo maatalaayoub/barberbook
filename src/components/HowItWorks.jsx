@@ -16,7 +16,7 @@ const steps = [
     icon: CalendarClock,
     title: 'Book Instantly',
     description: 'Choose your preferred time slot or join the smart queue for immediate service.',
-    highlights: ['Real-time availability', 'Queue system', 'Instant confirmation']
+    highlights: ['Real-time availability', 'Queue system', 'Instant confirmation', 'Cash option']
   },
   {
     number: '03',
@@ -29,11 +29,11 @@ const steps = [
 
 export default function HowItWorks() {
   return (
-    <section id="how-it-works" className="relative overflow-hidden bg-[#0F172A] py-24">
+    <section id="how-it-works" className="relative overflow-hidden bg-gray-50 py-24">
       {/* Background elements */}
       <div className="absolute inset-0">
-        <div className="absolute top-0 left-1/4 h-96 w-96 rounded-full bg-[#D4AF37]/5 blur-3xl" />
-        <div className="absolute bottom-0 right-1/4 h-96 w-96 rounded-full bg-[#D4AF37]/5 blur-3xl" />
+        <div className="absolute top-0 left-1/4 h-96 w-96 rounded-full bg-[#D4AF37]/10 blur-3xl" />
+        <div className="absolute bottom-0 right-1/4 h-96 w-96 rounded-full bg-[#D4AF37]/10 blur-3xl" />
       </div>
       
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -48,13 +48,13 @@ export default function HowItWorks() {
           <span className="mb-4 inline-block rounded-[5px] bg-[#D4AF37]/10 px-4 py-1.5 text-sm font-medium text-[#D4AF37]">
             How It Works
           </span>
-          <h2 className="mb-6 text-3xl font-bold text-white sm:text-4xl">
+          <h2 className="mb-6 text-3xl font-bold text-[#0F172A] sm:text-4xl">
             Book Your Appointment in{' '}
             <span className="bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] bg-clip-text text-transparent">
               3 Easy Steps
             </span>
           </h2>
-          <p className="text-lg text-gray-400">
+          <p className="text-lg text-gray-600">
             Simple, fast, and hassle-free. Your perfect haircut is just a few taps away.
           </p>
         </motion.div>
@@ -62,7 +62,7 @@ export default function HowItWorks() {
         {/* Steps Timeline */}
         <div className="relative">
           {/* Vertical line for desktop */}
-          <div className="absolute left-1/2 top-0 hidden h-full w-px -translate-x-1/2 bg-gradient-to-b from-[#D4AF37] via-[#D4AF37]/50 to-transparent lg:block" />
+          <div className="absolute left-1/2 top-0 hidden h-full w-px -translate-x-1/2 bg-gradient-to-b from-[#D4AF37] via-[#D4AF37]/30 to-transparent lg:block" />
           
           <div className="space-y-12 lg:space-y-0">
             {steps.map((step, idx) => (
@@ -76,12 +76,12 @@ export default function HowItWorks() {
               >
                 {/* Content Card */}
                 <div className={`w-full lg:w-[calc(50%-3rem)] ${idx % 2 === 0 ? 'lg:text-right' : 'lg:text-left'}`}>
-                  <div className="rounded-[5px] border border-white/10 bg-white/5 p-8 backdrop-blur-sm transition-all hover:border-[#D4AF37]/30 hover:bg-white/10">
+                  <div className="rounded-[5px] border border-gray-200 bg-white p-8 shadow-sm transition-all hover:border-[#D4AF37]/50 hover:shadow-md">
                     <div className={`mb-4 flex items-center gap-3 ${idx % 2 === 0 ? 'lg:justify-end' : ''}`}>
                       <span className="text-3xl font-bold text-[#D4AF37]">{step.number}</span>
-                      <h3 className="text-xl font-bold text-white">{step.title}</h3>
+                      <h3 className="text-xl font-bold text-[#0F172A]">{step.title}</h3>
                     </div>
-                    <p className="mb-6 text-gray-400">{step.description}</p>
+                    <p className="mb-6 text-gray-600">{step.description}</p>
                     <div className={`flex flex-wrap gap-2 ${idx % 2 === 0 ? 'lg:justify-end' : ''}`}>
                       {step.highlights.map((highlight, hIdx) => (
                         <span 

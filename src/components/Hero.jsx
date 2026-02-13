@@ -1,11 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Moon, Sun, Search, Map } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Moon, Sun, Search, Map, Menu, X } from 'lucide-react';
 
 export default function Hero() {
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
@@ -44,6 +45,16 @@ export default function Hero() {
             <span className="text-xl font-bold text-white">BarberBook</span>
           </motion.div>
           
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="flex h-10 w-10 items-center justify-center rounded-[15px] bg-gray-800/50 text-gray-300 transition-all hover:bg-gray-700 hover:text-white md:hidden"
+            aria-label="Toggle menu"
+          >
+            {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+          
+          {/* Desktop Navigation */}
           <motion.div 
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -102,6 +113,72 @@ export default function Hero() {
             </button>
           </motion.div>
         </nav>
+
+        {/* Mobile Menu */}
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+              className="md:hidden overflow-hidden"
+            >
+              <div className="rounded-[5px] border border-white/10 bg-[#0F172A]/95 backdrop-blur-lg p-6 mb-6">
+                {/* Navigation Links */}
+                <div className="flex flex-col gap-4 mb-6">
+                  <a href="#features" className="text-base text-gray-300 transition-colors hover:text-[#D4AF37]">Features</a>
+                  <a href="#how-it-works" className="text-base text-gray-300 transition-colors hover:text-[#D4AF37]">How It Works</a>
+                  <a href="#app" className="text-base text-gray-300 transition-colors hover:text-[#D4AF37]">App</a>
+                </div>
+                
+                {/* Divider */}
+                <div className="h-px w-full bg-gray-700 mb-6" />
+                
+                {/* Barber Space Button */}
+                <a 
+                  href="/barber-space" 
+                  className="mb-4 flex items-center justify-center gap-2 rounded-[5px] border border-[#D4AF37] bg-[#D4AF37]/5 px-4 py-3 text-sm font-semibold text-[#D4AF37] transition-all hover:bg-[#D4AF37] hover:text-[#0F172A]"
+                >
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="6" cy="6" r="3" />
+                    <path d="M8.12 8.12L12 12" />
+                    <path d="M20 4L8.12 15.88" />
+                    <circle cx="6" cy="18" r="3" />
+                    <path d="M14.8 14.8L20 20" />
+                  </svg>
+                  Barber Space
+                </a>
+                
+                {/* Auth Buttons */}
+                <div className="flex gap-3 mb-6">
+                  <a 
+                    href="/login" 
+                    className="flex-1 rounded-[5px] border border-gray-500 bg-transparent px-4 py-3 text-center text-sm font-medium text-gray-300 transition-all hover:border-white hover:bg-white/5 hover:text-white"
+                  >
+                    Login
+                  </a>
+                  
+                  <a 
+                    href="/signup" 
+                    className="flex-1 rounded-[5px] bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] px-4 py-3 text-center text-sm font-semibold text-[#0F172A] transition-all hover:shadow-lg hover:shadow-[#D4AF37]/25"
+                  >
+                    Sign Up
+                  </a>
+                </div>
+                
+                {/* Dark Mode Toggle */}
+                <button
+                  onClick={toggleDarkMode}
+                  className="flex w-full items-center justify-center gap-2 rounded-[5px] bg-gray-800/50 py-3 text-sm text-gray-300 transition-all hover:bg-gray-700 hover:text-[#D4AF37]"
+                >
+                  {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+                  <span>{isDarkMode ? 'Light Mode' : 'Dark Mode'}</span>
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <div className="flex min-h-[calc(100vh-88px)] items-center justify-center py-12">
           {/* Content */}

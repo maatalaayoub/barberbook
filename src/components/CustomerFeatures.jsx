@@ -37,14 +37,14 @@ export default function CustomerFeatures() {
   const features = [
     {
       icon: CalendarCheck,
-      title: t('instantAppointmentBooking'),
-      description: t('instantAppointmentBookingDesc'),
+      title: t('appointmentBooking'),
+      description: t('appointmentBookingDesc'),
       color: 'from-[#D4AF37] to-[#F4CF67]'
     },
     {
       icon: Clock,
-      title: t('smartQueueSystem'),
-      description: t('smartQueueSystemDesc'),
+      title: t('turnBasedBookingFeature'),
+      description: t('turnBasedBookingFeatureDesc'),
       color: 'from-[#14B8A6] to-[#5EEAD4]'
     },
     {

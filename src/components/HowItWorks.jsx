@@ -20,7 +20,7 @@ export default function HowItWorks() {
       icon: CalendarClock,
       title: t('step2Title'),
       description: t('step2Desc'),
-      highlights: [t('realTimeAvailability'), t('queueSystem'), t('instantConfirmation')]
+      highlights: [t('realTimeAvailability'), t('turnBasedBooking'), t('instantConfirmation')]
     },
     {
       number: '03',

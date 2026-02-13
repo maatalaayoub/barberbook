@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Moon, Sun, Search, Map, Menu, X } from 'lucide-react';
+import Image from 'next/image';
 
 export default function Hero() {
   const [isDarkMode, setIsDarkMode] = useState(true);
@@ -15,7 +16,7 @@ export default function Hero() {
   };
 
   return (
-    <section className="relative min-h-screen overflow-hidden bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A]">
+    <section className="relative overflow-hidden bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A] sm:min-h-screen">
       {/* Background decorative elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 h-80 w-80 rounded-full bg-[#D4AF37]/10 blur-3xl" />
@@ -37,12 +38,16 @@ export default function Hero() {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
-            className="flex items-center gap-2"
+            className="flex items-center"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#D4AF37] to-[#F4CF67]">
-              <span className="text-xl font-bold text-[#0F172A]">B</span>
-            </div>
-            <span className="text-xl font-bold text-white">BarberBook</span>
+            <Image 
+              src="/images/logo.png" 
+              alt="BarberBook" 
+              width={200} 
+              height={50}
+              className="h-11 w-auto"
+              priority
+            />
           </motion.div>
           
           {/* Mobile Menu Button */}
@@ -74,7 +79,7 @@ export default function Hero() {
             {/* Barber Space Button */}
             <a 
               href="/barber-space" 
-              className="mr-4 flex items-center gap-2 rounded-[15px] border border-[#D4AF37] bg-[#D4AF37]/5 px-4 py-2 text-sm font-semibold text-[#D4AF37] transition-all hover:bg-[#D4AF37] hover:text-[#0F172A] hover:shadow-lg hover:shadow-[#D4AF37]/25"
+              className="mr-4 flex items-center gap-2 rounded-[15px] border border-[#D4AF37] bg-[#D4AF37]/5 px-4 py-2 text-sm font-semibold text-[#D4AF37] transition-all hover:bg-[#D4AF37] hover:text-[#0F172A]"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="6" cy="6" r="3" />
@@ -97,7 +102,7 @@ export default function Hero() {
               
               <a 
                 href="/signup" 
-                className="rounded-[15px] bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] px-5 py-2 text-sm font-semibold text-[#0F172A] transition-all hover:shadow-lg hover:shadow-[#D4AF37]/25 hover:scale-105"
+                className="rounded-[15px] border-2 border-[#D4AF37] bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] px-5 py-2 text-sm font-semibold text-[#0F172A] transition-all hover:scale-105"
               >
                 Sign Up
               </a>
@@ -161,7 +166,7 @@ export default function Hero() {
                   
                   <a 
                     href="/signup" 
-                    className="flex-1 rounded-[5px] bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] px-4 py-3 text-center text-sm font-semibold text-[#0F172A] transition-all hover:shadow-lg hover:shadow-[#D4AF37]/25"
+                    className="flex-1 rounded-[5px] border-2 border-[#D4AF37] bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] px-4 py-3 text-center text-sm font-semibold text-[#0F172A] transition-all hover:brightness-110"
                   >
                     Sign Up
                   </a>
@@ -180,7 +185,7 @@ export default function Hero() {
           )}
         </AnimatePresence>
 
-        <div className="flex min-h-[calc(100vh-88px)] items-center justify-center py-8 sm:py-12">
+        <div className="flex items-start pt-16 pb-12 sm:pt-0 sm:pb-0 sm:items-center sm:min-h-[calc(100vh-88px)] justify-center sm:py-12">
           {/* Content */}
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
@@ -201,7 +206,7 @@ export default function Hero() {
 
             {/* Search Bar */}
             <div className="mx-auto mb-10 max-w-2xl">
-              <div className="flex items-center gap-1 sm:gap-2 rounded-[5px] bg-white p-1 sm:p-1.5 shadow-xl shadow-black/20">
+              <div className="flex items-center gap-1 sm:gap-2 rounded-[5px] border border-gray-200 bg-white p-1 sm:p-1.5">
                 <div className="flex flex-1 items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2 sm:py-2.5">
                   <Search className="h-5 w-5 text-gray-400 shrink-0" />
                   <input 
@@ -210,15 +215,15 @@ export default function Hero() {
                     className="flex-1 bg-transparent text-[#0F172A] placeholder-gray-400 outline-none text-xs sm:text-sm font-medium min-w-0"
                   />
                 </div>
-                <div className="hidden sm:block h-8 w-px bg-gray-200" />
+                <div className="h-6 sm:h-8 w-px bg-gray-200" />
                 <button 
-                  className="hidden sm:flex h-10 w-10 items-center justify-center rounded-[5px] text-gray-500 transition-all hover:bg-gray-100 hover:text-[#D4AF37]"
+                  className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-[5px] text-gray-500 transition-all hover:bg-gray-100 hover:text-[#D4AF37]"
                   aria-label="Open map"
                 >
-                  <Map className="h-5 w-5" />
+                  <Map className="h-4 w-4 sm:h-5 sm:w-5" />
                 </button>
                 <button 
-                  className="flex h-9 sm:h-10 items-center gap-2 rounded-[5px] bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] px-3 sm:px-6 text-xs sm:text-sm font-semibold text-[#0F172A] transition-all hover:shadow-lg hover:shadow-[#D4AF37]/30 shrink-0"
+                  className="flex h-9 sm:h-10 items-center gap-2 rounded-[5px] border-2 border-[#D4AF37] bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] px-3 sm:px-6 text-xs sm:text-sm font-semibold text-[#0F172A] transition-all hover:brightness-110 shrink-0"
                 >
                   <Search className="h-4 w-4" />
                   <span className="hidden sm:inline">Search</span>

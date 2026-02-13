@@ -39,7 +39,7 @@ export default function AppShowcase() {
           >
             <div className="relative">
               {/* Main phone */}
-              <div className="relative z-10 h-[600px] w-[300px] overflow-hidden rounded-[3rem] border-[8px] border-[#0F172A] bg-[#0F172A] shadow-2xl shadow-black/30">
+              <div className="relative z-10 h-[600px] w-[300px] overflow-hidden rounded-[3rem] border-[8px] border-[#0F172A] bg-[#0F172A]">
                 <div className="h-full w-full bg-gradient-to-b from-[#1E293B] to-[#0F172A] p-5">
                   {/* Status bar */}
                   <div className="mb-4 flex items-center justify-between px-2 text-xs text-white">
@@ -136,7 +136,7 @@ export default function AppShowcase() {
                 whileInView={{ opacity: 1, y: 0, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: 0.6 }}
-                className="absolute -right-8 top-20 z-20 flex items-center gap-3 rounded-[5px] border border-gray-200 bg-white p-4 shadow-xl"
+                className="absolute -right-8 top-20 z-20 flex items-center gap-3 rounded-[5px] border border-gray-300 bg-white p-4"
               >
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
                   <Bell className="h-5 w-5 text-green-600" />
@@ -153,7 +153,7 @@ export default function AppShowcase() {
                 whileInView={{ opacity: 1, y: 0, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: 0.8 }}
-                className="absolute -left-12 bottom-24 z-20 flex items-center gap-3 rounded-[5px] bg-gradient-to-r from-[#14B8A6] to-[#5EEAD4] p-4 shadow-xl"
+                className="absolute -left-12 bottom-24 z-20 flex items-center gap-3 rounded-[5px] border-2 border-[#14B8A6] bg-gradient-to-r from-[#14B8A6] to-[#5EEAD4] p-4"
               >
                 <CreditCard className="h-8 w-8 text-white" />
                 <div>
@@ -171,9 +171,13 @@ export default function AppShowcase() {
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            <span className="mb-4 inline-block rounded-[5px] bg-[#D4AF37]/10 px-4 py-1.5 text-sm font-medium text-[#D4AF37]">
-              Premium Experience
-            </span>
+            <div className="mb-6 flex items-center gap-4">
+              <div className="h-px w-8 bg-gradient-to-r from-transparent to-[#D4AF37]" />
+              <span className="text-sm font-bold uppercase tracking-widest text-[#D4AF37]">
+                Premium Experience
+              </span>
+              <div className="h-px w-8 bg-gradient-to-l from-transparent to-[#D4AF37]" />
+            </div>
             
             <h2 className="mb-6 text-3xl font-bold text-[#0F172A] sm:text-4xl lg:text-5xl">
               A Mobile App{' '}
@@ -197,7 +201,7 @@ export default function AppShowcase() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.4, delay: 0.3 + idx * 0.1 }}
-                  className="flex items-center gap-3 rounded-[5px] border border-gray-200 bg-white p-4 shadow-sm transition-all hover:border-[#D4AF37]/30 hover:shadow-md"
+                  className="flex items-center gap-3 rounded-[5px] border border-gray-200 bg-white p-4 transition-all hover:border-[#D4AF37]"
                 >
                   <feature.icon className="h-5 w-5 text-[#D4AF37]" />
                   <span className="text-sm font-medium text-[#0F172A]">{feature.text}</span>
@@ -209,7 +213,7 @@ export default function AppShowcase() {
             <div className="flex flex-col gap-4 sm:flex-row">
               <a 
                 href="#" 
-                className="group relative flex items-center justify-center gap-4 overflow-hidden rounded-[5px] bg-[#0F172A] px-8 py-4 transition-all hover:scale-[1.02] hover:shadow-xl sm:justify-start"
+                className="group relative flex items-center justify-center gap-4 overflow-hidden rounded-[5px] border-2 border-[#0F172A] bg-[#0F172A] px-8 py-4 transition-all hover:scale-[1.02] sm:justify-start"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-[#0F172A] to-[#1E293B] opacity-0 transition-opacity group-hover:opacity-100" />
                 <svg className="relative h-9 w-9 text-white" viewBox="0 0 24 24" fill="currentColor">
@@ -223,7 +227,7 @@ export default function AppShowcase() {
               
               <a 
                 href="#" 
-                className="group relative flex items-center justify-center gap-4 overflow-hidden rounded-[5px] border-2 border-[#D4AF37] bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] px-8 py-4 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-[#D4AF37]/25 sm:justify-start"
+                className="group relative flex items-center justify-center gap-4 overflow-hidden rounded-[5px] border-2 border-[#D4AF37] bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] px-8 py-4 transition-all hover:scale-[1.02] hover:brightness-110 sm:justify-start"
               >
                 <svg className="h-9 w-9 text-[#0F172A]" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M3,20.5V3.5C3,2.91 3.34,2.39 3.84,2.15L13.69,12L3.84,21.85C3.34,21.6 3,21.09 3,20.5M16.81,15.12L6.05,21.34L14.54,12.85L16.81,15.12M20.16,10.81C20.5,11.08 20.75,11.5 20.75,12C20.75,12.5 20.53,12.9 20.18,13.18L17.89,14.5L15.39,12L17.89,9.5L20.16,10.81M6.05,2.66L16.81,8.88L14.54,11.15L6.05,2.66Z"/>

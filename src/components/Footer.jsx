@@ -1,15 +1,22 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import { 
   Facebook, 
-  Twitter, 
   Instagram, 
   Linkedin,
   Mail,
   Phone,
   MapPin
 } from 'lucide-react';
+
+// Custom X (Twitter) icon
+const XIcon = ({ className }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+  </svg>
+);
 
 const footerLinks = {
   product: [
@@ -40,7 +47,7 @@ const footerLinks = {
 
 const socialLinks = [
   { icon: Facebook, href: '#', label: 'Facebook' },
-  { icon: Twitter, href: '#', label: 'Twitter' },
+  { icon: XIcon, href: '#', label: 'X' },
   { icon: Instagram, href: '#', label: 'Instagram' },
   { icon: Linkedin, href: '#', label: 'LinkedIn' }
 ];
@@ -60,11 +67,14 @@ export default function Footer() {
               transition={{ duration: 0.5 }}
             >
               {/* Logo */}
-              <div className="mb-6 flex items-center gap-2">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#D4AF37] to-[#F4CF67]">
-                  <span className="text-xl font-bold text-[#0F172A]">B</span>
-                </div>
-                <span className="text-xl font-bold text-white">BarberBook</span>
+              <div className="mb-6">
+                <Image 
+                  src="/images/logo.png" 
+                  alt="BarberBook" 
+                  width={200} 
+                  height={50}
+                  className="h-11 w-auto"
+                />
               </div>
               
               <p className="mb-6 max-w-xs text-gray-400">
@@ -78,13 +88,13 @@ export default function Footer() {
                   <Mail className="h-4 w-4" />
                   hello@barberbook.app
                 </a>
-                <a href="tel:+1234567890" className="flex items-center gap-3 text-sm text-gray-400 transition-colors hover:text-[#D4AF37]">
+                <a href="tel:+212600000000" className="flex items-center gap-3 text-sm text-gray-400 transition-colors hover:text-[#D4AF37]">
                   <Phone className="h-4 w-4" />
-                  +1 (234) 567-890
+                  +212 6 00 00 00 00
                 </a>
                 <div className="flex items-center gap-3 text-sm text-gray-400">
                   <MapPin className="h-4 w-4" />
-                  San Francisco, CA
+                  Fes, Morocco
                 </div>
               </div>
               

@@ -82,9 +82,13 @@ export default function BarberFeatures() {
           transition={{ duration: 0.6 }}
           className="mx-auto mb-16 max-w-3xl text-center"
         >
-          <span className="mb-4 inline-block rounded-[5px] bg-[#D4AF37]/10 px-4 py-1.5 text-sm font-medium text-[#D4AF37]">
-            For Barbers & Salons
-          </span>
+          <div className="mb-6 flex items-center justify-center gap-4">
+            <div className="h-px w-12 bg-gradient-to-r from-transparent to-[#D4AF37]" />
+            <span className="text-sm font-bold uppercase tracking-widest text-[#D4AF37]">
+              For Barbers & Salons
+            </span>
+            <div className="h-px w-12 bg-gradient-to-l from-transparent to-[#D4AF37]" />
+          </div>
           <h2 className="mb-6 text-3xl font-bold text-white sm:text-4xl lg:text-5xl">
             Everything You Need to{' '}
             <span className="bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] bg-clip-text text-transparent">
@@ -153,7 +157,7 @@ export default function BarberFeatures() {
             
             {/* Right CTA */}
             <div className="flex flex-col gap-4">
-              <button className="group flex items-center justify-center gap-2 rounded-[5px] bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] px-8 py-4 text-lg font-bold text-[#0F172A] transition-all hover:shadow-lg hover:shadow-[#D4AF37]/25">
+              <button className="group flex items-center justify-center gap-2 rounded-[5px] border-2 border-[#D4AF37] bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] px-8 py-4 text-lg font-bold text-[#0F172A] transition-all hover:brightness-110">
                 Register as Barber
                 <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
               </button>

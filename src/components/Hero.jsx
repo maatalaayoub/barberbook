@@ -1,13 +1,42 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Moon, Sun, Search, Map, Menu, X } from 'lucide-react';
+import { Moon, Sun, Search, Map, Menu, X, ChevronDown, Globe } from 'lucide-react';
 import Image from 'next/image';
+import ReactCountryFlag from 'react-country-flag';
+import { useLanguage } from '@/contexts/LanguageContext';
+
+const languages = [
+  { code: 'en', name: 'English', countryCode: 'GB' },
+  { code: 'fr', name: 'Français', countryCode: 'FR' },
+  { code: 'ar', name: 'العربية', countryCode: 'MA' },
+];
 
 export default function Hero() {
+  const { t, locale, changeLanguage } = useLanguage();
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [currentLang, setCurrentLang] = useState(languages[0]);
+  const [isLangOpen, setIsLangOpen] = useState(false);
+  const langRef = useRef(null);
+
+  // Sync currentLang with locale
+  useEffect(() => {
+    const lang = languages.find(l => l.code === locale);
+    if (lang) setCurrentLang(lang);
+  }, [locale]);
+
+  // Close language dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (langRef.current && !langRef.current.contains(event.target)) {
+        setIsLangOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
@@ -33,7 +62,7 @@ export default function Hero() {
       />
 
       <div className="relative mx-auto max-w-7xl px-6 sm:px-8 lg:px-8">
-        <nav className="flex items-center justify-between py-6">
+        <nav dir="ltr" className="flex items-center justify-between py-6">
           <motion.div 
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -68,9 +97,9 @@ export default function Hero() {
           >
             {/* Navigation Links */}
             <div className="flex items-center gap-6 mr-6">
-              <a href="#features" className="text-sm text-gray-300 transition-colors hover:text-[#D4AF37]">Features</a>
-              <a href="#how-it-works" className="text-sm text-gray-300 transition-colors hover:text-[#D4AF37]">How It Works</a>
-              <a href="#app" className="text-sm text-gray-300 transition-colors hover:text-[#D4AF37]">App</a>
+              <a href="#features" className="text-sm text-gray-300 transition-colors hover:text-[#D4AF37]">{t('features')}</a>
+              <a href="#how-it-works" className="text-sm text-gray-300 transition-colors hover:text-[#D4AF37]">{t('howItWorks')}</a>
+              <a href="#app" className="text-sm text-gray-300 transition-colors hover:text-[#D4AF37]">{t('app')}</a>
             </div>
             
             {/* Divider */}
@@ -88,7 +117,7 @@ export default function Hero() {
                 <circle cx="6" cy="18" r="3" />
                 <path d="M14.8 14.8L20 20" />
               </svg>
-              Barber Space
+              {t('barberSpace')}
             </a>
             
             {/* Auth Buttons Group */}
@@ -97,14 +126,14 @@ export default function Hero() {
                 href="/login" 
                 className="rounded-[15px] border border-gray-500 bg-transparent px-4 py-2 text-sm font-medium text-gray-300 transition-all hover:border-white hover:bg-white/5 hover:text-white"
               >
-                Login
+                {t('login')}
               </a>
               
               <a 
                 href="/signup" 
                 className="rounded-[15px] border-2 border-[#D4AF37] bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] px-5 py-2 text-sm font-semibold text-[#0F172A] transition-all hover:scale-105"
               >
-                Sign Up
+                {t('signUp')}
               </a>
             </div>
             
@@ -116,6 +145,55 @@ export default function Hero() {
             >
               {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </button>
+
+            {/* Language Selector */}
+            <div className="relative ml-2" ref={langRef}>
+              <button
+                onClick={() => setIsLangOpen(!isLangOpen)}
+                className="flex h-10 items-center gap-2 rounded-[15px] bg-gray-800/50 px-3 text-sm text-gray-300 transition-all hover:bg-gray-700"
+              >
+                <ReactCountryFlag 
+                  countryCode={currentLang.countryCode} 
+                  svg 
+                  style={{ width: '1.2em', height: '1.2em' }}
+                />
+                <span className="hidden lg:inline">{currentLang.code.toUpperCase()}</span>
+                <ChevronDown className={`h-4 w-4 transition-transform ${isLangOpen ? 'rotate-180' : ''}`} />
+              </button>
+              
+              <AnimatePresence>
+                {isLangOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute right-0 top-12 z-50 min-w-[160px] overflow-hidden rounded-[10px] border border-gray-700 bg-[#1E293B]" 
+                  >
+                    {languages.map((lang) => (
+                      <button
+                        key={lang.code}
+                        onClick={() => {
+                          setCurrentLang(lang);
+                          changeLanguage(lang.code);
+                          setIsLangOpen(false);
+                        }}
+                        className={`flex w-full items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-gray-700 ${
+                          currentLang.code === lang.code ? 'bg-gray-700/50 text-[#D4AF37]' : 'text-gray-300'
+                        }`}
+                      >
+                        <ReactCountryFlag 
+                          countryCode={lang.countryCode} 
+                          svg 
+                          style={{ width: '1.2em', height: '1.2em' }}
+                        />
+                        <span>{lang.name}</span>
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </motion.div>
         </nav>
 
@@ -128,13 +206,14 @@ export default function Hero() {
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3 }}
               className="md:hidden overflow-hidden"
+              dir="ltr"
             >
               <div className="rounded-[5px] border border-white/10 bg-[#0F172A]/95 backdrop-blur-lg p-6 mb-6">
                 {/* Navigation Links */}
                 <div className="flex flex-col gap-4 mb-6">
-                  <a href="#features" className="text-base text-gray-300 transition-colors hover:text-[#D4AF37]">Features</a>
-                  <a href="#how-it-works" className="text-base text-gray-300 transition-colors hover:text-[#D4AF37]">How It Works</a>
-                  <a href="#app" className="text-base text-gray-300 transition-colors hover:text-[#D4AF37]">App</a>
+                  <a href="#features" className="text-base text-gray-300 transition-colors hover:text-[#D4AF37]">{t('features')}</a>
+                  <a href="#how-it-works" className="text-base text-gray-300 transition-colors hover:text-[#D4AF37]">{t('howItWorks')}</a>
+                  <a href="#app" className="text-base text-gray-300 transition-colors hover:text-[#D4AF37]">{t('app')}</a>
                 </div>
                 
                 {/* Divider */}
@@ -152,7 +231,7 @@ export default function Hero() {
                     <circle cx="6" cy="18" r="3" />
                     <path d="M14.8 14.8L20 20" />
                   </svg>
-                  Barber Space
+                  {t('barberSpace')}
                 </a>
                 
                 {/* Auth Buttons */}
@@ -161,25 +240,50 @@ export default function Hero() {
                     href="/login" 
                     className="flex-1 rounded-[5px] border border-gray-500 bg-transparent px-4 py-3 text-center text-sm font-medium text-gray-300 transition-all hover:border-white hover:bg-white/5 hover:text-white"
                   >
-                    Login
+                    {t('login')}
                   </a>
                   
                   <a 
                     href="/signup" 
                     className="flex-1 rounded-[5px] border-2 border-[#D4AF37] bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] px-4 py-3 text-center text-sm font-semibold text-[#0F172A] transition-all hover:brightness-110"
                   >
-                    Sign Up
+                    {t('signUp')}
                   </a>
                 </div>
                 
                 {/* Dark Mode Toggle */}
                 <button
                   onClick={toggleDarkMode}
-                  className="flex w-full items-center justify-center gap-2 rounded-[5px] bg-gray-800/50 py-3 text-sm text-gray-300 transition-all hover:bg-gray-700 hover:text-[#D4AF37]"
+                  className="flex w-full items-center justify-center gap-2 rounded-[5px] bg-gray-800/50 py-3 text-sm text-gray-300 transition-all hover:bg-gray-700 hover:text-[#D4AF37] mb-3"
                 >
                   {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-                  <span>{isDarkMode ? 'Light Mode' : 'Dark Mode'}</span>
+                  <span>{isDarkMode ? t('lightMode') : t('darkMode')}</span>
                 </button>
+
+                {/* Language Selector */}
+                <div className="flex gap-2">
+                  {languages.map((lang) => (
+                    <button
+                      key={lang.code}
+                      onClick={() => {
+                        setCurrentLang(lang);
+                        changeLanguage(lang.code);
+                      }}
+                      className={`flex flex-1 items-center justify-center gap-2 rounded-[5px] py-3 text-sm transition-all ${
+                        currentLang.code === lang.code 
+                          ? 'bg-[#D4AF37]/20 border border-[#D4AF37] text-[#D4AF37]' 
+                          : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700'
+                      }`}
+                    >
+                      <ReactCountryFlag 
+                        countryCode={lang.countryCode} 
+                        svg 
+                        style={{ width: '1.2em', height: '1.2em' }}
+                      />
+                      <span>{lang.code.toUpperCase()}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
             </motion.div>
           )}
@@ -194,14 +298,14 @@ export default function Hero() {
             className="text-center max-w-4xl px-2 sm:px-0"
           >
             <h1 className="mb-6 text-2xl font-extrabold leading-tight tracking-tight text-white sm:text-3xl md:text-4xl lg:text-5xl">
-              Book Your Barber or Salon{' '}
+              {t('heroTitle')}{' '}
               <span className="bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] bg-clip-text text-transparent">
-                in Seconds
+                {t('heroHighlight')}
               </span>
             </h1>
             
             <p className="mx-auto mb-8 max-w-2xl text-base sm:text-lg text-gray-400 px-2 sm:px-0">
-              The smartest way to book haircuts, beauty appointments, and reserve queue spots. Connect with professional barbers and beauty salons effortlessly. No more waiting in lines — enjoy your perfect look on your schedule.
+              {t('heroDescription')}
             </p>
 
             {/* Search Bar */}
@@ -211,7 +315,7 @@ export default function Hero() {
                   <Search className="h-5 w-5 text-gray-400 shrink-0" />
                   <input 
                     type="text" 
-                    placeholder="Search barber, salon..."
+                    placeholder={t('searchPlaceholder')}
                     className="flex-1 bg-transparent text-[#0F172A] placeholder-gray-400 outline-none text-xs sm:text-sm font-medium min-w-0"
                   />
                 </div>
@@ -226,57 +330,57 @@ export default function Hero() {
                   className="flex h-9 sm:h-10 items-center gap-2 rounded-[5px] border-2 border-[#D4AF37] bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] px-3 sm:px-6 text-xs sm:text-sm font-semibold text-[#0F172A] transition-all hover:brightness-110 shrink-0"
                 >
                   <Search className="h-4 w-4" />
-                  <span className="hidden sm:inline">Search</span>
+                  <span className="hidden sm:inline">{t('search')}</span>
                 </button>
               </div>
             </div>
 
             {/* Services */}
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+            <div className="mt-8 flex flex-nowrap items-center justify-center gap-2 sm:gap-3 overflow-x-auto pb-2">
               <a 
                 href="/mobile-barber" 
-                className="group flex items-center gap-2 rounded-[5px] bg-white/5 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-gray-300 transition-all hover:bg-[#D4AF37] hover:text-[#0F172A]"
+                className="group flex items-center gap-2 rounded-[5px] bg-white/5 px-3 py-2 text-xs sm:text-sm text-gray-300 transition-all hover:bg-[#D4AF37] hover:text-[#0F172A] whitespace-nowrap"
               >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
                 </svg>
-                Book a Mobile Barber
+                {t('bookMobileBarber')}
               </a>
               
-              <span className="hidden sm:inline text-gray-600">|</span>
+              <span className="text-gray-600">|</span>
               
               <a 
                 href="/learn-barbering" 
-                className="group flex items-center gap-2 rounded-[5px] bg-white/5 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-gray-300 transition-all hover:bg-[#D4AF37] hover:text-[#0F172A]"
+                className="group flex items-center gap-2 rounded-[5px] bg-white/5 px-3 py-2 text-xs sm:text-sm text-gray-300 transition-all hover:bg-[#D4AF37] hover:text-[#0F172A] whitespace-nowrap"
               >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5" />
                 </svg>
-                Learn Barbering
+                {t('learnBarbering')}
               </a>
               
-              <span className="hidden sm:inline text-gray-600">|</span>
+              <span className="text-gray-600">|</span>
               
               <a 
                 href="/shop" 
-                className="group flex items-center gap-2 rounded-[5px] bg-white/5 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-gray-300 transition-all hover:bg-[#D4AF37] hover:text-[#0F172A]"
+                className="group flex items-center gap-2 rounded-[5px] bg-white/5 px-3 py-2 text-xs sm:text-sm text-gray-300 transition-all hover:bg-[#D4AF37] hover:text-[#0F172A] whitespace-nowrap"
               >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
                 </svg>
-                Shop Supplies
+                {t('shopSupplies')}
               </a>
               
-              <span className="hidden sm:inline text-gray-600">|</span>
+              <span className="text-gray-600">|</span>
               
               <a 
                 href="/careers" 
-                className="group flex items-center gap-2 rounded-[5px] bg-white/5 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-gray-300 transition-all hover:bg-[#D4AF37] hover:text-[#0F172A]"
+                className="group flex items-center gap-2 rounded-[5px] bg-white/5 px-3 py-2 text-xs sm:text-sm text-gray-300 transition-all hover:bg-[#D4AF37] hover:text-[#0F172A] whitespace-nowrap"
               >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 14.15v4.25c0 1.094-.787 2.036-1.872 2.18-2.087.277-4.216.42-6.378.42s-4.291-.143-6.378-.42c-1.085-.144-1.872-1.086-1.872-2.18v-4.25m16.5 0a2.18 2.18 0 00.75-1.661V8.706c0-1.081-.768-2.015-1.837-2.175a48.114 48.114 0 00-3.413-.387m4.5 8.006c-.194.165-.42.295-.673.38A23.978 23.978 0 0112 15.75c-2.648 0-5.195-.429-7.577-1.22a2.016 2.016 0 01-.673-.38m0 0A2.18 2.18 0 013 12.489V8.706c0-1.081.768-2.015 1.837-2.175a48.111 48.111 0 013.413-.387m7.5 0V5.25A2.25 2.25 0 0013.5 3h-3a2.25 2.25 0 00-2.25 2.25v.894m7.5 0a48.667 48.667 0 00-7.5 0M12 12.75h.008v.008H12v-.008z" />
                 </svg>
-                Career Opportunities
+                {t('careerOpportunities')}
               </a>
             </div>
           </motion.div>

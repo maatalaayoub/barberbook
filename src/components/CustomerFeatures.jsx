@@ -8,39 +8,7 @@ import {
   Shield, 
   Zap 
 } from 'lucide-react';
-
-const features = [
-  {
-    icon: CalendarCheck,
-    title: 'Instant Appointment Booking',
-    description: 'Book your preferred time slot instantly with just a few taps. No more phone calls or waiting.',
-    color: 'from-[#D4AF37] to-[#F4CF67]'
-  },
-  {
-    icon: Clock,
-    title: 'Smart Queue System',
-    description: 'Join virtual queues and get real-time updates on your position. Arrive exactly when it\'s your turn.',
-    color: 'from-[#14B8A6] to-[#5EEAD4]'
-  },
-  {
-    icon: MapPin,
-    title: 'Mobile Barber Booking',
-    description: 'Book professional barbers to come to your location. Premium haircut experience at your doorstep.',
-    color: 'from-[#8B5CF6] to-[#A78BFA]'
-  },
-  {
-    icon: Shield,
-    title: 'Secure Booking Guarantee',
-    description: 'Your bookings are protected. Get full refunds for cancellations and no-shows from barbers.',
-    color: 'from-[#F59E0B] to-[#FBBF24]'
-  },
-  {
-    icon: Zap,
-    title: 'Real-Time Availability',
-    description: 'See live availability of all barbers near you. Never book a slot that\'s already taken.',
-    color: 'from-[#EC4899] to-[#F472B6]'
-  }
-];
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -64,6 +32,41 @@ const itemVariants = {
 };
 
 export default function CustomerFeatures() {
+  const { t } = useLanguage();
+  
+  const features = [
+    {
+      icon: CalendarCheck,
+      title: t('instantAppointmentBooking'),
+      description: t('instantAppointmentBookingDesc'),
+      color: 'from-[#D4AF37] to-[#F4CF67]'
+    },
+    {
+      icon: Clock,
+      title: t('smartQueueSystem'),
+      description: t('smartQueueSystemDesc'),
+      color: 'from-[#14B8A6] to-[#5EEAD4]'
+    },
+    {
+      icon: MapPin,
+      title: t('mobileBarberFeature'),
+      description: t('mobileBarberFeatureDesc'),
+      color: 'from-[#8B5CF6] to-[#A78BFA]'
+    },
+    {
+      icon: Shield,
+      title: t('secureBookingGuarantee'),
+      description: t('secureBookingGuaranteeDesc'),
+      color: 'from-[#F59E0B] to-[#FBBF24]'
+    },
+    {
+      icon: Zap,
+      title: t('realTimeAvailabilityFeature'),
+      description: t('realTimeAvailabilityFeatureDesc'),
+      color: 'from-[#EC4899] to-[#F472B6]'
+    }
+  ];
+  
   return (
     <section id="features" className="relative overflow-hidden bg-white py-24">
       {/* Background decorations */}
@@ -80,16 +83,16 @@ export default function CustomerFeatures() {
           className="mx-auto mb-16 max-w-3xl text-center"
         >
           <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-[#D4AF37]/10 px-4 py-2">
-            <span className="text-sm font-medium text-[#D4AF37]">For Customers</span>
+            <span className="text-sm font-medium text-[#D4AF37]">{t('forCustomers')}</span>
           </div>
           <h2 className="mb-4 text-3xl font-bold text-[#0F172A] sm:text-4xl lg:text-5xl">
-            Everything You Need for the{' '}
+            {t('everythingForHaircut')}{' '}
             <span className="bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] bg-clip-text text-transparent">
-              Perfect Haircut
+              {t('perfectHaircut')}
             </span>
           </h2>
           <p className="text-lg text-gray-600">
-            From instant booking to doorstep service, we've got every aspect of your grooming needs covered.
+            {t('customerFeaturesDesc')}
           </p>
         </motion.div>
 

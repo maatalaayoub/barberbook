@@ -2,32 +2,35 @@
 
 import { motion } from 'framer-motion';
 import { Search, CalendarClock, Scissors, CheckCircle } from 'lucide-react';
-
-const steps = [
-  {
-    number: '01',
-    icon: Search,
-    title: 'Find Your Barber',
-    description: 'Browse verified barbers and salons near you. View ratings, portfolios, and real customer reviews.',
-    highlights: ['Verified profiles', 'Real reviews', 'Portfolio gallery']
-  },
-  {
-    number: '02',
-    icon: CalendarClock,
-    title: 'Book Instantly',
-    description: 'Choose your preferred time slot or join the smart queue for immediate service.',
-    highlights: ['Real-time availability', 'Queue system', 'Instant confirmation', 'Cash option']
-  },
-  {
-    number: '03',
-    icon: Scissors,
-    title: 'Enjoy Your Service',
-    description: 'Arrive at your appointment and enjoy a premium grooming experience.',
-    highlights: ['No waiting', 'Premium service', 'Rate & review']
-  }
-];
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function HowItWorks() {
+  const { t } = useLanguage();
+  
+  const steps = [
+    {
+      number: '01',
+      icon: Search,
+      title: t('step1Title'),
+      description: t('step1Desc'),
+      highlights: [t('verifiedProfiles'), t('realReviews'), t('portfolioGallery')]
+    },
+    {
+      number: '02',
+      icon: CalendarClock,
+      title: t('step2Title'),
+      description: t('step2Desc'),
+      highlights: [t('realTimeAvailability'), t('queueSystem'), t('instantConfirmation')]
+    },
+    {
+      number: '03',
+      icon: Scissors,
+      title: t('step3Title'),
+      description: t('step3Desc'),
+      highlights: [t('noWaiting'), t('premiumService'), t('rateReview')]
+    }
+  ];
+  
   return (
     <section id="how-it-works" className="relative overflow-hidden bg-gray-50 py-24">
       {/* Background elements */}
@@ -48,18 +51,15 @@ export default function HowItWorks() {
           <div className="mb-6 flex items-center justify-center gap-4">
             <div className="h-px w-12 bg-gradient-to-r from-transparent to-[#D4AF37]" />
             <span className="text-sm font-bold uppercase tracking-widest text-[#D4AF37]">
-              How It Works
+              {t('howItWorksSubtitle')}
             </span>
             <div className="h-px w-12 bg-gradient-to-l from-transparent to-[#D4AF37]" />
           </div>
           <h2 className="mb-6 text-3xl font-bold text-[#0F172A] sm:text-4xl">
-            Book Your Appointment in{' '}
-            <span className="bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] bg-clip-text text-transparent">
-              3 Easy Steps
-            </span>
+            {t('howItWorksTitle')}
           </h2>
           <p className="text-lg text-gray-600">
-            Simple, fast, and hassle-free. Your perfect haircut is just a few taps away.
+            {t('howItWorksDesc')}
           </p>
         </motion.div>
 
@@ -124,7 +124,7 @@ export default function HowItWorks() {
             href="#download" 
             className="group relative inline-flex items-center gap-3 overflow-hidden rounded-full bg-[#0F172A] px-8 py-4 text-base font-semibold text-white transition-all duration-300 hover:bg-[#1E293B]"
           >
-            <span className="relative z-10">Start Booking Now</span>
+            <span className="relative z-10">{t('startBookingNow')}</span>
             <span className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full bg-[#D4AF37] transition-transform duration-300 group-hover:translate-x-1">
               <svg className="h-4 w-4 text-[#0F172A]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />

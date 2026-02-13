@@ -10,6 +10,7 @@ import {
   Phone,
   MapPin
 } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 // Custom X (Twitter) icon
 const XIcon = ({ className }) => (
@@ -17,33 +18,6 @@ const XIcon = ({ className }) => (
     <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
   </svg>
 );
-
-const footerLinks = {
-  product: [
-    { name: 'Features', href: '#features' },
-    { name: 'How It Works', href: '#how-it-works' },
-    { name: 'Pricing', href: '#' },
-    { name: 'Download App', href: '#download' }
-  ],
-  company: [
-    { name: 'About Us', href: '#' },
-    { name: 'Careers', href: '#' },
-    { name: 'Blog', href: '#' },
-    { name: 'Press Kit', href: '#' }
-  ],
-  support: [
-    { name: 'Help Center', href: '#' },
-    { name: 'Contact Us', href: '#' },
-    { name: 'Privacy Policy', href: '#' },
-    { name: 'Terms of Service', href: '#' }
-  ],
-  barbers: [
-    { name: 'Register as Barber', href: '#' },
-    { name: 'Barber Dashboard', href: '#' },
-    { name: 'Success Stories', href: '#' },
-    { name: 'Partner Program', href: '#' }
-  ]
-};
 
 const socialLinks = [
   { icon: Facebook, href: '#', label: 'Facebook' },
@@ -53,6 +27,35 @@ const socialLinks = [
 ];
 
 export default function Footer() {
+  const { t } = useLanguage();
+  
+  const footerLinks = {
+    product: [
+      { name: t('features'), href: '#features' },
+      { name: t('howItWorks'), href: '#how-it-works' },
+      { name: t('pricing'), href: '#' },
+      { name: t('downloadApp'), href: '#download' }
+    ],
+    company: [
+      { name: t('aboutUs'), href: '#' },
+      { name: t('careers'), href: '#' },
+      { name: t('blog'), href: '#' },
+      { name: t('pressKit'), href: '#' }
+    ],
+    support: [
+      { name: t('helpCenter'), href: '#' },
+      { name: t('contactUs'), href: '#' },
+      { name: t('privacyPolicy'), href: '#' },
+      { name: t('termsOfService'), href: '#' }
+    ],
+    barbers: [
+      { name: t('registerAsBarberFooter'), href: '#' },
+      { name: t('barberDashboard'), href: '#' },
+      { name: t('successStories'), href: '#' },
+      { name: t('partnerProgram'), href: '#' }
+    ]
+  };
+  
   return (
     <footer className="relative overflow-hidden bg-[#0F172A]">
       {/* Top section */}
@@ -78,8 +81,7 @@ export default function Footer() {
               </div>
               
               <p className="mb-6 max-w-xs text-gray-400">
-                The smartest way to book barber appointments. Join thousands of 
-                satisfied customers and barbers on our platform.
+                {t('footerDescription')}
               </p>
               
               {/* Contact info */}
@@ -122,7 +124,7 @@ export default function Footer() {
             transition={{ duration: 0.5, delay: 0.1 }}
           >
             <h4 className="mb-4 text-sm font-semibold uppercase tracking-wider text-white">
-              Product
+              {t('product')}
             </h4>
             <ul className="space-y-3">
               {footerLinks.product.map((link, idx) => (
@@ -145,7 +147,7 @@ export default function Footer() {
             transition={{ duration: 0.5, delay: 0.2 }}
           >
             <h4 className="mb-4 text-sm font-semibold uppercase tracking-wider text-white">
-              Company
+              {t('company')}
             </h4>
             <ul className="space-y-3">
               {footerLinks.company.map((link, idx) => (
@@ -168,7 +170,7 @@ export default function Footer() {
             transition={{ duration: 0.5, delay: 0.3 }}
           >
             <h4 className="mb-4 text-sm font-semibold uppercase tracking-wider text-white">
-              Support
+              {t('support')}
             </h4>
             <ul className="space-y-3">
               {footerLinks.support.map((link, idx) => (
@@ -191,7 +193,7 @@ export default function Footer() {
             transition={{ duration: 0.5, delay: 0.4 }}
           >
             <h4 className="mb-4 text-sm font-semibold uppercase tracking-wider text-white">
-              For Barbers
+              {t('barbers')}
             </h4>
             <ul className="space-y-3">
               {footerLinks.barbers.map((link, idx) => (
@@ -214,7 +216,7 @@ export default function Footer() {
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
             <p className="text-sm text-gray-500">
-              © {new Date().getFullYear()} BarberBook. All rights reserved.
+              © {new Date().getFullYear()} BarberBook. {t('allRightsReserved')}
             </p>
             
             {/* Download badges */}

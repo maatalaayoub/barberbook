@@ -11,54 +11,57 @@ import {
   TrendingUp,
   ArrowRight
 } from 'lucide-react';
-
-const features = [
-  {
-    icon: UserCircle,
-    title: 'Professional Profile',
-    description: 'Showcase your skills, portfolio, services, and pricing to attract more clients.',
-    color: 'from-[#D4AF37] to-[#F4CF67]'
-  },
-  {
-    icon: Calendar,
-    title: 'Smart Scheduling',
-    description: 'Manage appointments and queues digitally. Reduce no-shows with automated reminders.',
-    color: 'from-[#14B8A6] to-[#5EEAD4]'
-  },
-  {
-    icon: CreditCard,
-    title: 'Flexible Payments',
-    description: 'Accept online payments or cash. Get instant payouts to your bank account.',
-    color: 'from-[#8B5CF6] to-[#A78BFA]'
-  },
-  {
-    icon: BarChart3,
-    title: 'Business Analytics',
-    description: 'Track daily income, monitor metrics, and gain insights to grow your business.',
-    color: 'from-[#F59E0B] to-[#FBBF24]'
-  },
-  {
-    icon: Users,
-    title: 'Client Management',
-    description: 'Build lasting relationships with customers. Store preferences and booking history.',
-    color: 'from-[#EC4899] to-[#F472B6]'
-  },
-  {
-    icon: TrendingUp,
-    title: 'Marketing Tools',
-    description: 'Get discovered by new customers. Run promotions and build your brand.',
-    color: 'from-[#06B6D4] to-[#22D3EE]'
-  }
-];
-
-const benefits = [
-  'Instant payouts',
-  'Full control',
-  'Secure platform',
-  'Premium features'
-];
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function BarberFeatures() {
+  const { t } = useLanguage();
+  
+  const features = [
+    {
+      icon: UserCircle,
+      title: t('professionalProfile'),
+      description: t('professionalProfileDesc'),
+      color: 'from-[#D4AF37] to-[#F4CF67]'
+    },
+    {
+      icon: Calendar,
+      title: t('smartScheduling'),
+      description: t('smartSchedulingDesc'),
+      color: 'from-[#14B8A6] to-[#5EEAD4]'
+    },
+    {
+      icon: CreditCard,
+      title: t('flexiblePayments'),
+      description: t('flexiblePaymentsDesc'),
+      color: 'from-[#8B5CF6] to-[#A78BFA]'
+    },
+    {
+      icon: BarChart3,
+      title: t('businessAnalytics'),
+      description: t('businessAnalyticsDesc'),
+      color: 'from-[#F59E0B] to-[#FBBF24]'
+    },
+    {
+      icon: Users,
+      title: t('clientManagement'),
+      description: t('clientManagementDesc'),
+      color: 'from-[#EC4899] to-[#F472B6]'
+    },
+    {
+      icon: TrendingUp,
+      title: t('marketingTools'),
+      description: t('marketingToolsDesc'),
+      color: 'from-[#06B6D4] to-[#22D3EE]'
+    }
+  ];
+
+  const benefits = [
+    t('instantPayouts'),
+    t('fullControl'),
+    t('securePlatform'),
+    t('premiumFeatures')
+  ];
+  
   return (
     <section className="relative overflow-hidden bg-[#0F172A] py-24">
       {/* Background Pattern */}
@@ -85,18 +88,18 @@ export default function BarberFeatures() {
           <div className="mb-6 flex items-center justify-center gap-4">
             <div className="h-px w-12 bg-gradient-to-r from-transparent to-[#D4AF37]" />
             <span className="text-sm font-bold uppercase tracking-widest text-[#D4AF37]">
-              For Barbers & Salons
+              {t('forBarbers')}
             </span>
             <div className="h-px w-12 bg-gradient-to-l from-transparent to-[#D4AF37]" />
           </div>
           <h2 className="mb-6 text-3xl font-bold text-white sm:text-4xl lg:text-5xl">
-            Everything You Need to{' '}
+            {t('growYourBusiness')}{' '}
             <span className="bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] bg-clip-text text-transparent">
-              Grow Your Business
+              {t('business')}
             </span>
           </h2>
           <p className="text-lg text-gray-400">
-            Join thousands of successful barbers who've transformed their business with BarberBook's powerful tools.
+            {t('barberFeaturesDesc')}
           </p>
         </motion.div>
 
@@ -138,10 +141,10 @@ export default function BarberFeatures() {
             {/* Left Content */}
             <div className="text-center lg:text-left">
               <h3 className="mb-4 text-2xl font-bold text-white md:text-3xl">
-                Ready to Transform Your Business?
+                {t('readyToTransform')}
               </h3>
               <p className="mb-6 max-w-xl text-gray-400">
-                Join BarberBook today and start accepting online bookings within minutes. No technical skills required.
+                {t('joinBarberBookToday')}
               </p>
               
               {/* Benefits Grid */}
@@ -158,13 +161,13 @@ export default function BarberFeatures() {
             {/* Right CTA */}
             <div className="flex flex-col gap-4">
               <button className="group flex items-center justify-center gap-2 rounded-[5px] border-2 border-[#D4AF37] bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] px-8 py-4 text-lg font-bold text-[#0F172A] transition-all hover:brightness-110">
-                Register as Barber
+                {t('registerAsBarber')}
                 <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
               </button>
               <p className="text-center text-sm text-gray-500">
-                Already registered?{' '}
+                {t('alreadyRegistered')}{' '}
                 <a href="#" className="text-[#D4AF37] hover:underline">
-                  Login to dashboard
+                  {t('loginToDashboard')}
                 </a>
               </p>
             </div>

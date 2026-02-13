@@ -9,41 +9,44 @@ import {
   Briefcase, 
   Users
 } from 'lucide-react';
-
-const features = [
-  {
-    icon: Calendar,
-    title: 'Barber & Salon Booking',
-    description: 'Book appointments instantly at your favorite barbershops and salons.',
-  },
-  {
-    icon: Truck,
-    title: 'Mobile Barber Booking',
-    description: 'Get professional haircuts at your doorstep, home, or office.',
-  },
-  {
-    icon: GraduationCap,
-    title: 'Learn Barbering',
-    description: 'Master the art of barbering with professional courses and tutorials.',
-  },
-  {
-    icon: ShoppingBag,
-    title: 'Shop Supplies',
-    description: 'Premium barbering tools, clippers, scissors, and styling products.',
-  },
-  {
-    icon: Briefcase,
-    title: 'Career Opportunities',
-    description: 'Find your dream job and connect with top salons looking for talent.',
-  },
-  {
-    icon: Users,
-    title: 'Barber Community',
-    description: 'Join a thriving community of barbers and stylists worldwide.',
-  }
-];
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function Features() {
+  const { t } = useLanguage();
+  
+  const features = [
+    {
+      icon: Calendar,
+      title: t('barberSalonBooking'),
+      description: t('barberSalonBookingDesc'),
+    },
+    {
+      icon: Truck,
+      title: t('mobileBarberBooking'),
+      description: t('mobileBarberBookingDesc'),
+    },
+    {
+      icon: GraduationCap,
+      title: t('learnBarberingSec'),
+      description: t('learnBarberingDesc'),
+    },
+    {
+      icon: ShoppingBag,
+      title: t('shopSuppliesSec'),
+      description: t('shopSuppliesDesc'),
+    },
+    {
+      icon: Briefcase,
+      title: t('careerOpportunitiesSec'),
+      description: t('careerOpportunitiesDesc'),
+    },
+    {
+      icon: Users,
+      title: t('barberCommunity'),
+      description: t('barberCommunityDesc'),
+    }
+  ];
+  
   return (
     <section id="features" className="relative bg-gray-50 py-20 lg:py-28">
       {/* Top Separator Line */}
@@ -67,12 +70,12 @@ export default function Features() {
           <div className="mb-6 flex items-center justify-center gap-4">
             <div className="h-px w-12 bg-gradient-to-r from-transparent to-[#D4AF37]" />
             <span className="text-sm font-bold uppercase tracking-widest text-[#D4AF37]">
-              Our Features
+              {t('ourFeatures')}
             </span>
             <div className="h-px w-12 bg-gradient-to-l from-transparent to-[#D4AF37]" />
           </div>
           <h2 className="text-3xl font-bold text-[#0F172A] sm:text-4xl lg:text-5xl">
-            Everything You Need
+            {t('everythingYouNeed')}
           </h2>
         </motion.div>
 

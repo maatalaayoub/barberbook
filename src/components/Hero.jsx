@@ -346,17 +346,20 @@ export default function Hero() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-center max-w-4xl px-2 sm:px-0"
+            className="text-center max-w-4xl px-2 sm:px-0 w-full"
           >
-            <h1 className="mb-14 min-h-[3.5rem] sm:min-h-[4rem] md:min-h-[4.5rem] lg:min-h-[5rem] text-xl font-extrabold leading-tight tracking-tight text-white sm:text-2xl md:text-3xl lg:text-4xl">
-              <span className="text-white">
-                {displayedText}
-              </span>
-              <span className="animate-pulse text-[#D4AF37]">|</span>
-            </h1>
+            {/* Title container with fixed height */}
+            <div className="h-[6rem] sm:h-[7rem] md:h-[8rem] lg:h-[9rem] flex items-center justify-center mb-10">
+              <h1 className="text-xl font-extrabold leading-tight tracking-tight text-white sm:text-2xl md:text-3xl lg:text-4xl max-w-3xl">
+                <span className="text-white">
+                  {displayedText}
+                </span>
+                <span className="animate-pulse text-[#D4AF37]">|</span>
+              </h1>
+            </div>
 
             {/* Search Bar */}
-            <div className="mx-auto mb-10 max-w-2xl">
+            <div className="mx-auto mb-10 max-w-2xl w-full">
               <div className="flex items-center gap-1 sm:gap-2 rounded-[5px] border border-gray-200 bg-white p-1 sm:p-1.5">
                 <div className="flex flex-1 items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2 sm:py-2.5">
                   <Search className="h-5 w-5 text-gray-400 shrink-0" />

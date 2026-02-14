@@ -1,58 +1,111 @@
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 
+// Supported locales
 const locales = ['en', 'fr', 'ar'];
 const defaultLocale = 'en';
 
-function getLocale(request) {
-  // Check if locale is in the pathname
-  const pathname = request.nextUrl.pathname;
-  const pathnameLocale = locales.find(
-    (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
-  );
-  
-  if (pathnameLocale) return pathnameLocale;
-  
-  // Check Accept-Language header
+// Define route matchers for different sections
+const isUserRoute = createRouteMatcher(['/user/:path*', '/:locale/user/:path*']);
+const isBarberRoute = createRouteMatcher(['/barber/:path*', '/:locale/barber/:path*']);
+const isUserAuthRoute = createRouteMatcher(['/auth/user/:path*', '/:locale/auth/user/:path*']);
+const isBarberAuthRoute = createRouteMatcher(['/auth/barber/:path*', '/:locale/auth/barber/:path*']);
+
+// Helper to get locale from pathname
+function getLocaleFromPath(pathname) {
+  const segments = pathname.split('/').filter(Boolean);
+  if (segments.length > 0 && locales.includes(segments[0])) {
+    return segments[0];
+  }
+  return null;
+}
+
+// Helper to get locale from request
+function getPreferredLocale(request) {
   const acceptLanguage = request.headers.get('Accept-Language');
   if (acceptLanguage) {
     const preferredLocale = acceptLanguage
       .split(',')
       .map((lang) => lang.split(';')[0].trim().substring(0, 2))
       .find((lang) => locales.includes(lang));
-    
     if (preferredLocale) return preferredLocale;
   }
-  
   return defaultLocale;
 }
 
-export function middleware(request) {
-  const pathname = request.nextUrl.pathname;
+export default clerkMiddleware(async (auth, req) => {
+  const pathname = req.nextUrl.pathname;
   
-  // Skip middleware for static files, API routes, and _next
+  // Skip static files
   if (
     pathname.startsWith('/_next') ||
-    pathname.startsWith('/api') ||
     pathname.startsWith('/images') ||
-    pathname.includes('.') // files with extensions
+    pathname.includes('.')
   ) {
     return NextResponse.next();
   }
+
+  // Handle locale routing first
+  const pathnameLocale = getLocaleFromPath(pathname);
+  const hasLocale = pathnameLocale !== null;
   
-  // Check if pathname already has a locale
-  const pathnameHasLocale = locales.some(
-    (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
-  );
+  // If no locale in path, redirect with locale prefix
+  if (!hasLocale && !pathname.startsWith('/api')) {
+    const locale = getPreferredLocale(req);
+    const newUrl = new URL(`/${locale}${pathname}`, req.url);
+    return NextResponse.redirect(newUrl);
+  }
+
+  const locale = pathnameLocale || defaultLocale;
   
-  if (pathnameHasLocale) return NextResponse.next();
-  
-  // Redirect to locale-prefixed path
-  const locale = getLocale(request);
-  const newUrl = new URL(`/${locale}${pathname}`, request.url);
-  
-  return NextResponse.redirect(newUrl);
-}
+  // Get auth state
+  const { userId, sessionClaims } = await auth();
+  const role = sessionClaims?.publicMetadata?.role;
+
+  // Check if accessing auth routes
+  if (isUserAuthRoute(req) || isBarberAuthRoute(req)) {
+    if (userId && role) {
+      // Already signed in with role - redirect to appropriate dashboard
+      if (role === 'user') {
+        return NextResponse.redirect(new URL(`/${locale}/user/dashboard`, req.url));
+      }
+      if (role === 'barber') {
+        return NextResponse.redirect(new URL(`/${locale}/barber/dashboard`, req.url));
+      }
+    }
+    // Allow access to auth pages for non-authenticated users
+    return NextResponse.next();
+  }
+
+  // Check protected routes
+  if (isUserRoute(req)) {
+    if (!userId) {
+      return NextResponse.redirect(new URL(`/${locale}/auth/user/sign-in`, req.url));
+    }
+    if (role !== 'user') {
+      // Wrong role - redirect to home
+      return NextResponse.redirect(new URL(`/${locale}`, req.url));
+    }
+  }
+
+  if (isBarberRoute(req)) {
+    // Temporarily disabled for testing - uncomment below to re-enable auth
+    // if (!userId) {
+    //   return NextResponse.redirect(new URL(`/${locale}/auth/barber/sign-in`, req.url));
+    // }
+    // if (role !== 'barber') {
+    //   // Wrong role - redirect to home
+    //   return NextResponse.redirect(new URL(`/${locale}`, req.url));
+    // }
+  }
+
+  return NextResponse.next();
+});
 
 export const config = {
-  matcher: ['/((?!_next|api|images|.*\\..*).*)'],
+  matcher: [
+    // Skip Next.js internals and static files
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    '/(api|trpc)(.*)',
+  ],
 };

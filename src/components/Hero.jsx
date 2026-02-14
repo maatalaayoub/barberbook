@@ -2,10 +2,11 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Moon, Sun, Search, Map, Menu, X, ChevronDown, Globe } from 'lucide-react';
+import { Moon, Sun, Search, Map, Menu, X, ChevronDown, Globe, User, LayoutDashboard } from 'lucide-react';
 import Image from 'next/image';
 import ReactCountryFlag from 'react-country-flag';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useUser, UserButton, SignOutButton } from '@clerk/nextjs';
 
 const languages = [
   { code: 'en', name: 'English', countryCode: 'GB' },
@@ -15,11 +16,16 @@ const languages = [
 
 export default function Hero() {
   const { t, locale, changeLanguage } = useLanguage();
+  const { isSignedIn, user, isLoaded } = useUser();
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [currentLang, setCurrentLang] = useState(languages[0]);
   const [isLangOpen, setIsLangOpen] = useState(false);
   const langRef = useRef(null);
+  
+  // Get user role from Clerk metadata
+  const userRole = user?.publicMetadata?.role;
+  const dashboardUrl = userRole === 'barber' ? `/${locale}/barber/dashboard` : `/${locale}/user/dashboard`;
   
   // Typewriter effect state
   const [currentSentenceIndex, setCurrentSentenceIndex] = useState(0);
@@ -37,7 +43,7 @@ export default function Hero() {
   useEffect(() => {
     const sentences = getRotatingSentences();
     const currentSentence = sentences[currentSentenceIndex];
-    
+
     if (isTyping) {
       if (displayedText.length < currentSentence.length) {
         const timeout = setTimeout(() => {
@@ -45,10 +51,10 @@ export default function Hero() {
         }, 40); // Typing speed
         return () => clearTimeout(timeout);
       } else {
-        // Finished typing, wait before erasing
+        // Finished typing, wait 1.5s before erasing
         const timeout = setTimeout(() => {
           setIsTyping(false);
-        }, 3000); // Display duration
+        }, 1500); // Display duration (1.5s)
         return () => clearTimeout(timeout);
       }
     } else {
@@ -158,7 +164,7 @@ export default function Hero() {
             
             {/* Barber Space Button */}
             <a 
-              href="/barber-space" 
+              href={`/${locale}/auth/barber/sign-in`}
               className="mr-4 flex items-center gap-2 rounded-[15px] border border-[#D4AF37] bg-[#D4AF37]/5 px-4 py-2 text-sm font-semibold text-[#D4AF37] transition-all hover:bg-[#D4AF37] hover:text-[#0F172A]"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -173,19 +179,47 @@ export default function Hero() {
             
             {/* Auth Buttons Group */}
             <div className="flex items-center gap-2 mr-4">
-              <a 
-                href="/login" 
-                className="rounded-[15px] border border-gray-500 bg-transparent px-4 py-2 text-sm font-medium text-gray-300 transition-all hover:border-white hover:bg-white/5 hover:text-white"
-              >
-                {t('login')}
-              </a>
-              
-              <a 
-                href="/signup" 
-                className="rounded-[15px] border-2 border-[#D4AF37] bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] px-5 py-2 text-sm font-semibold text-[#0F172A] transition-all hover:scale-105"
-              >
-                {t('signUp')}
-              </a>
+              {!isLoaded ? (
+                // Loading state
+                <div className="w-24 h-10 bg-gray-800/50 rounded-[15px] animate-pulse" />
+              ) : isSignedIn ? (
+                // Signed in state - show dashboard button and user menu
+                <>
+                  <a 
+                    href={dashboardUrl}
+                    className="flex items-center gap-2 rounded-[15px] border border-gray-500 bg-transparent px-4 py-2 text-sm font-medium text-gray-300 transition-all hover:border-white hover:bg-white/5 hover:text-white"
+                  >
+                    <LayoutDashboard className="h-4 w-4" />
+                    {t('dashboard') || 'Dashboard'}
+                  </a>
+                  <UserButton 
+                    afterSignOutUrl={`/${locale}`}
+                    appearance={{
+                      elements: {
+                        avatarBox: 'w-10 h-10 rounded-[15px]',
+                        userButtonTrigger: 'focus:shadow-none',
+                      }
+                    }}
+                  />
+                </>
+              ) : (
+                // Signed out state - show login/signup buttons
+                <>
+                  <a 
+                    href={`/${locale}/auth/user/sign-in`}
+                    className="rounded-[15px] border border-gray-500 bg-transparent px-4 py-2 text-sm font-medium text-gray-300 transition-all hover:border-white hover:bg-white/5 hover:text-white"
+                  >
+                    {t('login')}
+                  </a>
+                  
+                  <a 
+                    href={`/${locale}/auth/user/sign-up`}
+                    className="rounded-[15px] border-2 border-[#D4AF37] bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] px-5 py-2 text-sm font-semibold text-[#0F172A] transition-all hover:scale-105"
+                  >
+                    {t('signUp')}
+                  </a>
+                </>
+              )}
             </div>
             
             {/* Dark Mode Toggle */}
@@ -272,7 +306,7 @@ export default function Hero() {
                 
                 {/* Barber Space Button */}
                 <a 
-                  href="/barber-space" 
+                  href={`/${locale}/auth/barber/sign-in`}
                   className="mb-4 flex items-center justify-center gap-2 rounded-[5px] border border-[#D4AF37] bg-[#D4AF37]/5 px-4 py-3 text-sm font-semibold text-[#D4AF37] transition-all hover:bg-[#D4AF37] hover:text-[#0F172A]"
                 >
                   <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -287,19 +321,43 @@ export default function Hero() {
                 
                 {/* Auth Buttons */}
                 <div className="flex gap-3 mb-6">
-                  <a 
-                    href="/login" 
-                    className="flex-1 rounded-[5px] border border-gray-500 bg-transparent px-4 py-3 text-center text-sm font-medium text-gray-300 transition-all hover:border-white hover:bg-white/5 hover:text-white"
-                  >
-                    {t('login')}
-                  </a>
-                  
-                  <a 
-                    href="/signup" 
-                    className="flex-1 rounded-[5px] border-2 border-[#D4AF37] bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] px-4 py-3 text-center text-sm font-semibold text-[#0F172A] transition-all hover:brightness-110"
-                  >
-                    {t('signUp')}
-                  </a>
+                  {!isLoaded ? (
+                    // Loading state
+                    <div className="flex-1 h-12 bg-gray-800/50 rounded-[5px] animate-pulse" />
+                  ) : isSignedIn ? (
+                    // Signed in state - show dashboard and sign out
+                    <>
+                      <a 
+                        href={dashboardUrl}
+                        className="flex-1 flex items-center justify-center gap-2 rounded-[5px] border border-[#D4AF37] bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] px-4 py-3 text-sm font-semibold text-[#0F172A] transition-all hover:brightness-110"
+                      >
+                        <LayoutDashboard className="h-4 w-4" />
+                        {t('dashboard') || 'Dashboard'}
+                      </a>
+                      <SignOutButton redirectUrl={`/${locale}`}>
+                        <button className="flex-1 rounded-[5px] border border-gray-500 bg-transparent px-4 py-3 text-center text-sm font-medium text-gray-300 transition-all hover:border-white hover:bg-white/5 hover:text-white">
+                          {t('signOut') || 'Sign Out'}
+                        </button>
+                      </SignOutButton>
+                    </>
+                  ) : (
+                    // Signed out state - show login/signup
+                    <>
+                      <a 
+                        href={`/${locale}/auth/user/sign-in`}
+                        className="flex-1 rounded-[5px] border border-gray-500 bg-transparent px-4 py-3 text-center text-sm font-medium text-gray-300 transition-all hover:border-white hover:bg-white/5 hover:text-white"
+                      >
+                        {t('login')}
+                      </a>
+                      
+                      <a 
+                        href={`/${locale}/auth/user/sign-up`}
+                        className="flex-1 rounded-[5px] border-2 border-[#D4AF37] bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] px-4 py-3 text-center text-sm font-semibold text-[#0F172A] transition-all hover:brightness-110"
+                      >
+                        {t('signUp')}
+                      </a>
+                    </>
+                  )}
                 </div>
                 
                 {/* Dark Mode Toggle */}

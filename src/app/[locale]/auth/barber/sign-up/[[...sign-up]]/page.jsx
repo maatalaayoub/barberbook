@@ -147,7 +147,7 @@ export default function BarberSignUpPage() {
               routing="path"
               path={`/${locale}/auth/barber/sign-up`}
               signInUrl={`/${locale}/auth/barber/sign-in`}
-              forceRedirectUrl={`/${locale}/auth/barber/complete-signup`}
+              forceRedirectUrl={`/${locale}?setup=barber`}
             />
             </div>
 

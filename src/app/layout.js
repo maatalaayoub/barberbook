@@ -27,7 +27,35 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <ClerkProvider>
+    <ClerkProvider
+      appearance={{
+        layout: {
+          socialButtonsPlacement: 'bottom',
+          socialButtonsVariant: 'iconButton',
+        },
+        elements: {
+          // Fix RTL modal header overlap issue
+          modalContent: {
+            direction: 'ltr',
+          },
+          userProfileModalContent: {
+            direction: 'ltr',
+          },
+          navbarButton: {
+            marginInlineStart: '0',
+            marginInlineEnd: 'auto',
+          },
+          headerTitle: {
+            direction: 'ltr',
+          },
+          modalCloseButton: {
+            position: 'absolute',
+            right: '1rem',
+            left: 'auto',
+          },
+        },
+      }}
+    >
       <html lang="en" className="scroll-smooth">
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}

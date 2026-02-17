@@ -2,11 +2,13 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Moon, Sun, Search, Map, Menu, X, ChevronDown, Globe, User, LayoutDashboard } from 'lucide-react';
+import { Search, Map, Menu, X, ChevronDown, Globe, User, LayoutDashboard, Settings, Scissors, Home, GraduationCap, ShoppingBag, Briefcase, LogOut } from 'lucide-react';
 import Image from 'next/image';
 import ReactCountryFlag from 'react-country-flag';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useUser, UserButton, SignOutButton } from '@clerk/nextjs';
+import { useUser, SignOutButton, useClerk } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
+import { useRole } from '@/hooks/useRole';
 
 const languages = [
   { code: 'en', name: 'English', countryCode: 'GB' },
@@ -16,33 +18,61 @@ const languages = [
 
 export default function Hero() {
   const { t, locale, changeLanguage } = useLanguage();
-  const { isSignedIn, user, isLoaded } = useUser();
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  const { isSignedIn, user, isLoaded: isClerkLoaded } = useUser();
+  const { role: userRole, isBarber, isLoaded: isRoleLoaded } = useRole();
+  const clerk = useClerk();
+  const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isDesktopSideMenuOpen, setIsDesktopSideMenuOpen] = useState(false);
   const [currentLang, setCurrentLang] = useState(languages[0]);
   const [isLangOpen, setIsLangOpen] = useState(false);
   const langRef = useRef(null);
+  const mobileMenuRef = useRef(null);
+  const mobileMenuToggleRef = useRef(null);
+  const desktopSideMenuRef = useRef(null);
   
-  // Get user role from Clerk metadata
-  const userRole = user?.publicMetadata?.role;
-  const dashboardUrl = userRole === 'barber' ? `/${locale}/barber/dashboard` : `/${locale}/user/dashboard`;
+  // Combined loaded state - both Clerk and role data must be loaded
+  const isLoaded = isClerkLoaded && isRoleLoaded;
+  
+  // Dashboard URL for barbers only
+  const dashboardUrl = `/${locale}/barber/dashboard`;
+  
+  // Debug logging
+  useEffect(() => {
+    console.log('[Hero] Auth state:', { isLoaded, isSignedIn, isBarber, userRole, isRoleLoaded });
+  }, [isLoaded, isSignedIn, isBarber, userRole, isRoleLoaded]);
   
   // Typewriter effect state
   const [currentSentenceIndex, setCurrentSentenceIndex] = useState(0);
   const [displayedText, setDisplayedText] = useState('');
   const [isTyping, setIsTyping] = useState(true);
+  const [targetLength, setTargetLength] = useState(0);
 
   // Get rotating sentences
   const getRotatingSentences = () => [
     t('heroRotating1'),
     t('heroRotating2'),
     t('heroRotating3'),
+    t('heroRotating4'),
+    t('heroRotating5'),
   ];
+
+  // Helper to find common prefix length between two strings
+  const getCommonPrefixLength = (str1, str2) => {
+    let i = 0;
+    while (i < str1.length && i < str2.length && str1[i] === str2[i]) {
+      i++;
+    }
+    return i;
+  };
 
   // Typewriter effect
   useEffect(() => {
     const sentences = getRotatingSentences();
     const currentSentence = sentences[currentSentenceIndex];
+    const nextSentenceIndex = (currentSentenceIndex + 1) % sentences.length;
+    const nextSentence = sentences[nextSentenceIndex];
+    const commonPrefixLength = getCommonPrefixLength(currentSentence, nextSentence);
 
     if (isTyping) {
       if (displayedText.length < currentSentence.length) {
@@ -53,29 +83,31 @@ export default function Hero() {
       } else {
         // Finished typing, wait 1.5s before erasing
         const timeout = setTimeout(() => {
+          setTargetLength(commonPrefixLength);
           setIsTyping(false);
         }, 1500); // Display duration (1.5s)
         return () => clearTimeout(timeout);
       }
     } else {
-      if (displayedText.length > 0) {
+      if (displayedText.length > targetLength) {
         const timeout = setTimeout(() => {
           setDisplayedText(displayedText.slice(0, -1));
         }, 25); // Erasing speed (faster)
         return () => clearTimeout(timeout);
       } else {
-        // Move to next sentence
-        setCurrentSentenceIndex((prev) => (prev + 1) % sentences.length);
+        // Move to next sentence and start typing
+        setCurrentSentenceIndex(nextSentenceIndex);
         setIsTyping(true);
       }
     }
-  }, [displayedText, isTyping, currentSentenceIndex, locale]);
+  }, [displayedText, isTyping, currentSentenceIndex, targetLength, locale]);
 
   // Reset when language changes
   useEffect(() => {
     setDisplayedText('');
     setCurrentSentenceIndex(0);
     setIsTyping(true);
+    setTargetLength(0);
   }, [locale]);
 
   // Sync currentLang with locale
@@ -95,14 +127,32 @@ export default function Hero() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode);
-    // You can add document class toggle for full site dark mode
-    document.documentElement.classList.toggle('dark');
-  };
+  // Close mobile menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const isOutsideMenu = mobileMenuRef.current && !mobileMenuRef.current.contains(event.target);
+      const isOutsideToggle = mobileMenuToggleRef.current && !mobileMenuToggleRef.current.contains(event.target);
+      if (isOutsideMenu && isOutsideToggle && isMobileMenuOpen) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isMobileMenuOpen]);
+
+  // Close desktop side menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (desktopSideMenuRef.current && !desktopSideMenuRef.current.contains(event.target) && isDesktopSideMenuOpen) {
+        setIsDesktopSideMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isDesktopSideMenuOpen]);
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A] sm:min-h-screen">
+    <section className="relative overflow-hidden bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A]">
       {/* Background decorative elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 h-80 w-80 rounded-full bg-[#D4AF37]/10 blur-3xl" />
@@ -124,26 +174,51 @@ export default function Hero() {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
-            className="flex items-center"
+            className="flex items-center gap-3"
           >
+            {/* Drawer icon - Show only when signed in on desktop (LTR languages) */}
+            {isLoaded && isSignedIn && locale !== 'ar' && (
+              <button
+                onClick={() => setIsDesktopSideMenuOpen(!isDesktopSideMenuOpen)}
+                className="hidden md:flex h-10 w-10 items-center justify-center rounded-[10px] bg-gray-800/50 text-gray-300 transition-all hover:bg-gray-700 hover:text-white"
+                aria-label={t('menu') || 'Menu'}
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+            )}
             <Image 
               src="/images/logo.png" 
               alt="BarberBook" 
               width={200} 
               height={50}
-              className="h-11 w-auto"
+              className="h-11 w-auto filter brightness-0 invert"
               priority
             />
           </motion.div>
           
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="flex h-10 w-10 items-center justify-center rounded-[15px] bg-gray-800/50 text-gray-300 transition-all hover:bg-gray-700 hover:text-white md:hidden"
-            aria-label="Toggle menu"
-          >
-            {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
+          {/* Mobile Menu Button & Icons */}
+          <div className="flex items-center gap-2 md:hidden">
+            {/* Show Dashboard button only for barbers */}
+            {isLoaded && isSignedIn && isBarber && (
+              <a
+                href={dashboardUrl}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] border-2 border-[#D4AF37] bg-gradient-to-br from-[#D4AF37] to-[#F4CF67] text-[#0F172A] shadow-lg shadow-[#D4AF37]/20 transition-all hover:shadow-[#D4AF37]/40 hover:scale-105"
+                aria-label={t('dashboard') || 'Dashboard'}
+              >
+                <Scissors className="h-3.5 w-3.5" />
+                <span className="text-xs font-semibold">{t('dashboard') || 'Dashboard'}</span>
+              </a>
+            )}
+            {/* Menu Toggle */}
+            <button
+              ref={mobileMenuToggleRef}
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-gray-800/50 text-gray-300 transition-all hover:bg-gray-700 hover:text-white"
+              aria-label="Toggle menu"
+            >
+              {isMobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            </button>
+          </div>
           
           {/* Desktop Navigation */}
           <motion.div 
@@ -152,30 +227,19 @@ export default function Hero() {
             transition={{ duration: 0.5 }}
             className="hidden items-center md:flex"
           >
-            {/* Navigation Links */}
-            <div className="flex items-center gap-6 mr-6">
-              <a href="#features" className="text-sm text-gray-300 transition-colors hover:text-[#D4AF37]">{t('features')}</a>
-              <a href="#how-it-works" className="text-sm text-gray-300 transition-colors hover:text-[#D4AF37]">{t('howItWorks')}</a>
-              <a href="#app" className="text-sm text-gray-300 transition-colors hover:text-[#D4AF37]">{t('app')}</a>
-            </div>
-            
-            {/* Divider */}
-            <div className="h-6 w-px bg-gray-600 mr-6" />
-            
-            {/* Barber Space Button */}
-            <a 
-              href={`/${locale}/auth/barber/sign-in`}
-              className="mr-4 flex items-center gap-2 rounded-[15px] border border-[#D4AF37] bg-[#D4AF37]/5 px-4 py-2 text-sm font-semibold text-[#D4AF37] transition-all hover:bg-[#D4AF37] hover:text-[#0F172A]"
-            >
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="6" cy="6" r="3" />
-                <path d="M8.12 8.12L12 12" />
-                <path d="M20 4L8.12 15.88" />
-                <circle cx="6" cy="18" r="3" />
-                <path d="M14.8 14.8L20 20" />
-              </svg>
-              {t('barberSpace')}
-            </a>
+            {/* Navigation Links - Only show when NOT signed in */}
+            {!isSignedIn && (
+              <>
+                <div className="flex items-center gap-6 mr-6">
+                  <a href="#features" className="text-sm text-gray-300 transition-colors hover:text-[#D4AF37]">{t('features')}</a>
+                  <a href="#how-it-works" className="text-sm text-gray-300 transition-colors hover:text-[#D4AF37]">{t('howItWorks')}</a>
+                  <a href="#app" className="text-sm text-gray-300 transition-colors hover:text-[#D4AF37]">{t('app')}</a>
+                </div>
+                
+                {/* Divider */}
+                <div className="h-6 w-px bg-gray-600 mr-6" />
+              </>
+            )}
             
             {/* Auth Buttons Group */}
             <div className="flex items-center gap-2 mr-4">
@@ -183,24 +247,29 @@ export default function Hero() {
                 // Loading state
                 <div className="w-24 h-10 bg-gray-800/50 rounded-[15px] animate-pulse" />
               ) : isSignedIn ? (
-                // Signed in state - show dashboard button and user menu
+                // Signed in state
                 <>
-                  <a 
-                    href={dashboardUrl}
-                    className="flex items-center gap-2 rounded-[15px] border border-gray-500 bg-transparent px-4 py-2 text-sm font-medium text-gray-300 transition-all hover:border-white hover:bg-white/5 hover:text-white"
-                  >
-                    <LayoutDashboard className="h-4 w-4" />
-                    {t('dashboard') || 'Dashboard'}
-                  </a>
-                  <UserButton 
-                    afterSignOutUrl={`/${locale}`}
-                    appearance={{
-                      elements: {
-                        avatarBox: 'w-10 h-10 rounded-[15px]',
-                        userButtonTrigger: 'focus:shadow-none',
-                      }
-                    }}
-                  />
+                  {/* Dashboard button - Show only for barbers */}
+                  {isBarber && (
+                    <a 
+                      href={dashboardUrl}
+                      className="flex items-center gap-2 px-4 py-2 rounded-[10px] border-2 border-[#D4AF37] bg-gradient-to-br from-[#D4AF37] to-[#F4CF67] text-[#0F172A] shadow-lg shadow-[#D4AF37]/20 transition-all hover:shadow-[#D4AF37]/40 hover:scale-105"
+                      aria-label={t('dashboard') || 'Dashboard'}
+                    >
+                      <Scissors className="h-4 w-4" />
+                      <span className="text-sm font-semibold">{t('dashboard') || 'Dashboard'}</span>
+                    </a>
+                  )}
+                  {/* Drawer icon - Show only for Arabic (RTL) on right side */}
+                  {locale === 'ar' && (
+                    <button
+                      onClick={() => setIsDesktopSideMenuOpen(!isDesktopSideMenuOpen)}
+                      className="hidden md:flex h-10 w-10 items-center justify-center rounded-[10px] bg-gray-800/50 text-gray-300 transition-all hover:bg-gray-700 hover:text-white"
+                      aria-label={t('menu') || 'Menu'}
+                    >
+                      <Menu className="h-5 w-5" />
+                    </button>
+                  )}
                 </>
               ) : (
                 // Signed out state - show login/signup buttons
@@ -221,50 +290,405 @@ export default function Hero() {
                 </>
               )}
             </div>
-            
-            {/* Dark Mode Toggle */}
-            <button
-              onClick={toggleDarkMode}
-              className="relative flex h-10 w-10 items-center justify-center rounded-[15px] bg-gray-800/50 text-gray-300 transition-all hover:bg-gray-700 hover:text-[#D4AF37] hover:scale-110"
-              aria-label="Toggle dark mode"
-            >
-              {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-            </button>
 
-            {/* Language Selector */}
-            <div className="relative ml-2" ref={langRef}>
-              <button
-                onClick={() => setIsLangOpen(!isLangOpen)}
-                className="flex h-10 items-center gap-2 rounded-[15px] bg-gray-800/50 px-3 text-sm text-gray-300 transition-all hover:bg-gray-700"
+            {/* Language Selector - Only show when NOT signed in */}
+            {!isSignedIn && (
+              <div className="relative ml-2" ref={langRef}>
+                <button
+                  onClick={() => setIsLangOpen(!isLangOpen)}
+                  className="flex h-10 items-center gap-2 rounded-[15px] bg-gray-800/50 px-3 text-sm text-gray-300 transition-all hover:bg-gray-700"
+                >
+                  <ReactCountryFlag 
+                    countryCode={currentLang.countryCode} 
+                    svg 
+                    style={{ width: '1.2em', height: '1.2em' }}
+                  />
+                  <span className="hidden lg:inline">{currentLang.code.toUpperCase()}</span>
+                  <ChevronDown className={`h-4 w-4 transition-transform ${isLangOpen ? 'rotate-180' : ''}`} />
+                </button>
+                
+                <AnimatePresence>
+                  {isLangOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute right-0 top-12 z-50 min-w-[160px] overflow-hidden rounded-[10px] border border-gray-700 bg-[#1E293B]" 
+                    >
+                      {languages.map((lang) => (
+                        <button
+                          key={lang.code}
+                          onClick={() => {
+                            setCurrentLang(lang);
+                            changeLanguage(lang.code);
+                            setIsLangOpen(false);
+                          }}
+                          className={`flex w-full items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-gray-700 ${
+                            currentLang.code === lang.code ? 'bg-gray-700/50 text-[#D4AF37]' : 'text-gray-300'
+                          }`}
+                        >
+                          <ReactCountryFlag 
+                            countryCode={lang.countryCode} 
+                            svg 
+                            style={{ width: '1.2em', height: '1.2em' }}
+                          />
+                          <span>{lang.name}</span>
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
+          </motion.div>
+        </nav>
+
+        {/* Desktop Side Menu */}
+        <AnimatePresence>
+          {isDesktopSideMenuOpen && isSignedIn && (
+            <>
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 hidden md:block"
+                onClick={() => setIsDesktopSideMenuOpen(false)}
+              />
+              {/* Side Panel - Clean Professional Design */}
+              <motion.div
+                ref={desktopSideMenuRef}
+                initial={{ x: locale === 'ar' ? '100%' : '-100%', opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: locale === 'ar' ? '100%' : '-100%', opacity: 0 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                className={`fixed top-0 ${locale === 'ar' ? 'right-0' : 'left-0'} h-screen w-[340px] bg-white shadow-2xl z-50 hidden md:flex flex-col`}
               >
-                <ReactCountryFlag 
-                  countryCode={currentLang.countryCode} 
-                  svg 
-                  style={{ width: '1.2em', height: '1.2em' }}
-                />
-                <span className="hidden lg:inline">{currentLang.code.toUpperCase()}</span>
-                <ChevronDown className={`h-4 w-4 transition-transform ${isLangOpen ? 'rotate-180' : ''}`} />
-              </button>
-              
-              <AnimatePresence>
-                {isLangOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2 }}
-                    className="absolute right-0 top-12 z-50 min-w-[160px] overflow-hidden rounded-[10px] border border-gray-700 bg-[#1E293B]" 
+                {/* Header */}
+                <div className="flex items-center justify-between p-5 border-b border-gray-100 shrink-0">
+                  <span className="text-gray-900 text-base font-semibold">Menu</span>
+                  <button
+                    onClick={() => setIsDesktopSideMenuOpen(false)}
+                    className="flex h-9 w-9 items-center justify-center rounded-[4px] bg-gray-100 text-gray-500 transition-all hover:bg-gray-200 hover:text-gray-700"
                   >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                {/* Scrollable Content */}
+                <div className="flex-1 overflow-y-auto">
+                  {/* Profile Card */}
+                  <div className="p-5">
+                    <div className="rounded-[4px] bg-gradient-to-br from-[#FDF8E8] to-[#F5EED6] border border-[#D4AF37]/20 overflow-hidden">
+                      {/* Profile Info - Clickable */}
+                      <button
+                        onClick={() => {
+                          clerk.openUserProfile();
+                          setIsDesktopSideMenuOpen(false);
+                        }}
+                        className="w-full flex items-center gap-4 p-4 cursor-pointer transition-all hover:bg-[#D4AF37]/5 group"
+                      >
+                        <div className="w-12 h-12 rounded-[4px] ring-2 ring-[#D4AF37] ring-offset-2 ring-offset-[#FDF8E8] overflow-hidden shrink-0 shadow-md">
+                          <img 
+                            src={user?.imageUrl} 
+                            alt={user?.firstName || 'Profile'} 
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="text-left flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-900 truncate">
+                            {user?.firstName} {user?.lastName}
+                          </p>
+                          <p className="text-xs text-gray-500 truncate">
+                            {user?.emailAddresses?.[0]?.emailAddress}
+                          </p>
+                        </div>
+                        <div className="flex items-center justify-center w-7 h-7 rounded-[4px] bg-[#D4AF37]/10 text-[#D4AF37] group-hover:bg-[#D4AF37] group-hover:text-white transition-all shrink-0">
+                          <ChevronDown className={`h-3.5 w-3.5 ${locale === 'ar' ? 'rotate-90' : '-rotate-90'}`} />
+                        </div>
+                      </button>
+                      {/* Divider */}
+                      <div className="h-px bg-[#D4AF37]/20" />
+                      {/* Logout Button */}
+                      <SignOutButton redirectUrl={`/${locale}`}>
+                        <button className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-600 transition-all hover:bg-red-50 hover:text-red-600 group">
+                          <LogOut className="h-4 w-4" />
+                          <span>{t('signOut') || 'Sign Out'}</span>
+                        </button>
+                      </SignOutButton>
+                    </div>
+                  </div>
+
+                  {/* Services Section */}
+                  <div className="px-5 pb-5">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">{t('services') || 'Services'}</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <a
+                        href={`/${locale}/home-barber`}
+                        className="flex flex-col items-center gap-3 p-4 rounded-[4px] bg-gray-50 border border-gray-100 text-gray-700 transition-all hover:bg-[#D4AF37]/5 hover:border-[#D4AF37]/30 hover:shadow-sm group"
+                        onClick={() => setIsDesktopSideMenuOpen(false)}
+                      >
+                        <div className="flex items-center justify-center w-12 h-12 rounded-[4px] bg-white shadow-sm border border-gray-100 group-hover:border-[#D4AF37]/30 group-hover:shadow-md transition-all">
+                          <Home className="h-5 w-5 text-gray-400 group-hover:text-[#D4AF37] transition-colors" />
+                        </div>
+                        <span className="text-xs font-medium text-center text-gray-600 group-hover:text-gray-900">{t('homeBarber') || 'Mobile barber'}</span>
+                      </a>
+                      <a
+                        href={`/${locale}/training`}
+                        className="flex flex-col items-center gap-3 p-4 rounded-[4px] bg-gray-50 border border-gray-100 text-gray-700 transition-all hover:bg-[#D4AF37]/5 hover:border-[#D4AF37]/30 hover:shadow-sm group"
+                        onClick={() => setIsDesktopSideMenuOpen(false)}
+                      >
+                        <div className="flex items-center justify-center w-12 h-12 rounded-[4px] bg-white shadow-sm border border-gray-100 group-hover:border-[#D4AF37]/30 group-hover:shadow-md transition-all">
+                          <GraduationCap className="h-5 w-5 text-gray-400 group-hover:text-[#D4AF37] transition-colors" />
+                        </div>
+                        <span className="text-xs font-medium text-center text-gray-600 group-hover:text-gray-900">{t('barberTraining') || 'Learn barbering'}</span>
+                      </a>
+                      <a
+                        href={`/${locale}/shop`}
+                        className="flex flex-col items-center gap-3 p-4 rounded-[4px] bg-gray-50 border border-gray-100 text-gray-700 transition-all hover:bg-[#D4AF37]/5 hover:border-[#D4AF37]/30 hover:shadow-sm group"
+                        onClick={() => setIsDesktopSideMenuOpen(false)}
+                      >
+                        <div className="flex items-center justify-center w-12 h-12 rounded-[4px] bg-white shadow-sm border border-gray-100 group-hover:border-[#D4AF37]/30 group-hover:shadow-md transition-all">
+                          <ShoppingBag className="h-5 w-5 text-gray-400 group-hover:text-[#D4AF37] transition-colors" />
+                        </div>
+                        <span className="text-xs font-medium text-center text-gray-600 group-hover:text-gray-900">{t('shop') || 'Boutique'}</span>
+                      </a>
+                      <a
+                        href={`/${locale}/jobs`}
+                        className="flex flex-col items-center gap-3 p-4 rounded-[4px] bg-gray-50 border border-gray-100 text-gray-700 transition-all hover:bg-[#D4AF37]/5 hover:border-[#D4AF37]/30 hover:shadow-sm group"
+                        onClick={() => setIsDesktopSideMenuOpen(false)}
+                      >
+                        <div className="flex items-center justify-center w-12 h-12 rounded-[4px] bg-white shadow-sm border border-gray-100 group-hover:border-[#D4AF37]/30 group-hover:shadow-md transition-all">
+                          <Briefcase className="h-5 w-5 text-gray-400 group-hover:text-[#D4AF37] transition-colors" />
+                        </div>
+                        <span className="text-xs font-medium text-center text-gray-600 group-hover:text-gray-900">{t('jobs') || 'Emplois'}</span>
+                      </a>
+                    </div>
+                  </div>
+
+                  {/* Settings - Only for barbers */}
+                  {isBarber && (
+                    <div className="px-5 pb-5">
+                      <a
+                        href={`/${locale}/barber/dashboard/settings`}
+                        className="flex items-center gap-3 w-full p-4 rounded-[4px] bg-gray-50 border border-gray-100 text-gray-600 transition-all hover:bg-[#D4AF37]/5 hover:border-[#D4AF37]/30"
+                        onClick={() => setIsDesktopSideMenuOpen(false)}
+                      >
+                        <div className="flex items-center justify-center w-10 h-10 rounded-[4px] bg-white shadow-sm border border-gray-100">
+                          <Settings className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <span className="font-medium">{t('settings') || 'Settings'}</span>
+                      </a>
+                    </div>
+                  )}
+
+                  {/* Language Selector */}
+                  <div className="px-5 py-4 border-t border-gray-100">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">{t('language') || 'Language'}</p>
+                    <div className="flex gap-2">
+                      {languages.map((lang) => (
+                        <button
+                          key={lang.code}
+                          onClick={() => {
+                            setCurrentLang(lang);
+                            changeLanguage(lang.code);
+                          }}
+                          className={`flex flex-1 items-center justify-center gap-2 rounded-[4px] py-3 text-sm font-medium transition-all ${
+                            currentLang.code === lang.code 
+                              ? 'bg-[#D4AF37] text-white shadow-md' 
+                              : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700'
+                          }`}
+                        >
+                          <ReactCountryFlag 
+                            countryCode={lang.countryCode} 
+                            svg 
+                            style={{ width: '1.3em', height: '1.3em' }}
+                          />
+                          <span>{lang.code.toUpperCase()}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+
+        {/* Mobile Menu */}
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <motion.div
+              ref={mobileMenuRef}
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+              className="md:hidden overflow-hidden"
+              dir={locale === 'ar' ? 'rtl' : 'ltr'}
+            >
+              <div className="rounded-[4px] bg-white shadow-xl border border-gray-100 mb-6 overflow-hidden">
+                {/* Profile Section - Only show when signed in */}
+                {isSignedIn && user && (
+                  <div className="p-4 bg-gradient-to-br from-[#FDF8E8] to-[#F5EED6] border-b border-[#D4AF37]/20">
+                    <div className="rounded-[4px] bg-white/80 border border-[#D4AF37]/20 overflow-hidden">
+                      {/* Profile Info - Clickable */}
+                      <button
+                        onClick={() => {
+                          clerk.openUserProfile();
+                          setIsMobileMenuOpen(false);
+                        }}
+                        className="w-full flex items-center gap-3 p-3 cursor-pointer transition-all hover:bg-[#D4AF37]/5 group"
+                      >
+                        <div className="w-10 h-10 rounded-[4px] ring-2 ring-[#D4AF37] ring-offset-1 ring-offset-white overflow-hidden shrink-0 shadow-sm">
+                          <img 
+                            src={user?.imageUrl} 
+                            alt={user?.firstName || 'Profile'} 
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className={`${locale === 'ar' ? 'text-right' : 'text-left'} flex-1 min-w-0`}>
+                          <p className="text-sm font-semibold text-gray-900 truncate">
+                            {user?.firstName} {user?.lastName}
+                          </p>
+                          <p className="text-xs text-gray-500 truncate">
+                            {user?.emailAddresses?.[0]?.emailAddress}
+                          </p>
+                        </div>
+                        <div className="flex items-center justify-center w-6 h-6 rounded-[4px] bg-[#D4AF37]/10 text-[#D4AF37] group-hover:bg-[#D4AF37] group-hover:text-white transition-all shrink-0">
+                          <ChevronDown className={`h-3 w-3 ${locale === 'ar' ? 'rotate-90' : '-rotate-90'}`} />
+                        </div>
+                      </button>
+                      {/* Divider */}
+                      <div className="h-px bg-[#D4AF37]/20" />
+                      {/* Logout Button */}
+                      <SignOutButton redirectUrl={`/${locale}`}>
+                        <button className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-gray-600 transition-all hover:bg-red-50 hover:text-red-600 group">
+                          <LogOut className="h-4 w-4" />
+                          <span>{t('signOut') || 'Sign Out'}</span>
+                        </button>
+                      </SignOutButton>
+                    </div>
+                  </div>
+                )}
+
+                {/* Services Section - Only show when signed in */}
+                {isSignedIn && (
+                  <div className="p-4">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">{t('services') || 'Services'}</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <a
+                        href={`/${locale}/home-barber`}
+                        className="flex flex-col items-center gap-2 p-3 rounded-[4px] bg-gray-50 border border-gray-100 text-gray-700 transition-all hover:bg-[#D4AF37]/5 hover:border-[#D4AF37]/30 group"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        <div className="flex items-center justify-center w-10 h-10 rounded-[4px] bg-white shadow-sm border border-gray-100 group-hover:border-[#D4AF37]/30 transition-all">
+                          <Home className="h-4 w-4 text-gray-400 group-hover:text-[#D4AF37] transition-colors" />
+                        </div>
+                        <span className="text-xs font-medium text-center text-gray-600 group-hover:text-gray-900">{t('homeBarber') || 'Mobile barber'}</span>
+                      </a>
+                      <a
+                        href={`/${locale}/training`}
+                        className="flex flex-col items-center gap-2 p-3 rounded-[4px] bg-gray-50 border border-gray-100 text-gray-700 transition-all hover:bg-[#D4AF37]/5 hover:border-[#D4AF37]/30 group"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        <div className="flex items-center justify-center w-10 h-10 rounded-[4px] bg-white shadow-sm border border-gray-100 group-hover:border-[#D4AF37]/30 transition-all">
+                          <GraduationCap className="h-4 w-4 text-gray-400 group-hover:text-[#D4AF37] transition-colors" />
+                        </div>
+                        <span className="text-xs font-medium text-center text-gray-600 group-hover:text-gray-900">{t('barberTraining') || 'Learn barbering'}</span>
+                      </a>
+                      <a
+                        href={`/${locale}/shop`}
+                        className="flex flex-col items-center gap-2 p-3 rounded-[4px] bg-gray-50 border border-gray-100 text-gray-700 transition-all hover:bg-[#D4AF37]/5 hover:border-[#D4AF37]/30 group"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        <div className="flex items-center justify-center w-10 h-10 rounded-[4px] bg-white shadow-sm border border-gray-100 group-hover:border-[#D4AF37]/30 transition-all">
+                          <ShoppingBag className="h-4 w-4 text-gray-400 group-hover:text-[#D4AF37] transition-colors" />
+                        </div>
+                        <span className="text-xs font-medium text-center text-gray-600 group-hover:text-gray-900">{t('shop') || 'Shop'}</span>
+                      </a>
+                      <a
+                        href={`/${locale}/jobs`}
+                        className="flex flex-col items-center gap-2 p-3 rounded-[4px] bg-gray-50 border border-gray-100 text-gray-700 transition-all hover:bg-[#D4AF37]/5 hover:border-[#D4AF37]/30 group"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        <div className="flex items-center justify-center w-10 h-10 rounded-[4px] bg-white shadow-sm border border-gray-100 group-hover:border-[#D4AF37]/30 transition-all">
+                          <Briefcase className="h-4 w-4 text-gray-400 group-hover:text-[#D4AF37] transition-colors" />
+                        </div>
+                        <span className="text-xs font-medium text-center text-gray-600 group-hover:text-gray-900">{t('jobs') || 'Jobs'}</span>
+                      </a>
+                    </div>
+                  </div>
+                )}
+
+                {/* Settings - Only for barbers */}
+                {isSignedIn && isBarber && (
+                  <div className="px-4 pb-4">
+                    <a
+                      href={`/${locale}/barber/dashboard/settings`}
+                      className="flex items-center gap-3 w-full p-3 rounded-[4px] bg-gray-50 border border-gray-100 text-gray-600 transition-all hover:bg-[#D4AF37]/5 hover:border-[#D4AF37]/30"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <div className="flex items-center justify-center w-8 h-8 rounded-[4px] bg-white shadow-sm border border-gray-100">
+                        <Settings className="h-4 w-4 text-gray-400" />
+                      </div>
+                      <span className="font-medium text-sm">{t('settings') || 'Settings'}</span>
+                    </a>
+                  </div>
+                )}
+
+                {/* Navigation Links - Only show when NOT signed in */}
+                {!isSignedIn && (
+                  <div className="p-4 border-b border-gray-100">
+                    <div className="flex flex-col gap-3">
+                      <a href="#features" className="text-sm font-medium text-gray-700 transition-colors hover:text-[#D4AF37]">{t('features')}</a>
+                      <a href="#how-it-works" className="text-sm font-medium text-gray-700 transition-colors hover:text-[#D4AF37]">{t('howItWorks')}</a>
+                      <a href="#app" className="text-sm font-medium text-gray-700 transition-colors hover:text-[#D4AF37]">{t('app')}</a>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Auth Buttons - Only show when NOT signed in */}
+                {!isLoaded ? (
+                  <div className="p-4 border-b border-gray-100">
+                    <div className="flex-1 h-10 bg-gray-100 rounded-[4px] animate-pulse" />
+                  </div>
+                ) : !isSignedIn && (
+                  <div className="p-4 border-b border-gray-100">
+                    <div className="flex gap-3">
+                      <a 
+                        href={`/${locale}/auth/user/sign-in`}
+                        className="flex-1 rounded-[4px] border border-gray-300 bg-white px-4 py-2.5 text-center text-sm font-medium text-gray-700 transition-all hover:border-[#D4AF37] hover:text-[#D4AF37]"
+                      >
+                        {t('login')}
+                      </a>
+                      
+                      <a 
+                        href={`/${locale}/auth/user/sign-up`}
+                        className="flex-1 rounded-[4px] bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] px-4 py-2.5 text-center text-sm font-semibold text-[#0F172A] transition-all hover:brightness-110"
+                      >
+                        {t('signUp')}
+                      </a>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Language Selector */}
+                <div className="p-4">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">{t('language') || 'Language'}</p>
+                  <div className="flex gap-2">
                     {languages.map((lang) => (
                       <button
                         key={lang.code}
                         onClick={() => {
                           setCurrentLang(lang);
                           changeLanguage(lang.code);
-                          setIsLangOpen(false);
                         }}
-                        className={`flex w-full items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-gray-700 ${
-                          currentLang.code === lang.code ? 'bg-gray-700/50 text-[#D4AF37]' : 'text-gray-300'
+                        className={`flex flex-1 items-center justify-center gap-2 rounded-[4px] py-2.5 text-sm font-medium transition-all ${
+                          currentLang.code === lang.code 
+                            ? 'bg-[#D4AF37] text-white shadow-md' 
+                            : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700'
                         }`}
                       >
                         <ReactCountryFlag 
@@ -272,133 +696,17 @@ export default function Hero() {
                           svg 
                           style={{ width: '1.2em', height: '1.2em' }}
                         />
-                        <span>{lang.name}</span>
+                        <span>{lang.code.toUpperCase()}</span>
                       </button>
                     ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </motion.div>
-        </nav>
-
-        {/* Mobile Menu */}
-        <AnimatePresence>
-          {isMobileMenuOpen && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
-              className="md:hidden overflow-hidden"
-              dir="ltr"
-            >
-              <div className="rounded-[5px] border border-white/10 bg-[#0F172A]/95 backdrop-blur-lg p-6 mb-6">
-                {/* Navigation Links */}
-                <div className="flex flex-col gap-4 mb-6">
-                  <a href="#features" className="text-base text-gray-300 transition-colors hover:text-[#D4AF37]">{t('features')}</a>
-                  <a href="#how-it-works" className="text-base text-gray-300 transition-colors hover:text-[#D4AF37]">{t('howItWorks')}</a>
-                  <a href="#app" className="text-base text-gray-300 transition-colors hover:text-[#D4AF37]">{t('app')}</a>
-                </div>
-                
-                {/* Divider */}
-                <div className="h-px w-full bg-gray-700 mb-6" />
-                
-                {/* Barber Space Button */}
-                <a 
-                  href={`/${locale}/auth/barber/sign-in`}
-                  className="mb-4 flex items-center justify-center gap-2 rounded-[5px] border border-[#D4AF37] bg-[#D4AF37]/5 px-4 py-3 text-sm font-semibold text-[#D4AF37] transition-all hover:bg-[#D4AF37] hover:text-[#0F172A]"
-                >
-                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="6" cy="6" r="3" />
-                    <path d="M8.12 8.12L12 12" />
-                    <path d="M20 4L8.12 15.88" />
-                    <circle cx="6" cy="18" r="3" />
-                    <path d="M14.8 14.8L20 20" />
-                  </svg>
-                  {t('barberSpace')}
-                </a>
-                
-                {/* Auth Buttons */}
-                <div className="flex gap-3 mb-6">
-                  {!isLoaded ? (
-                    // Loading state
-                    <div className="flex-1 h-12 bg-gray-800/50 rounded-[5px] animate-pulse" />
-                  ) : isSignedIn ? (
-                    // Signed in state - show dashboard and sign out
-                    <>
-                      <a 
-                        href={dashboardUrl}
-                        className="flex-1 flex items-center justify-center gap-2 rounded-[5px] border border-[#D4AF37] bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] px-4 py-3 text-sm font-semibold text-[#0F172A] transition-all hover:brightness-110"
-                      >
-                        <LayoutDashboard className="h-4 w-4" />
-                        {t('dashboard') || 'Dashboard'}
-                      </a>
-                      <SignOutButton redirectUrl={`/${locale}`}>
-                        <button className="flex-1 rounded-[5px] border border-gray-500 bg-transparent px-4 py-3 text-center text-sm font-medium text-gray-300 transition-all hover:border-white hover:bg-white/5 hover:text-white">
-                          {t('signOut') || 'Sign Out'}
-                        </button>
-                      </SignOutButton>
-                    </>
-                  ) : (
-                    // Signed out state - show login/signup
-                    <>
-                      <a 
-                        href={`/${locale}/auth/user/sign-in`}
-                        className="flex-1 rounded-[5px] border border-gray-500 bg-transparent px-4 py-3 text-center text-sm font-medium text-gray-300 transition-all hover:border-white hover:bg-white/5 hover:text-white"
-                      >
-                        {t('login')}
-                      </a>
-                      
-                      <a 
-                        href={`/${locale}/auth/user/sign-up`}
-                        className="flex-1 rounded-[5px] border-2 border-[#D4AF37] bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] px-4 py-3 text-center text-sm font-semibold text-[#0F172A] transition-all hover:brightness-110"
-                      >
-                        {t('signUp')}
-                      </a>
-                    </>
-                  )}
-                </div>
-                
-                {/* Dark Mode Toggle */}
-                <button
-                  onClick={toggleDarkMode}
-                  className="flex w-full items-center justify-center gap-2 rounded-[5px] bg-gray-800/50 py-3 text-sm text-gray-300 transition-all hover:bg-gray-700 hover:text-[#D4AF37] mb-3"
-                >
-                  {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-                  <span>{isDarkMode ? t('lightMode') : t('darkMode')}</span>
-                </button>
-
-                {/* Language Selector */}
-                <div className="flex gap-2">
-                  {languages.map((lang) => (
-                    <button
-                      key={lang.code}
-                      onClick={() => {
-                        setCurrentLang(lang);
-                        changeLanguage(lang.code);
-                      }}
-                      className={`flex flex-1 items-center justify-center gap-2 rounded-[5px] py-3 text-sm transition-all ${
-                        currentLang.code === lang.code 
-                          ? 'bg-[#D4AF37]/20 border border-[#D4AF37] text-[#D4AF37]' 
-                          : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700'
-                      }`}
-                    >
-                      <ReactCountryFlag 
-                        countryCode={lang.countryCode} 
-                        svg 
-                        style={{ width: '1.2em', height: '1.2em' }}
-                      />
-                      <span>{lang.code.toUpperCase()}</span>
-                    </button>
-                  ))}
+                  </div>
                 </div>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        <div className="flex items-start pt-16 pb-12 sm:pt-0 sm:pb-0 sm:items-center sm:min-h-[calc(100vh-88px)] justify-center sm:py-12">
+        <div className="flex items-start pt-16 pb-12 sm:pt-20 sm:pb-20 sm:items-center justify-center">
           {/* Content */}
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
@@ -409,9 +717,21 @@ export default function Hero() {
             {/* Title container with fixed height */}
             <div className="h-[6rem] sm:h-[7rem] md:h-[8rem] lg:h-[9rem] flex items-center justify-center mb-10">
               <h1 className="text-xl font-extrabold leading-tight tracking-tight text-white sm:text-2xl md:text-3xl lg:text-4xl max-w-3xl">
-                <span className="text-white">
-                  {displayedText}
-                </span>
+                {(() => {
+                  const firstSpaceIndex = displayedText.indexOf(' ');
+                  if (firstSpaceIndex === -1) {
+                    // Only one word or typing the first word
+                    return <span className="text-[#D4AF37]">{displayedText}</span>;
+                  }
+                  const firstWord = displayedText.slice(0, firstSpaceIndex);
+                  const restOfText = displayedText.slice(firstSpaceIndex);
+                  return (
+                    <>
+                      <span className="text-[#D4AF37]">{firstWord}</span>
+                      <span className="text-white">{restOfText}</span>
+                    </>
+                  );
+                })()}
                 <span className="animate-pulse text-[#D4AF37]">|</span>
               </h1>
             </div>

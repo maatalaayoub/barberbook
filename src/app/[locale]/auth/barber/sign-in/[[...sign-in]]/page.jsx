@@ -60,7 +60,7 @@ export default function BarberSignInPage() {
           
           <div>
             <h1 className="text-4xl xl:text-5xl font-bold text-white mb-6 leading-tight">
-              {t('auth.barber.signInHeroTitle') || 'Welcome back, Pro'}
+              {t('auth.barber.signInHeroTitle') || 'Welcome back'}
             </h1>
             
             <p className="text-gray-400 text-lg max-w-md">

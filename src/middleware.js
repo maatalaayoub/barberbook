@@ -35,6 +35,10 @@ function getPreferredLocale(request) {
 
 export default clerkMiddleware(async (auth, req) => {
   const pathname = req.nextUrl.pathname;
+  const searchParams = req.nextUrl.searchParams;
+  
+  // Check for setup flag (allows passing role setup parameter)
+  const setupRole = searchParams.get('setup');
   
   // Skip static files
   if (
@@ -53,50 +57,42 @@ export default clerkMiddleware(async (auth, req) => {
   if (!hasLocale && !pathname.startsWith('/api')) {
     const locale = getPreferredLocale(req);
     const newUrl = new URL(`/${locale}${pathname}`, req.url);
+    // Preserve search params
+    newUrl.search = req.nextUrl.search;
     return NextResponse.redirect(newUrl);
   }
 
   const locale = pathnameLocale || defaultLocale;
   
-  // Get auth state
-  const { userId, sessionClaims } = await auth();
-  const role = sessionClaims?.publicMetadata?.role;
+  // Get auth state (only check if user is signed in)
+  const { userId } = await auth();
 
   // Check if accessing auth routes
   if (isUserAuthRoute(req) || isBarberAuthRoute(req)) {
-    if (userId && role) {
-      // Already signed in with role - redirect to appropriate dashboard
-      if (role === 'user') {
-        return NextResponse.redirect(new URL(`/${locale}/user/dashboard`, req.url));
-      }
-      if (role === 'barber') {
+    if (userId) {
+      // Already signed in - redirect appropriately
+      // Role check will be done on the destination page
+      if (isBarberAuthRoute(req)) {
         return NextResponse.redirect(new URL(`/${locale}/barber/dashboard`, req.url));
       }
+      return NextResponse.redirect(new URL(`/${locale}`, req.url));
     }
     // Allow access to auth pages for non-authenticated users
     return NextResponse.next();
   }
 
-  // Check protected routes
+  // User routes - redirect to home (users don't have dashboard)
   if (isUserRoute(req)) {
-    if (!userId) {
-      return NextResponse.redirect(new URL(`/${locale}/auth/user/sign-in`, req.url));
-    }
-    if (role !== 'user') {
-      // Wrong role - redirect to home
-      return NextResponse.redirect(new URL(`/${locale}`, req.url));
-    }
+    return NextResponse.redirect(new URL(`/${locale}`, req.url));
   }
 
+  // Barber routes - require authentication only
+  // Role verification is done on the page level via useRole hook
   if (isBarberRoute(req)) {
-    // Temporarily disabled for testing - uncomment below to re-enable auth
-    // if (!userId) {
-    //   return NextResponse.redirect(new URL(`/${locale}/auth/barber/sign-in`, req.url));
-    // }
-    // if (role !== 'barber') {
-    //   // Wrong role - redirect to home
-    //   return NextResponse.redirect(new URL(`/${locale}`, req.url));
-    // }
+    if (!userId) {
+      return NextResponse.redirect(new URL(`/${locale}/auth/barber/sign-in`, req.url));
+    }
+    // Allow access - role check done client-side in dashboard
   }
 
   return NextResponse.next();
@@ -109,3 +105,4 @@ export const config = {
     '/(api|trpc)(.*)',
   ],
 };
+

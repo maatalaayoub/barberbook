@@ -3,9 +3,10 @@
 import { motion } from 'framer-motion';
 import { Search, CalendarClock, Scissors, CheckCircle } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import Link from 'next/link';
 
 export default function HowItWorks() {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   
   const steps = [
     {
@@ -120,8 +121,8 @@ export default function HowItWorks() {
           transition={{ duration: 0.6, delay: 0.6 }}
           className="mt-20 text-center"
         >
-          <a 
-            href="#download" 
+          <Link 
+            href={`/${locale}/auth/user/sign-up`}
             className="group relative inline-flex items-center gap-3 overflow-hidden rounded-full bg-[#0F172A] px-8 py-4 text-base font-semibold text-white transition-all duration-300 hover:bg-[#1E293B]"
           >
             <span className="relative z-10">{t('startBookingNow')}</span>
@@ -130,7 +131,7 @@ export default function HowItWorks() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
             </span>
-          </a>
+          </Link>
         </motion.div>
       </div>
     </section>

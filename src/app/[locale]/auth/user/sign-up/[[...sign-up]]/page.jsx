@@ -137,7 +137,7 @@ export default function UserSignUpPage() {
               routing="path"
               path={`/${locale}/auth/user/sign-up`}
               signInUrl={`/${locale}/auth/user/sign-in`}
-              forceRedirectUrl={`/${locale}/auth/user/complete-signup`}
+              forceRedirectUrl={`/${locale}?setup=user`}
             />
             </div>
           </div>

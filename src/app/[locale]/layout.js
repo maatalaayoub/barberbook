@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useParams } from 'next/navigation';
+import RoleSetupHandler from '@/components/RoleSetupHandler';
 
 export default function LocaleLayout({ children }) {
   const params = useParams();
@@ -24,5 +25,12 @@ export default function LocaleLayout({ children }) {
     }
   }, [params?.locale]);
   
-  return <>{children}</>;
+  return (
+    <>
+      <Suspense fallback={null}>
+        <RoleSetupHandler />
+      </Suspense>
+      {children}
+    </>
+  );
 }

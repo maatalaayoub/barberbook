@@ -12,9 +12,10 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import Link from 'next/link';
 
 export default function BarberFeatures() {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   
   const features = [
     {
@@ -160,15 +161,18 @@ export default function BarberFeatures() {
             
             {/* Right CTA */}
             <div className="flex flex-col gap-4">
-              <button className="group flex items-center justify-center gap-2 rounded-[5px] border-2 border-[#D4AF37] bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] px-8 py-4 text-lg font-bold text-[#0F172A] transition-all hover:brightness-110">
+              <Link 
+                href={`/${locale}/auth/barber/sign-up`}
+                className="group flex items-center justify-center gap-2 rounded-[5px] border-2 border-[#D4AF37] bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] px-8 py-4 text-lg font-bold text-[#0F172A] transition-all hover:brightness-110"
+              >
                 {t('registerAsBarber')}
                 <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-              </button>
+              </Link>
               <p className="text-center text-sm text-gray-500">
                 {t('alreadyRegistered')}{' '}
-                <a href="#" className="text-[#D4AF37] hover:underline">
+                <Link href={`/${locale}/auth/barber/sign-in`} className="text-[#D4AF37] hover:underline">
                   {t('loginToDashboard')}
-                </a>
+                </Link>
               </p>
             </div>
           </div>

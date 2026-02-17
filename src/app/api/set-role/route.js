@@ -39,7 +39,20 @@ export async function POST(request) {
 
     // Initialize Supabase client
     console.log('[set-role] Creating Supabase client...');
-    const supabase = createServerSupabaseClient();
+    console.log('[set-role] SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Set' : 'MISSING');
+    console.log('[set-role] SERVICE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'Set (length: ' + process.env.SUPABASE_SERVICE_ROLE_KEY.length + ')' : 'MISSING');
+    
+    let supabase;
+    try {
+      supabase = createServerSupabaseClient();
+      console.log('[set-role] Supabase client created successfully');
+    } catch (err) {
+      console.error('[set-role] Failed to create Supabase client:', err);
+      return NextResponse.json(
+        { error: 'Failed to create database client', details: err.message },
+        { status: 500 }
+      );
+    }
 
     // Check if user already exists in Supabase
     console.log('[set-role] Checking if user exists...');
@@ -85,8 +98,19 @@ export async function POST(request) {
 
     if (insertError) {
       console.error('[set-role] Error creating user:', insertError);
+      console.error('[set-role] Insert error details:', {
+        message: insertError.message,
+        code: insertError.code,
+        hint: insertError.hint,
+        details: insertError.details
+      });
       return NextResponse.json(
-        { error: 'Failed to create user', details: insertError.message },
+        { 
+          error: 'Failed to create user', 
+          details: insertError.message,
+          code: insertError.code,
+          hint: insertError.hint
+        },
         { status: 500 }
       );
     }

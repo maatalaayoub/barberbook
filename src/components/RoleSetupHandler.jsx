@@ -89,7 +89,7 @@ export default function RoleSetupHandler() {
             window.history.replaceState({}, '', `/${locale}`);
             setSetupComplete(true);
           } else {
-            console.error('Failed to assign role:', result.error);
+            console.error('Failed to assign role:', result.error, 'Details:', result.details, 'Code:', result.code);
             setSetupComplete(true);
           }
         } catch (error) {

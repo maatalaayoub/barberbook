@@ -69,15 +69,34 @@ export default clerkMiddleware(async (auth, req) => {
 
   // Check if accessing auth routes
   if (isUserAuthRoute(req) || isBarberAuthRoute(req)) {
+    // Don't interfere with Clerk's sign-up flow - let forceRedirectUrl work
+    // After signup, Clerk handles the redirect with the ?setup= param
+    // Only redirect if user is explicitly visiting auth pages when already signed in
+    // (detected by absence of Clerk session initialization indicators)
     if (userId) {
-      // Already signed in - redirect appropriately
-      // Role check will be done on the destination page
-      if (isBarberAuthRoute(req)) {
-        return NextResponse.redirect(new URL(`/${locale}/barber/dashboard`, req.url));
+      // Check if this is a fresh page load (not a Clerk callback/redirect)
+      // Clerk sets __clerk_status cookie during auth flow
+      const isClerkCallback = pathname.includes('/sso-callback') || 
+                              pathname.includes('/verify') ||
+                              searchParams.has('__clerk_ticket') ||
+                              searchParams.has('__clerk_status');
+      
+      // If not a Clerk callback, redirect signed-in users away from auth pages
+      if (!isClerkCallback) {
+        // Allow a brief window for Clerk's forceRedirectUrl to take effect
+        // by checking if we're on a sign-up completion
+        const isSignUpPage = pathname.includes('/sign-up');
+        
+        // Don't redirect from sign-up pages - let Clerk's forceRedirectUrl handle it
+        if (!isSignUpPage) {
+          if (isBarberAuthRoute(req)) {
+            return NextResponse.redirect(new URL(`/${locale}/barber/dashboard`, req.url));
+          }
+          return NextResponse.redirect(new URL(`/${locale}`, req.url));
+        }
       }
-      return NextResponse.redirect(new URL(`/${locale}`, req.url));
     }
-    // Allow access to auth pages for non-authenticated users
+    // Allow access to auth pages
     return NextResponse.next();
   }
 

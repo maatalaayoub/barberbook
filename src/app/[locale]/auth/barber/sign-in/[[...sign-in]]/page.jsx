@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Scissors } from 'lucide-react';
+import ClientOnly from '@/components/ClientOnly';
 import { frFR, arSA } from '@clerk/localizations';
 
 const clerkLocalizations = {
@@ -111,6 +112,11 @@ export default function BarberSignInPage() {
 
             {/* Clerk Sign In */}
             <div className="flex justify-center">
+              <ClientOnly fallback={
+                <div className="w-full h-64 flex items-center justify-center">
+                  <div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              }>
               <SignIn
               appearance={{
                 elements: {
@@ -144,6 +150,7 @@ export default function BarberSignInPage() {
               signUpUrl={`/${locale}/auth/barber/sign-up`}
               forceRedirectUrl={`/${locale}/barber/dashboard`}
             />
+              </ClientOnly>
             </div>
           </div>
         </div>

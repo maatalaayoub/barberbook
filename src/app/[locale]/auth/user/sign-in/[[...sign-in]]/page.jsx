@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { frFR, arSA } from '@clerk/localizations';
+import ClientOnly from '@/components/ClientOnly';
 
 const clerkLocalizations = {
   en: undefined,
@@ -106,6 +107,11 @@ export default function UserSignInPage() {
 
             {/* Clerk Sign In */}
             <div className="flex justify-center">
+              <ClientOnly fallback={
+                <div className="w-full h-64 flex items-center justify-center">
+                  <div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              }>
               <SignIn
               appearance={{
                 elements: {
@@ -139,6 +145,7 @@ export default function UserSignInPage() {
               signUpUrl={`/${locale}/auth/user/sign-up`}
               forceRedirectUrl={`/${locale}`}
             />
+              </ClientOnly>
             </div>
           </div>
         </div>

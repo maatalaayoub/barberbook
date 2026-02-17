@@ -75,7 +75,17 @@ export function useRole({ requiredRole = null, redirectTo = '/' } = {}) {
         body: JSON.stringify({ role: newRole }),
       });
       
-      const data = await response.json();
+      const responseText = await response.text();
+      console.log('[useRole] Raw response:', responseText);
+      
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('[useRole] Failed to parse response:', parseError);
+        return { success: false, error: 'Invalid server response', details: responseText };
+      }
+      
       console.log('[useRole] API response:', { status: response.status, data });
       
       if (response.ok) {
@@ -83,15 +93,17 @@ export function useRole({ requiredRole = null, redirectTo = '/' } = {}) {
         setSupabaseUserId(data.userId || null);
         return { success: true, role: data.role };
       } else {
+        // Log full error details
+        console.error('[useRole] Error details:', JSON.stringify(data, null, 2));
         // If role already assigned (403), set the returned role
         if (response.status === 403 && data.role) {
           setRole(data.role);
         }
-        return { success: false, error: data.error };
+        return { success: false, error: data.error, details: data.details, code: data.code };
       }
     } catch (error) {
       console.error('[useRole] Error assigning role:', error);
-      return { success: false, error: 'Network error' };
+      return { success: false, error: 'Network error', details: error.message };
     }
   }, []);
 

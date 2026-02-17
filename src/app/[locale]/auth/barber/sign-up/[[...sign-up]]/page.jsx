@@ -5,7 +5,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Scissors, ArrowRight, Zap } from 'lucide-react';
+import { Scissors, Zap } from 'lucide-react';
 import { frFR, arSA } from '@clerk/localizations';
 import ClientOnly from '@/components/ClientOnly';
 
@@ -156,27 +156,6 @@ export default function BarberSignUpPage() {
               forceRedirectUrl={`/${locale}?setup=barber`}
             />
               </ClientOnly>
-            </div>
-
-            {/* Switch to Customer */}
-            <div className="mt-8 p-4 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-slate-700 font-medium text-sm">
-                    {t('auth.barber.lookingForAppointment') || 'Looking to book a haircut?'}
-                  </p>
-                  <p className="text-slate-500 text-xs mt-0.5">
-                    {t('auth.barber.createCustomerAccount') || 'Create a customer account instead'}
-                  </p>
-                </div>
-                <Link
-                  href={`/${locale}/auth/user/sign-up`}
-                  className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-4 py-2 rounded-lg text-sm font-medium transition-all hover:border-slate-300"
-                >
-                  {t('auth.barber.customerSignUp') || 'Sign Up'}
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
-              </div>
             </div>
 
             {/* Back to Home */}

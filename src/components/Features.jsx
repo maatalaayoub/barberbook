@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import { 
   Calendar, 
-  Truck, 
+  MapPin, 
   GraduationCap, 
   ShoppingBag, 
   Briefcase, 
@@ -21,7 +21,7 @@ export default function Features() {
       description: t('barberSalonBookingDesc'),
     },
     {
-      icon: Truck,
+      icon: MapPin,
       title: t('mobileBarberBooking'),
       description: t('mobileBarberBookingDesc'),
     },

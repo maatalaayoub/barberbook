@@ -275,6 +275,14 @@ export default function Hero() {
                 // Signed out state - show login/signup buttons
                 <>
                   <a 
+                    href={`/${locale}/auth/barber/sign-in`}
+                    className="flex items-center gap-2 rounded-[15px] border-2 border-[#D4AF37] bg-transparent px-4 py-2 text-sm font-medium text-[#D4AF37] transition-all hover:bg-[#D4AF37]/10"
+                  >
+                    <Scissors className="h-4 w-4" />
+                    {t('barberSpace')}
+                  </a>
+                  
+                  <a 
                     href={`/${locale}/auth/user/sign-in`}
                     className="rounded-[15px] border border-gray-500 bg-transparent px-4 py-2 text-sm font-medium text-gray-300 transition-all hover:border-white hover:bg-white/5 hover:text-white"
                   >
@@ -656,20 +664,31 @@ export default function Hero() {
                   </div>
                 ) : !isSignedIn && (
                   <div className="p-4 border-b border-gray-100">
-                    <div className="flex gap-3">
+                    <div className="flex flex-col gap-3">
+                      {/* Barber Space Button */}
                       <a 
-                        href={`/${locale}/auth/user/sign-in`}
-                        className="flex-1 rounded-[4px] border border-gray-300 bg-white px-4 py-2.5 text-center text-sm font-medium text-gray-700 transition-all hover:border-[#D4AF37] hover:text-[#D4AF37]"
+                        href={`/${locale}/auth/barber/sign-in`}
+                        className="flex items-center justify-center gap-2 w-full rounded-[4px] border-2 border-[#D4AF37] bg-[#D4AF37]/5 px-4 py-2.5 text-sm font-semibold text-[#D4AF37] transition-all hover:bg-[#D4AF37]/10"
                       >
-                        {t('login')}
+                        <Scissors className="h-4 w-4" />
+                        {t('barberSpace')}
                       </a>
                       
-                      <a 
-                        href={`/${locale}/auth/user/sign-up`}
-                        className="flex-1 rounded-[4px] bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] px-4 py-2.5 text-center text-sm font-semibold text-[#0F172A] transition-all hover:brightness-110"
-                      >
-                        {t('signUp')}
-                      </a>
+                      <div className="flex gap-3">
+                        <a 
+                          href={`/${locale}/auth/user/sign-in`}
+                          className="flex-1 rounded-[4px] border border-gray-300 bg-white px-4 py-2.5 text-center text-sm font-medium text-gray-700 transition-all hover:border-[#D4AF37] hover:text-[#D4AF37]"
+                        >
+                          {t('login')}
+                        </a>
+                        
+                        <a 
+                          href={`/${locale}/auth/user/sign-up`}
+                          className="flex-1 rounded-[4px] bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] px-4 py-2.5 text-center text-sm font-semibold text-[#0F172A] transition-all hover:brightness-110"
+                        >
+                          {t('signUp')}
+                        </a>
+                      </div>
                     </div>
                   </div>
                 )}

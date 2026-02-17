@@ -62,10 +62,7 @@ export default function RoleSetupHandler() {
         // Clean URL
         window.history.replaceState({}, '', `/${locale}`);
         
-        // Redirect barbers to dashboard
-        if (role === 'barber') {
-          router.push(`/${locale}/barber/dashboard`);
-        }
+        // Stay on home page for all users
         setSetupComplete(true);
         return;
       }
@@ -85,19 +82,11 @@ export default function RoleSetupHandler() {
             // Clean URL first
             window.history.replaceState({}, '', `/${locale}`);
             
-            // Redirect barbers to dashboard
-            if (setupParam === 'barber') {
-              router.push(`/${locale}/barber/dashboard`);
-            } else {
-              // Users stay on home page
-              setSetupComplete(true);
-            }
+            // All users stay on home page after signup
+            setSetupComplete(true);
           } else if (result.error === 'Role already assigned. Role cannot be changed.') {
             // Role was already assigned somehow
             window.history.replaceState({}, '', `/${locale}`);
-            if (result.role === 'barber') {
-              router.push(`/${locale}/barber/dashboard`);
-            }
             setSetupComplete(true);
           } else {
             console.error('Failed to assign role:', result.error);

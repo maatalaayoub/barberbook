@@ -14,7 +14,16 @@ export async function GET() {
     }
 
     // Initialize Supabase client
-    const supabase = createServerSupabaseClient();
+    let supabase;
+    try {
+      supabase = createServerSupabaseClient();
+    } catch (err) {
+      console.error('[get-role] Failed to create Supabase client:', err.message);
+      return NextResponse.json(
+        { error: 'Database configuration error', role: null },
+        { status: 500 }
+      );
+    }
 
     // Get user from Supabase
     const { data: user, error } = await supabase

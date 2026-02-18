@@ -75,3 +75,41 @@ CREATE TRIGGER update_barber_profiles_updated_at
   BEFORE UPDATE ON barber_profiles
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================
+-- BARBER ONBOARDING DATA
+-- ============================================
+
+-- Barber Business Info - stores professional type, work location, and business hours
+CREATE TABLE IF NOT EXISTS barber_business_info (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE UNIQUE,
+  professional_type TEXT NOT NULL CHECK (professional_type IN ('barber', 'hairdresser', 'stylist', 'colorist', 'other')),
+  work_location TEXT NOT NULL CHECK (work_location IN ('my_place', 'client_location', 'both')),
+  business_hours JSONB DEFAULT '[]'::jsonb,
+  onboarding_completed BOOLEAN DEFAULT false,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- business_hours JSONB format example:
+-- [
+--   {"dayOfWeek": 0, "isOpen": false, "openTime": null, "closeTime": null},
+--   {"dayOfWeek": 1, "isOpen": true, "openTime": "10:00", "closeTime": "19:00"},
+--   {"dayOfWeek": 2, "isOpen": true, "openTime": "10:00", "closeTime": "19:00"},
+--   ...
+-- ]
+
+CREATE INDEX IF NOT EXISTS idx_barber_business_info_user_id ON barber_business_info(user_id);
+
+ALTER TABLE barber_business_info ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Barber business info viewable by everyone"
+  ON barber_business_info FOR SELECT
+  USING (true);
+
+DROP TRIGGER IF EXISTS update_barber_business_info_updated_at ON barber_business_info;
+CREATE TRIGGER update_barber_business_info_updated_at
+  BEFORE UPDATE ON barber_business_info
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();

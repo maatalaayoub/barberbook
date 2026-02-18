@@ -97,6 +97,23 @@ export async function POST(request) {
     console.log('[set-role] Insert result:', { newUser, insertError });
 
     if (insertError) {
+      // Handle duplicate key error - user was created by a concurrent request
+      if (insertError.code === '23505') {
+        console.log('[set-role] User already exists (race condition), fetching existing user...');
+        const { data: existingUserRetry, error: retryError } = await supabase
+          .from('users')
+          .select('id, role')
+          .eq('clerk_id', userId)
+          .single();
+        
+        if (existingUserRetry) {
+          return NextResponse.json(
+            { error: 'Role already assigned. Role cannot be changed.', role: existingUserRetry.role },
+            { status: 403 }
+          );
+        }
+      }
+      
       console.error('[set-role] Error creating user:', insertError);
       console.error('[set-role] Insert error details:', {
         message: insertError.message,

@@ -4,63 +4,67 @@ import { useUser, useClerk } from '@clerk/nextjs';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import Image from 'next/image';
-import Link from 'next/link';
+import { Bell, Menu } from 'lucide-react';
 
 export default function DashboardHeader() {
   const { user } = useUser();
   const clerk = useClerk();
   const params = useParams();
   const locale = params.locale || 'en';
-  const { t } = useLanguage();
+  const { t, isRTL } = useLanguage();
+
+  const handleOpenSidebar = () => {
+    window.dispatchEvent(new CustomEvent('toggle-mobile-sidebar'));
+  };
 
   return (
-    <header className="bg-[#121A2D] border-b border-gray-700/50 sticky top-0 z-30">
-      <div className="mx-auto max-w-7xl px-6 sm:px-8 lg:px-8">
+    <header className="bg-white border-b border-gray-200 sticky top-0 z-30">
+      <div className="px-4 lg:px-8">
         <nav dir="ltr" className="flex items-center justify-between py-4">
-          {/* Logo */}
-          <motion.div 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
-            className="flex items-center"
+          {/* Mobile Menu Button */}
+          <button
+            onClick={handleOpenSidebar}
+            className={`lg:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors ${isRTL ? 'order-last' : ''}`}
           >
-            <Link href={`/${locale}`}>
-              <Image 
-                src="/images/logo.png" 
-                alt="BarberBook" 
-                width={200} 
-                height={50}
-                className="h-11 w-auto filter brightness-0 invert"
-                priority
-              />
-            </Link>
-          </motion.div>
-          
-          {/* Right Section - Profile Button */}
+            <Menu className="w-6 h-6" />
+          </button>
+
+          {/* Spacer for desktop */}
+          <div className="hidden lg:block" />
+
+          {/* Right Section - Notifications & Profile */}
           <motion.div 
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
-            className="flex items-center"
+            className="flex items-center gap-4"
           >
+            {/* Notifications */}
+            <button className="relative p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+              <Bell className="w-5 h-5" />
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+            </button>
+
             {/* User Profile Button */}
             {user && (
               <button
                 onClick={() => clerk.openUserProfile()}
-                className="flex items-center gap-2 rounded-full bg-white/5 backdrop-blur-sm border border-white/10 pl-3 pr-1 py-1 transition-all hover:bg-white/10 hover:border-[#D4AF37]/30 cursor-pointer"
+                className="flex items-center gap-3 rounded-lg bg-gray-100 hover:bg-gray-200 px-3 py-2 transition-all cursor-pointer"
               >
-                {user.firstName && (
-                  <span className="text-sm font-medium text-white/90">
-                    {user.firstName}
-                  </span>
-                )}
                 <div className="w-8 h-8 rounded-full ring-2 ring-[#D4AF37]/50 overflow-hidden">
                   <img 
                     src={user.imageUrl} 
                     alt={user.firstName || 'Profile'} 
                     className="w-full h-full object-cover"
                   />
+                </div>
+                <div className="hidden sm:block text-left">
+                  <p className="text-sm font-medium text-gray-900">
+                    {user.firstName} {user.lastName}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {t('dashboard.header.professional') || 'Professional'}
+                  </p>
                 </div>
               </button>
             )}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useParams } from 'next/navigation';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -22,8 +22,15 @@ import {
 } from 'lucide-react';
 
 export default function Sidebar() {
-  const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Listen for toggle event from header
+  useEffect(() => {
+    const handleToggle = () => setMobileOpen(true);
+    window.addEventListener('toggle-mobile-sidebar', handleToggle);
+    return () => window.removeEventListener('toggle-mobile-sidebar', handleToggle);
+  }, []);
+  const [isHovered, setIsHovered] = useState(false);
   const pathname = usePathname();
   const params = useParams();
   const locale = params.locale || 'en';
@@ -88,86 +95,60 @@ export default function Sidebar() {
     return pathname.startsWith(href);
   };
 
-  const SidebarContent = () => (
-    <div className={`flex flex-col h-full ${isRTL ? 'rtl' : 'ltr'}`}>
-      {/* Logo */}
-      <div className={`flex items-center ${collapsed ? 'justify-center' : 'justify-between'} p-4 border-b border-slate-700`}>
-        {!collapsed && (
-          <Link href={`/${locale}`} className="flex items-center gap-2">
-            <Scissors className="w-7 h-7 text-amber-400" />
-            <span className="text-xl font-bold bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">
-              BarberBook
-            </span>
-          </Link>
-        )}
-        {collapsed && (
-          <Scissors className="w-7 h-7 text-amber-400" />
-        )}
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="hidden lg:flex p-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 transition-colors"
-        >
-          {collapsed ? (
-            <ChevronRight className="w-4 h-4 text-slate-300" />
-          ) : (
-            <ChevronLeft className="w-4 h-4 text-slate-300" />
-          )}
-        </button>
-      </div>
+  // Desktop sidebar - collapsed by default, expanded on hover
+  const isExpanded = isHovered;
 
-      {/* PRO Badge */}
-      {!collapsed && (
-        <div className="mx-4 mt-4 px-3 py-2 bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 rounded-lg">
-          <div className="flex items-center gap-2">
-            <span className="text-amber-400 text-sm font-medium">PRO</span>
-            <span className="text-slate-400 text-xs">{t('dashboard.sidebar.professionalAccount') || 'Professional Account'}</span>
-          </div>
-        </div>
-      )}
-
+  const SidebarContent = ({ forMobile = false }) => (
+    <div className={`flex flex-col h-full overflow-hidden ${isRTL ? 'rtl' : 'ltr'}`}>
       {/* Main Navigation */}
-      <nav className="flex-1 overflow-y-auto p-4 space-y-1">
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-4 space-y-1">
         {menuItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
+            className={`flex items-center gap-3 px-2 py-2.5 rounded-lg transition-colors duration-200 ${
               isActive(item.href)
-                ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-400 border border-amber-500/30'
-                : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
-            } ${collapsed ? 'justify-center' : ''}`}
-            title={collapsed ? item.label : undefined}
+                ? 'bg-amber-50 text-amber-600'
+                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+            }`}
+            title={(!forMobile && !isExpanded) ? item.label : undefined}
           >
-            <item.icon className={`w-5 h-5 ${isActive(item.href) ? 'text-amber-400' : ''}`} />
-            {!collapsed && <span className="font-medium">{item.label}</span>}
+            <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive(item.href) ? 'text-amber-500' : 'text-gray-400'}`} />
+            <span className={`font-medium text-sm whitespace-nowrap transition-all duration-300 ${
+              (!forMobile && !isExpanded) ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'
+            }`}>
+              {item.label}
+            </span>
           </Link>
         ))}
       </nav>
 
       {/* Bottom Navigation */}
-      <div className="p-4 border-t border-slate-700 space-y-1">
+      <div className="px-3 py-4 border-t border-gray-100 space-y-1">
         {bottomItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
+            className={`flex items-center gap-3 px-2 py-2.5 rounded-lg transition-colors duration-200 ${
               isActive(item.href)
-                ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-400 border border-amber-500/30'
-                : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
-            } ${collapsed ? 'justify-center' : ''}`}
-            title={collapsed ? item.label : undefined}
+                ? 'bg-amber-50 text-amber-600'
+                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+            }`}
+            title={(!forMobile && !isExpanded) ? item.label : undefined}
           >
-            <div className="relative">
-              <item.icon className={`w-5 h-5 ${isActive(item.href) ? 'text-amber-400' : ''}`} />
+            <div className="relative flex-shrink-0">
+              <item.icon className={`w-5 h-5 ${isActive(item.href) ? 'text-amber-500' : 'text-gray-400'}`} />
               {item.badge && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-amber-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
                   {item.badge}
                 </span>
               )}
             </div>
-            {!collapsed && (
-              <span className="font-medium flex-1">{item.label}</span>
-            )}
+            <span className={`font-medium text-sm whitespace-nowrap transition-all duration-300 ${
+              (!forMobile && !isExpanded) ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 flex-1'
+            }`}>
+              {item.label}
+            </span>
           </Link>
         ))}
       </div>
@@ -176,48 +157,42 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Mobile Menu Button */}
-      <button
-        onClick={() => setMobileOpen(true)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-slate-800 border border-slate-700 rounded-lg"
-      >
-        <Menu className="w-6 h-6 text-white" />
-      </button>
-
       {/* Mobile Overlay */}
       {mobileOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+          className="lg:hidden fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
           onClick={() => setMobileOpen(false)}
         />
       )}
 
       {/* Mobile Sidebar */}
       <aside
-        className={`lg:hidden fixed inset-y-0 ${isRTL ? 'right-0' : 'left-0'} w-72 bg-slate-800 border-r border-slate-700 z-50 transform transition-transform ${
+        className={`lg:hidden fixed inset-y-0 ${isRTL ? 'right-0' : 'left-0'} w-72 bg-white border-r border-gray-200 z-50 transform transition-transform duration-300 ease-in-out shadow-xl ${
           mobileOpen ? 'translate-x-0' : isRTL ? 'translate-x-full' : '-translate-x-full'
         }`}
       >
         <button
           onClick={() => setMobileOpen(false)}
-          className={`absolute top-4 ${isRTL ? 'left-4' : 'right-4'} p-1 text-slate-400 hover:text-white`}
+          className={`absolute top-4 ${isRTL ? 'left-4' : 'right-4'} p-1 text-gray-400 hover:text-gray-600`}
         >
           <X className="w-6 h-6" />
         </button>
-        <SidebarContent />
+        <SidebarContent forMobile={true} />
       </aside>
 
-      {/* Desktop Sidebar */}
+      {/* Desktop Sidebar - Collapsed by default, expands on hover */}
       <aside
-        className={`hidden lg:block fixed inset-y-0 ${isRTL ? 'right-0' : 'left-0'} bg-slate-800 border-${isRTL ? 'l' : 'r'} border-slate-700 transition-all duration-300 z-40 ${
-          collapsed ? 'w-20' : 'w-64'
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        className={`hidden lg:block fixed inset-y-0 ${isRTL ? 'right-0' : 'left-0'} bg-white ${isRTL ? 'border-l' : 'border-r'} border-gray-200 transition-all duration-300 ease-in-out z-40 overflow-hidden ${
+          isExpanded ? 'w-64 shadow-xl' : 'w-16'
         }`}
       >
-        <SidebarContent />
+        <SidebarContent forMobile={false} />
       </aside>
 
-      {/* Spacer */}
-      <div className={`hidden lg:block transition-all duration-300 ${collapsed ? 'w-20' : 'w-64'}`} />
+      {/* Spacer - minimal width since sidebar auto-hides */}
+      <div className={`hidden lg:block w-16 flex-shrink-0 ${isRTL ? 'order-last' : 'order-first'}`} />
     </>
   );
 }

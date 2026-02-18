@@ -173,11 +173,13 @@ export default function Sidebar() {
       >
         <button
           onClick={() => setMobileOpen(false)}
-          className={`absolute top-4 ${isRTL ? 'left-4' : 'right-4'} p-1 text-gray-400 hover:text-gray-600`}
+          className={`absolute top-4 ${isRTL ? 'left-4' : 'right-4'} p-1 text-gray-400 hover:text-gray-600 z-50`}
         >
           <X className="w-6 h-6" />
         </button>
-        <SidebarContent forMobile={true} />
+        <div className="pt-12 h-full">
+          <SidebarContent forMobile={true} />
+        </div>
       </aside>
 
       {/* Desktop Sidebar - Collapsed by default, expands on hover */}
@@ -190,9 +192,6 @@ export default function Sidebar() {
       >
         <SidebarContent forMobile={false} />
       </aside>
-
-      {/* Spacer - minimal width since sidebar auto-hides */}
-      <div className={`hidden lg:block w-16 flex-shrink-0 ${isRTL ? 'order-last' : 'order-first'}`} />
     </>
   );
 }

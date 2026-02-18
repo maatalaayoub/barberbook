@@ -4,7 +4,8 @@ import { useUser, useClerk } from '@clerk/nextjs';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Bell, Menu } from 'lucide-react';
+import { Bell, Menu, Home } from 'lucide-react';
+import Link from 'next/link';
 
 export default function DashboardHeader() {
   const { user } = useUser();
@@ -20,36 +21,45 @@ export default function DashboardHeader() {
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-30">
       <div className="px-4 lg:px-8">
-        <nav dir="ltr" className="flex items-center justify-between py-4">
-          {/* Mobile Menu Button */}
-          <button
-            onClick={handleOpenSidebar}
-            className={`lg:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors ${isRTL ? 'order-last' : ''}`}
-          >
-            <Menu className="w-6 h-6" />
-          </button>
+        <nav dir="ltr" className={`flex items-center justify-between py-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
+          {/* Left Section - Mobile Menu & Home Button */}
+          <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+            {/* Mobile Menu Button */}
+            <button
+              onClick={handleOpenSidebar}
+              className="lg:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <Menu className="w-6 h-6" />
+            </button>
 
-          {/* Spacer for desktop */}
-          <div className="hidden lg:block" />
+            {/* Home Button */}
+            <Link
+              href={`/${locale}`}
+              className={`flex items-center gap-2 p-2 text-gray-600 hover:text-[#D4AF37] hover:bg-gray-100 rounded-lg transition-colors ${isRTL ? 'flex-row-reverse' : ''}`}
+            >
+              <Home className="w-5 h-5" />
+              <span className="hidden sm:inline text-sm font-medium">{isRTL ? 'الرئيسية' : 'Home'}</span>
+            </Link>
+          </div>
 
           {/* Right Section - Notifications & Profile */}
           <motion.div 
-            initial={{ opacity: 0, x: 20 }}
+            initial={{ opacity: 0, x: isRTL ? -20 : 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
-            className="flex items-center gap-4"
+            className={`flex items-center gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}
           >
             {/* Notifications */}
             <button className="relative p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
               <Bell className="w-5 h-5" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+              <span className={`absolute top-1 ${isRTL ? 'left-1' : 'right-1'} w-2 h-2 bg-red-500 rounded-full`}></span>
             </button>
 
             {/* User Profile Button */}
             {user && (
               <button
                 onClick={() => clerk.openUserProfile()}
-                className="flex items-center gap-3 rounded-lg bg-gray-100 hover:bg-gray-200 px-3 py-2 transition-all cursor-pointer"
+                className={`flex items-center gap-3 rounded-lg bg-gray-100 hover:bg-gray-200 px-3 py-2 transition-all cursor-pointer ${isRTL ? 'flex-row-reverse' : ''}`}
               >
                 <div className="w-8 h-8 rounded-full ring-2 ring-[#D4AF37]/50 overflow-hidden">
                   <img 
@@ -58,7 +68,7 @@ export default function DashboardHeader() {
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <div className="hidden sm:block text-left">
+                <div className={`hidden sm:block ${isRTL ? 'text-right' : 'text-left'}`}>
                   <p className="text-sm font-medium text-gray-900">
                     {user.firstName} {user.lastName}
                   </p>

@@ -38,14 +38,12 @@ export default function DashboardLayout({ children }) {
 
   return (
     <div className={`min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 overflow-x-hidden ${isRTL ? 'rtl' : 'ltr'}`}>
-      <div className="flex">
-        <Sidebar />
-        <div className="flex-1 flex flex-col min-h-screen overflow-x-hidden">
-          <DashboardHeader />
-          <main className="flex-1 p-6">
-            {children}
-          </main>
-        </div>
+      <Sidebar />
+      <div className={`flex flex-col min-h-screen overflow-x-hidden ${isRTL ? 'lg:mr-16' : 'lg:ml-16'}`}>
+        <DashboardHeader />
+        <main className="flex-1 p-6">
+          {children}
+        </main>
       </div>
     </div>
   );

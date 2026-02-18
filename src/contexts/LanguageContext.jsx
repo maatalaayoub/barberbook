@@ -1317,8 +1317,10 @@ export function LanguageProvider({ children }) {
     router.push(newPath);
   }, [pathname, router]);
   
+  const isRTL = locale === 'ar';
+  
   return (
-    <LanguageContext.Provider value={{ locale, t, changeLanguage, locales }}>
+    <LanguageContext.Provider value={{ locale, t, changeLanguage, locales, isRTL }}>
       {children}
     </LanguageContext.Provider>
   );

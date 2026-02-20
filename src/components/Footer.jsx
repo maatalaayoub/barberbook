@@ -63,8 +63,8 @@ export default function Footer() {
           {/* Logo */}
           <div className="flex items-center">
             <Image 
-              src="/images/logo.png" 
-              alt="BarberBook" 
+              src="/images/logo-booq.png" 
+              alt="Booq" 
               width={180} 
               height={45}
               className="h-10 w-auto filter brightness-0 invert"

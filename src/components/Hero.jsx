@@ -187,8 +187,8 @@ export default function Hero() {
               </button>
             )}
             <Image 
-              src="/images/logo.png" 
-              alt="BarberBook" 
+              src="/images/logo-booq.png" 
+              alt="Booq" 
               width={200} 
               height={50}
               className="h-11 w-auto filter brightness-0 invert"

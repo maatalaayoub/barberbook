@@ -43,8 +43,8 @@ export default function BarberSignInPage() {
           <div className="flex items-center justify-between mb-12">
             <Link href={`/${locale}`} className="inline-block">
               <Image 
-                src="/images/logo.png" 
-                alt="BarberBook" 
+                src="/images/logo-booq.png" 
+                alt="Booq" 
                 width={200} 
                 height={50}
                 className="h-12 w-auto filter brightness-0 invert"
@@ -77,8 +77,8 @@ export default function BarberSignInPage() {
         <div className="lg:hidden p-6 bg-gradient-to-r from-slate-900 to-slate-800 flex items-center justify-between">
           <Link href={`/${locale}`} className="inline-flex items-center gap-3">
             <Image 
-              src="/images/logo.png" 
-              alt="BarberBook" 
+              src="/images/logo-booq.png" 
+              alt="Booq" 
               width={150} 
               height={40}
               className="h-10 w-auto filter brightness-0 invert"

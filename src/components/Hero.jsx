@@ -34,8 +34,8 @@ export default function Hero() {
   // Combined loaded state - both Clerk and role data must be loaded
   const isLoaded = isClerkLoaded && isRoleLoaded;
   
-  // Dashboard URL for barbers only
-  const dashboardUrl = `/${locale}/barber/dashboard`;
+  // Dashboard URL for business users only
+  const dashboardUrl = `/${locale}/business/dashboard`;
   
   // Debug logging
   useEffect(() => {
@@ -275,7 +275,7 @@ export default function Hero() {
                 // Signed out state - show login/signup buttons
                 <>
                   <a 
-                    href={`/${locale}/auth/barber/sign-in`}
+                    href={`/${locale}/auth/business/sign-in`}
                     className="flex items-center gap-2 rounded-[15px] border-2 border-[#D4AF37] bg-transparent px-4 py-2 text-sm font-medium text-[#D4AF37] transition-all hover:bg-[#D4AF37]/10"
                   >
                     <Scissors className="h-4 w-4" />
@@ -475,11 +475,11 @@ export default function Hero() {
                     </div>
                   </div>
 
-                  {/* Settings - Only for barbers */}
+                  {/* Settings - Only for business users */}
                   {isBarber && (
                     <div className="px-5 pb-5">
                       <a
-                        href={`/${locale}/barber/dashboard/settings`}
+                        href={`/${locale}/business/dashboard/settings`}
                         className="flex items-center gap-3 w-full p-4 rounded-[4px] bg-gray-50 border border-gray-100 text-gray-600 transition-all hover:bg-[#D4AF37]/5 hover:border-[#D4AF37]/30"
                         onClick={() => setIsDesktopSideMenuOpen(false)}
                       >
@@ -630,11 +630,11 @@ export default function Hero() {
                   </div>
                 )}
 
-                {/* Settings - Only for barbers */}
+                {/* Settings - Only for business users */}
                 {isSignedIn && isBarber && (
                   <div className="px-4 pb-4">
                     <a
-                      href={`/${locale}/barber/dashboard/settings`}
+                      href={`/${locale}/business/dashboard/settings`}
                       className="flex items-center gap-3 w-full p-3 rounded-[4px] bg-gray-50 border border-gray-100 text-gray-600 transition-all hover:bg-[#D4AF37]/5 hover:border-[#D4AF37]/30"
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
@@ -667,7 +667,7 @@ export default function Hero() {
                     <div className="flex flex-col gap-3">
                       {/* Barber Space Button */}
                       <a 
-                        href={`/${locale}/auth/barber/sign-in`}
+                        href={`/${locale}/auth/business/sign-in`}
                         className="flex items-center justify-center gap-2 w-full rounded-[4px] border-2 border-[#D4AF37] bg-[#D4AF37]/5 px-4 py-2.5 text-sm font-semibold text-[#D4AF37] transition-all hover:bg-[#D4AF37]/10"
                       >
                         <Scissors className="h-4 w-4" />

@@ -1,8 +1,9 @@
 'use client';
 
-import { SignIn } from '@clerk/nextjs';
+import { SignIn, useUser, useClerk } from '@clerk/nextjs';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { frFR, arSA } from '@clerk/localizations';
@@ -18,12 +19,68 @@ export default function UserSignInPage() {
   const params = useParams();
   const locale = params.locale || 'en';
   const { t, isRTL } = useLanguage();
+  const { isSignedIn, isLoaded } = useUser();
+  const { signOut } = useClerk();
+  const router = useRouter();
+  const [isMounted, setIsMounted] = useState(false);
+  const [isCheckingRole, setIsCheckingRole] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  // Track client mount to prevent hydration mismatch
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Redirect to home when user signs in
+  // Check if user exists in database first - if not, sign them out
+  useEffect(() => {
+    if (isLoaded && isSignedIn && !isCheckingRole) {
+      setIsCheckingRole(true);
+      console.log('[UserSignIn] User signed in, checking if user exists in database...');
+      
+      // Check if user has a role in database
+      fetch('/api/get-role')
+        .then(res => res.json())
+        .then(async (data) => {
+          console.log('[UserSignIn] Role check result:', data);
+          if (data.role) {
+            // User exists with a role, go to home
+            console.log('[UserSignIn] User exists with role:', data.role);
+            router.push(`/${locale}`);
+          } else {
+            // User doesn't exist in database - sign them out and show error
+            console.log('[UserSignIn] User not in database, signing out...');
+            await signOut();
+            setIsCheckingRole(false);
+            setErrorMessage(t('auth.accountNotFound') || 'Account not found. Please sign up first.');
+          }
+        })
+        .catch(async (err) => {
+          console.error('[UserSignIn] Error checking role:', err);
+          // On error, sign out to be safe
+          await signOut();
+          setIsCheckingRole(false);
+          setErrorMessage(t('auth.errorCheckingAccount') || 'Error checking account. Please try again.');
+        });
+    }
+  }, [isLoaded, isSignedIn, locale, router, isCheckingRole, signOut, t]);
+
+  // Show loading while not mounted, checking auth, or if user is signed in (redirecting)
+  if (!isMounted || !isLoaded || isSignedIn) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-slate-100">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-[#D4AF37] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-500">{isSignedIn ? 'Redirecting...' : 'Loading...'}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`min-h-screen flex flex-col lg:flex-row ${isRTL ? 'rtl' : 'ltr'}`}>
       {/* Left Side - Hero Section */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
-        {/* Background Image Layer */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">{/* Background Image Layer */}
         <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900" />
         
         {/* Premium Pattern */}
@@ -105,6 +162,18 @@ export default function UserSignInPage() {
               </p>
             </div>
 
+            {/* Error Message */}
+            {errorMessage && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+                <p className="text-red-700 text-center font-medium">{errorMessage}</p>
+                <p className="text-red-600 text-center text-sm mt-2">
+                  <Link href={`/${locale}/auth/user/sign-up`} className="underline hover:text-red-800 font-semibold">
+                    {t('auth.createAccount') || 'Create an account'}
+                  </Link>
+                </p>
+              </div>
+            )}
+
             {/* Clerk Sign In */}
             <div className="flex justify-center">
               <ClientOnly fallback={
@@ -143,7 +212,6 @@ export default function UserSignInPage() {
               routing="path"
               path={`/${locale}/auth/user/sign-in`}
               signUpUrl={`/${locale}/auth/user/sign-up`}
-              forceRedirectUrl={`/${locale}`}
             />
               </ClientOnly>
             </div>

@@ -1,8 +1,9 @@
 'use client';
 
-import { SignUp } from '@clerk/nextjs';
+import { SignUp, useUser } from '@clerk/nextjs';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Scissors, Zap } from 'lucide-react';
@@ -15,10 +16,38 @@ const clerkLocalizations = {
   ar: arSA,
 };
 
-export default function BarberSignUpPage() {
+export default function BusinessSignUpPage() {
   const params = useParams();
   const locale = params.locale || 'en';
   const { t, isRTL } = useLanguage();
+  const { isSignedIn, isLoaded } = useUser();
+  const router = useRouter();
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Track client mount to prevent hydration mismatch
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Redirect to dashboard when user signs in
+  useEffect(() => {
+    if (isLoaded && isSignedIn) {
+      console.log('[SignUp] User signed in, redirecting to dashboard...');
+      router.push(`/${locale}/business/dashboard?setup=business`);
+    }
+  }, [isLoaded, isSignedIn, locale, router]);
+
+  // Show loading while not mounted, checking auth, or if user is signed in (redirecting)
+  if (!isMounted || !isLoaded || isSignedIn) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-slate-100">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-[#D4AF37] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-500">{isSignedIn ? 'Redirecting...' : 'Loading...'}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`min-h-screen flex flex-col lg:flex-row ${isRTL ? 'rtl' : 'ltr'}`}>
@@ -151,9 +180,10 @@ export default function BarberSignUpPage() {
               }}
               localization={clerkLocalizations[locale]}
               routing="path"
-              path={`/${locale}/auth/barber/sign-up`}
-              signInUrl={`/${locale}/auth/barber/sign-in`}
-              forceRedirectUrl={`/${locale}?setup=barber`}
+              path={`/${locale}/auth/business/sign-up`}
+              signInUrl={`/${locale}/auth/business/sign-in`}
+              forceRedirectUrl={`/${locale}/business/dashboard?setup=business`}
+              fallbackRedirectUrl={`/${locale}/business/dashboard?setup=business`}
             />
               </ClientOnly>
             </div>

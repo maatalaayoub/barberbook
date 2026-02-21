@@ -7,7 +7,7 @@ import { useEffect, useState, useCallback } from 'react';
 /**
  * Custom hook for role-based access control using Supabase
  * @param {Object} options
- * @param {'user' | 'barber' | null} options.requiredRole - The role required to access the current page
+ * @param {'user' | 'business' | null} options.requiredRole - The role required to access the current page
  * @param {string} options.redirectTo - Where to redirect if role doesn't match
  * @returns {Object} Role information and utilities
  */
@@ -52,7 +52,8 @@ export function useRole({ requiredRole = null, redirectTo = '/' } = {}) {
   }, [isClerkLoaded, fetchRole]);
 
   const isUser = role === 'user';
-  const isBarber = role === 'barber';
+  const isBusiness = role === 'business';
+  const isBarber = role === 'business'; // Alias for backward compatibility
   const hasRole = role !== null;
   const isLoaded = isClerkLoaded && !isLoading;
 
@@ -93,12 +94,14 @@ export function useRole({ requiredRole = null, redirectTo = '/' } = {}) {
         setSupabaseUserId(data.userId || null);
         return { success: true, role: data.role };
       } else {
-        // Log full error details
-        console.error('[useRole] Error details:', JSON.stringify(data, null, 2));
-        // If role already assigned (403), set the returned role
+        // If role already assigned (403), this is expected - just set the role
         if (response.status === 403 && data.role) {
+          console.log('[useRole] Role already assigned:', data.role);
           setRole(data.role);
+          return { success: false, error: data.error, role: data.role, alreadyAssigned: true };
         }
+        // Log actual errors
+        console.error('[useRole] Error details:', JSON.stringify(data, null, 2));
         return { success: false, error: data.error, details: data.details, code: data.code };
       }
     } catch (error) {
@@ -116,7 +119,8 @@ export function useRole({ requiredRole = null, redirectTo = '/' } = {}) {
   return {
     role,
     isUser,
-    isBarber,
+    isBusiness,
+    isBarber, // Alias for backward compatibility
     hasRole,
     isLoaded,
     isLoading,

@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useSearchParams, useParams, useRouter } from 'next/navigation';
 import { useRole } from '@/hooks/useRole';
 import { useLanguage } from '@/contexts/LanguageContext';
-import BarberOnboarding from '@/components/BarberOnboarding';
+import BusinessOnboarding from '@/components/BusinessOnboarding';
 
-export default function BarberDashboard() {
+export default function BusinessDashboard() {
   const { 
     role, 
     isBarber, 
@@ -14,7 +14,6 @@ export default function BarberDashboard() {
     isLoaded, 
     isSignedIn,
     user,
-    assignRole, 
     refetch 
   } = useRole();
   const { t } = useLanguage();
@@ -26,6 +25,20 @@ export default function BarberDashboard() {
   const [setupComplete, setSetupComplete] = useState(false);
   const [onboardingStatus, setOnboardingStatus] = useState(null);
   const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true);
+  const [setupError, setSetupError] = useState(null);
+  
+  // Ref to track if we've handled the setup (prevents redirect after URL clean)
+  const setupHandledRef = useRef(false);
+
+  // Debug logging
+  useEffect(() => {
+    console.log('[Dashboard] State:', { 
+      isLoaded, isSignedIn, role, isBarber, hasRole, 
+      isSettingUp, setupComplete, isCheckingOnboarding,
+      onboardingStatus,
+      setupParam: searchParams.get('setup')
+    });
+  }, [isLoaded, isSignedIn, role, isBarber, hasRole, isSettingUp, setupComplete, isCheckingOnboarding, onboardingStatus, searchParams]);
 
   // Notify layout about onboarding status
   const notifyLayout = (completed) => {
@@ -37,7 +50,7 @@ export default function BarberDashboard() {
   // Check onboarding status
   const checkOnboardingStatus = async () => {
     try {
-      const response = await fetch('/api/barber/onboarding');
+      const response = await fetch('/api/business/onboarding');
       
       // Check content type to ensure it's JSON
       const contentType = response.headers.get('content-type');
@@ -62,15 +75,21 @@ export default function BarberDashboard() {
   useEffect(() => {
     async function setupRole() {
       const setupParam = searchParams.get('setup');
+      console.log('[Dashboard] setupRole running:', { setupParam, isLoaded, isSignedIn, isBarber, hasRole, setupComplete, setupHandled: setupHandledRef.current });
       
       // Wait for auth and role data to load
-      if (!isLoaded || !isSignedIn) return;
+      if (!isLoaded || !isSignedIn) {
+        console.log('[Dashboard] Not ready yet, waiting...');
+        return;
+      }
       
       // If user already has barber role, check onboarding and clean URL
       if (isBarber) {
+        console.log('[Dashboard] User is barber, checking onboarding...');
         if (setupParam) {
-          window.history.replaceState({}, '', `/${locale}/barber/dashboard`);
+          window.history.replaceState({}, '', `/${locale}/business/dashboard`);
         }
+        setupHandledRef.current = true;
         setSetupComplete(true);
         checkOnboardingStatus();
         return;
@@ -78,48 +97,79 @@ export default function BarberDashboard() {
 
       // If user has a different role (user role), redirect home
       if (hasRole && !isBarber) {
+        console.log('[Dashboard] User has different role, redirecting...');
         router.push(`/${locale}`);
         return;
       }
 
-      // If user has no role and setup param exists, assign barber role
-      if (!hasRole && setupParam === 'barber') {
-        setIsSettingUp(true);
-        try {
-          const result = await assignRole('barber');
-          
-          if (result.success || result.error === 'Role already assigned. Role cannot be changed.') {
-            // Refetch role to confirm
-            await refetch();
-            // Clean URL
-            window.history.replaceState({}, '', `/${locale}/barber/dashboard`);
-            setSetupComplete(true);
-            // Check onboarding status after role setup
-            checkOnboardingStatus();
-          } else {
-            console.error('Error setting up role:', result.error);
-          }
-        } catch (error) {
-          console.error('Error setting up role:', error);
-        }
-        setIsSettingUp(false);
+      // If user has no role and setup param exists, show onboarding (role will be assigned on completion)
+      if (!hasRole && setupParam === 'business') {
+        console.log('[Dashboard] Showing onboarding flow (role will be assigned on completion)...');
+        // Mark as handled BEFORE cleaning URL
+        setupHandledRef.current = true;
+        // Clean URL but keep showing onboarding
+        window.history.replaceState({}, '', `/${locale}/business/dashboard`);
+        setSetupComplete(true); // This triggers showing onboarding
+        setIsCheckingOnboarding(false);
+        // Set onboarding status to show the form
+        setOnboardingStatus({ onboardingCompleted: false });
         return;
       }
 
-      // If user has no role and no setup param, redirect to sign up
-      if (!hasRole && !setupParam) {
-        router.push(`/${locale}/auth/barber/sign-up`);
+      // If setup was already handled (URL was cleaned), don't redirect
+      if (setupHandledRef.current || setupComplete) {
+        console.log('[Dashboard] Setup already handled, not redirecting');
+        setIsCheckingOnboarding(false);
         return;
       }
+
+      // If user has no role and no setup param, redirect to sign-up
+      // Sign-in page now blocks new users, so they must go through sign-up
+      if (!hasRole && !setupParam) {
+        console.log('[Dashboard] No role - redirecting to sign-up...');
+        router.push(`/${locale}/auth/business/sign-up`);
+        return;
+      }
+      
+      // Fallback: no matching condition, stop checking
+      console.log('[Dashboard] No matching condition, stopping checks');
+      setIsCheckingOnboarding(false);
     }
 
     setupRole();
-  }, [isLoaded, isSignedIn, isBarber, hasRole, searchParams, locale, assignRole, refetch, router]);
+    // Note: setupComplete is NOT in dependencies to prevent re-triggering after we set it
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoaded, isSignedIn, isBarber, hasRole, searchParams, locale, router]);
 
-  const handleOnboardingComplete = () => {
+  const handleOnboardingComplete = async () => {
+    // Refetch role since it was assigned during onboarding completion
+    await refetch();
     setOnboardingStatus({ ...onboardingStatus, onboardingCompleted: true });
     notifyLayout(true);
   };
+
+  // Show error if setup failed
+  if (setupError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center max-w-md p-8">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Setup Error</h2>
+          <p className="text-gray-500 mb-6">{setupError}</p>
+          <a
+            href={`/${locale}/auth/business/sign-up`}
+            className="inline-block px-6 py-3 bg-[#D4AF37] text-white rounded-lg font-medium hover:bg-[#C4A037] transition-colors"
+          >
+            Try Again
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   // Consolidated loading state - only show ONE loading screen
   if (!isLoaded || isSettingUp || isCheckingOnboarding || (searchParams.get('setup') && !setupComplete && !hasRole)) {
@@ -127,13 +177,16 @@ export default function BarberDashboard() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-[#D4AF37] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-500">Loading...</p>
+          <p className="text-gray-500">
+            {isSettingUp ? 'Setting up your account...' : 'Loading...'}
+          </p>
         </div>
       </div>
     );
   }
 
-  // Redirect if not a barber (extra client-side protection)
+  // Redirect if not a business user (extra client-side protection)
+  // Only redirect if user has a different role, not if they have no role (new user)
   if (isLoaded && isSignedIn && hasRole && !isBarber) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -144,10 +197,22 @@ export default function BarberDashboard() {
     );
   }
 
-  // Show onboarding if not completed
-  if (isBarber && onboardingStatus && !onboardingStatus.onboardingCompleted) {
+  // Show onboarding if:
+  // 1. User is barber but hasn't completed onboarding
+  // 2. User has no role yet but came from signup (setupComplete is true)
+  const shouldShowOnboarding = (isBarber && onboardingStatus && !onboardingStatus.onboardingCompleted) ||
+    (!hasRole && setupComplete && onboardingStatus && !onboardingStatus.onboardingCompleted);
+  
+  console.log('[Dashboard] Render check:', { 
+    isBarber, hasRole, setupComplete, 
+    onboardingStatus, 
+    shouldShowOnboarding,
+    isLoaded, isSignedIn
+  });
+    
+  if (shouldShowOnboarding) {
     return (
-      <BarberOnboarding 
+      <BusinessOnboarding 
         userName={user?.firstName} 
         onComplete={handleOnboardingComplete} 
       />

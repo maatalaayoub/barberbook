@@ -19,14 +19,14 @@ export async function getServerRole() {
 /**
  * Require a specific role to access a server component
  * Redirects to specified path if role doesn't match
- * @param {'user' | 'barber'} requiredRole - Required role
+ * @param {'user' | 'business'} requiredRole - Required role
  * @param {string} redirectTo - Path to redirect to on failure
  */
 export async function requireRole(requiredRole, redirectTo = '/') {
   const { userId, role } = await getServerRole();
   
   if (!userId) {
-    redirect(requiredRole === 'barber' ? '/auth/barber/sign-in' : '/auth/user/sign-in');
+    redirect(requiredRole === 'business' ? '/auth/business/sign-in' : '/auth/user/sign-in');
   }
   
   if (role !== requiredRole) {
@@ -55,10 +55,13 @@ export async function isUserRole() {
 }
 
 /**
- * Check if current user is a barber
+ * Check if current user is a business user
  * @returns {Promise<boolean>}
  */
-export async function isBarberRole() {
+export async function isBusinessRole() {
   const { role } = await getServerRole();
-  return role === 'barber';
+  return role === 'business';
 }
+
+// Alias for backward compatibility
+export const isBarberRole = isBusinessRole;

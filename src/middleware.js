@@ -7,9 +7,9 @@ const defaultLocale = 'en';
 
 // Define route matchers for different sections
 const isUserRoute = createRouteMatcher(['/user/:path*', '/:locale/user/:path*']);
-const isBarberRoute = createRouteMatcher(['/barber/:path*', '/:locale/barber/:path*']);
+const isBusinessRoute = createRouteMatcher(['/business/:path*', '/:locale/business/:path*']);
 const isUserAuthRoute = createRouteMatcher(['/auth/user/:path*', '/:locale/auth/user/:path*']);
-const isBarberAuthRoute = createRouteMatcher(['/auth/barber/:path*', '/:locale/auth/barber/:path*']);
+const isBusinessAuthRoute = createRouteMatcher(['/auth/business/:path*', '/:locale/auth/business/:path*']);
 
 // Helper to get locale from pathname
 function getLocaleFromPath(pathname) {
@@ -36,6 +36,9 @@ function getPreferredLocale(request) {
 export default clerkMiddleware(async (auth, req) => {
   const pathname = req.nextUrl.pathname;
   const searchParams = req.nextUrl.searchParams;
+  
+  // Debug logging
+  console.log('[Middleware] Path:', pathname, 'Search:', searchParams.toString());
   
   // Check for setup flag (allows passing role setup parameter)
   const setupRole = searchParams.get('setup');
@@ -68,7 +71,7 @@ export default clerkMiddleware(async (auth, req) => {
   const { userId } = await auth();
 
   // Check if accessing auth routes
-  if (isUserAuthRoute(req) || isBarberAuthRoute(req)) {
+  if (isUserAuthRoute(req) || isBusinessAuthRoute(req)) {
     // Don't interfere with Clerk's sign-up flow - let forceRedirectUrl work
     // After signup, Clerk handles the redirect with the ?setup= param
     // Only redirect if user is explicitly visiting auth pages when already signed in
@@ -83,14 +86,16 @@ export default clerkMiddleware(async (auth, req) => {
       
       // If not a Clerk callback, redirect signed-in users away from auth pages
       if (!isClerkCallback) {
-        // Allow a brief window for Clerk's forceRedirectUrl to take effect
-        // by checking if we're on a sign-up completion
+        // Allow sign-in and sign-up pages to handle their own redirects
+        // They need to check if user exists in database first
         const isSignUpPage = pathname.includes('/sign-up');
+        const isSignInPage = pathname.includes('/sign-in');
         
-        // Don't redirect from sign-up pages - let Clerk's forceRedirectUrl handle it
-        if (!isSignUpPage) {
-          if (isBarberAuthRoute(req)) {
-            return NextResponse.redirect(new URL(`/${locale}/barber/dashboard`, req.url));
+        // Let auth pages handle their own redirects for business users
+        // This allows them to check database before deciding where to go
+        if (!isSignUpPage && !isSignInPage) {
+          if (isBusinessAuthRoute(req)) {
+            return NextResponse.redirect(new URL(`/${locale}/business/dashboard`, req.url));
           }
           return NextResponse.redirect(new URL(`/${locale}`, req.url));
         }
@@ -102,15 +107,19 @@ export default clerkMiddleware(async (auth, req) => {
 
   // User routes - redirect to home (users don't have dashboard)
   if (isUserRoute(req)) {
+    console.log('[Middleware] User route, redirecting to home');
     return NextResponse.redirect(new URL(`/${locale}`, req.url));
   }
 
-  // Barber routes - require authentication only
+  // Business routes - require authentication only
   // Role verification is done on the page level via useRole hook
-  if (isBarberRoute(req)) {
+  if (isBusinessRoute(req)) {
+    console.log('[Middleware] Business route, userId:', userId ? 'present' : 'missing');
     if (!userId) {
-      return NextResponse.redirect(new URL(`/${locale}/auth/barber/sign-in`, req.url));
+      console.log('[Middleware] No userId, redirecting to sign-in');
+      return NextResponse.redirect(new URL(`/${locale}/auth/business/sign-in`, req.url));
     }
+    console.log('[Middleware] Business route allowed');
     // Allow access - role check done client-side in dashboard
   }
 

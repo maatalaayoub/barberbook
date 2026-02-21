@@ -40,37 +40,37 @@ export default function Sidebar() {
     { 
       icon: LayoutDashboard, 
       label: t('dashboard.sidebar.overview') || 'Overview', 
-      href: `/${locale}/barber/dashboard` 
+      href: `/${locale}/business/dashboard` 
     },
     { 
       icon: Calendar, 
       label: t('dashboard.sidebar.appointments') || 'Appointments', 
-      href: `/${locale}/barber/dashboard/appointments` 
+      href: `/${locale}/business/dashboard/appointments` 
     },
     { 
       icon: Clock, 
       label: t('dashboard.sidebar.schedule') || 'Schedule', 
-      href: `/${locale}/barber/dashboard/schedule` 
+      href: `/${locale}/business/dashboard/schedule` 
     },
     { 
       icon: Users, 
       label: t('dashboard.sidebar.clients') || 'Clients', 
-      href: `/${locale}/barber/dashboard/clients` 
+      href: `/${locale}/business/dashboard/clients` 
     },
     { 
       icon: Scissors, 
       label: t('dashboard.sidebar.services') || 'Services', 
-      href: `/${locale}/barber/dashboard/services` 
+      href: `/${locale}/business/dashboard/services` 
     },
     { 
       icon: DollarSign, 
       label: t('dashboard.sidebar.earnings') || 'Earnings', 
-      href: `/${locale}/barber/dashboard/earnings` 
+      href: `/${locale}/business/dashboard/earnings` 
     },
     { 
       icon: BarChart3, 
       label: t('dashboard.sidebar.analytics') || 'Analytics', 
-      href: `/${locale}/barber/dashboard/analytics` 
+      href: `/${locale}/business/dashboard/analytics` 
     },
   ];
 
@@ -78,18 +78,18 @@ export default function Sidebar() {
     { 
       icon: Bell, 
       label: t('dashboard.sidebar.notifications') || 'Notifications', 
-      href: `/${locale}/barber/dashboard/notifications`,
+      href: `/${locale}/business/dashboard/notifications`,
       badge: 3
     },
     { 
       icon: Settings, 
       label: t('dashboard.sidebar.settings') || 'Settings', 
-      href: `/${locale}/barber/dashboard/settings` 
+      href: `/${locale}/business/dashboard/settings` 
     },
   ];
 
   const isActive = (href) => {
-    if (href === `/${locale}/barber/dashboard`) {
+    if (href === `/${locale}/business/dashboard`) {
       return pathname === href;
     }
     return pathname.startsWith(href);

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 
-const VALID_ROLES = ['user', 'barber'];
+const VALID_ROLES = ['user', 'business'];
 
 export async function POST(request) {
   console.log('[set-role] API called');
@@ -27,15 +27,17 @@ export async function POST(request) {
     if (!role || !VALID_ROLES.includes(role)) {
       console.log('[set-role] Invalid role');
       return NextResponse.json(
-        { error: 'Invalid role. Must be "user" or "barber"' },
+        { error: 'Invalid role. Must be "user" or "business"' },
         { status: 400 }
       );
     }
 
-    // Get current user email from Clerk
+    // Get current user info from Clerk
     const user = await currentUser();
     const email = user?.emailAddresses?.[0]?.emailAddress || null;
-    console.log('[set-role] User email:', email);
+    const firstName = user?.firstName || null;
+    const lastName = user?.lastName || null;
+    console.log('[set-role] User info:', { email, firstName, lastName });
 
     // Initialize Supabase client
     console.log('[set-role] Creating Supabase client...');
@@ -89,6 +91,8 @@ export async function POST(request) {
       .insert({
         clerk_id: userId,
         email: email,
+        first_name: firstName,
+        last_name: lastName,
         role: role,
       })
       .select()

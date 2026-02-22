@@ -2,6 +2,28 @@ import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 
+// Helper to get category-specific data
+async function getCategoryData(supabase, businessInfoId, category) {
+  if (!businessInfoId || !category) return null;
+  
+  const tableMap = {
+    'shop_salon_owner': 'shop_salon_info',
+    'mobile_service': 'mobile_service_info',
+    'job_seeker': 'job_seeker_info'
+  };
+  
+  const tableName = tableMap[category];
+  if (!tableName) return null;
+  
+  const { data } = await supabase
+    .from(tableName)
+    .select('*')
+    .eq('business_info_id', businessInfoId)
+    .single();
+  
+  return data;
+}
+
 // GET - Check onboarding status and get data
 export async function GET() {
   try {
@@ -35,11 +57,25 @@ export async function GET() {
       .eq('user_id', user.id)
       .single();
 
+    // Get category-specific data if business info exists
+    let categoryData = null;
+    let businessHours = [];
+    
+    if (businessInfo?.id && businessInfo?.business_category) {
+      categoryData = await getCategoryData(supabase, businessInfo.id, businessInfo.business_category);
+      
+      // Extract business hours from category data
+      if (categoryData?.business_hours) {
+        businessHours = categoryData.business_hours;
+      }
+    }
+
     return NextResponse.json({
       onboardingCompleted: businessInfo?.onboarding_completed || false,
       businessInfo: businessInfo || null,
       businessCategory: businessInfo?.business_category || null,
-      businessHours: businessInfo?.business_hours || [],
+      categoryData: categoryData || null,
+      businessHours: businessHours,
     });
   } catch (error) {
     console.error('[onboarding GET] Error:', error);
@@ -68,6 +104,17 @@ export async function POST(request) {
       businessHours, 
       yearsOfExperience,
       hasCertificate,
+      // Shop/salon specific
+      businessName,
+      address,
+      city,
+      phone,
+      // Mobile service specific
+      serviceArea,
+      travelRadiusKm,
+      // Job seeker specific
+      preferredCity,
+      bio,
       completeOnboarding 
     } = body;
 
@@ -77,12 +124,26 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Professional type is required' }, { status: 400 });
     }
 
+    if (!businessCategory) {
+      console.error('[onboarding POST] Missing businessCategory');
+      return NextResponse.json({ error: 'Business category is required' }, { status: 400 });
+    }
+
     const validProfessionalTypes = ['barber', 'hairdresser', 'stylist', 'colorist', 'other'];
     if (!validProfessionalTypes.includes(professionalType)) {
       console.error('[onboarding POST] Invalid professionalType:', professionalType);
       return NextResponse.json({ 
         error: 'Invalid professional type',
         validTypes: validProfessionalTypes 
+      }, { status: 400 });
+    }
+
+    const validBusinessCategories = ['shop_salon_owner', 'mobile_service', 'job_seeker'];
+    if (!validBusinessCategories.includes(businessCategory)) {
+      console.error('[onboarding POST] Invalid businessCategory:', businessCategory);
+      return NextResponse.json({ 
+        error: 'Invalid business category',
+        validCategories: validBusinessCategories 
       }, { status: 400 });
     }
 
@@ -107,68 +168,115 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Not a business user', role: user.role }, { status: 403 });
     }
 
-    // Validate business category if provided
-    const validBusinessCategories = ['shop_salon_owner', 'mobile_service', 'job_seeker'];
-    if (businessCategory && !validBusinessCategories.includes(businessCategory)) {
-      console.error('[onboarding POST] Invalid businessCategory:', businessCategory);
-      return NextResponse.json({ 
-        error: 'Invalid business category',
-        validCategories: validBusinessCategories 
-      }, { status: 400 });
-    }
-
-    // Upsert business info
-    const upsertData = {
+    // Step 1: Upsert business_info (base table)
+    const businessInfoData = {
       user_id: user.id,
-      business_category: businessCategory || null,
+      business_category: businessCategory,
       professional_type: professionalType,
       onboarding_completed: completeOnboarding || false,
     };
 
-    // Add work location if provided
-    if (workLocation) {
-      upsertData.work_location = workLocation;
-    }
-
-    // Add business hours if provided
-    if (businessHours && Array.isArray(businessHours)) {
-      upsertData.business_hours = businessHours;
-    }
-
-    // Add job seeker specific fields
-    if (yearsOfExperience) {
-      upsertData.years_of_experience = yearsOfExperience;
-    }
-    if (hasCertificate !== undefined && hasCertificate !== null) {
-      upsertData.has_certificate = hasCertificate;
-    }
-
-    console.log('[onboarding POST] Upserting business info:', upsertData);
+    console.log('[onboarding POST] Upserting business_info:', businessInfoData);
     
-    const { data: upsertResult, error: infoError } = await supabase
+    const { data: businessInfoResult, error: infoError } = await supabase
       .from('business_info')
-      .upsert(upsertData, {
-        onConflict: 'user_id',
-      })
-      .select();
+      .upsert(businessInfoData, { onConflict: 'user_id' })
+      .select()
+      .single();
 
     if (infoError) {
-      console.error('[onboarding POST] Business info error:', {
-        message: infoError.message,
-        code: infoError.code,
-        details: infoError.details,
-        hint: infoError.hint
-      });
+      console.error('[onboarding POST] Business info error:', infoError);
       return NextResponse.json({ 
         error: 'Failed to save business info',
         details: infoError.message,
-        code: infoError.code,
-        hint: infoError.hint
       }, { status: 500 });
     }
 
-    console.log('[onboarding POST] Upsert result:', upsertResult);
-    return NextResponse.json({ success: true, data: upsertResult });
+    console.log('[onboarding POST] Business info saved:', businessInfoResult);
+    const businessInfoId = businessInfoResult.id;
+
+    // Step 2: Upsert category-specific data
+    let categoryResult = null;
+    let categoryError = null;
+
+    if (businessCategory === 'shop_salon_owner') {
+      // Shop/Salon owner data
+      const shopSalonData = {
+        business_info_id: businessInfoId,
+        business_name: businessName || null,
+        address: address || null,
+        city: city || null,
+        phone: phone || null,
+        work_location: workLocation || null,
+        business_hours: businessHours || [],
+      };
+
+      console.log('[onboarding POST] Upserting shop_salon_info:', shopSalonData);
+      
+      const { data, error } = await supabase
+        .from('shop_salon_info')
+        .upsert(shopSalonData, { onConflict: 'business_info_id' })
+        .select();
+      
+      categoryResult = data;
+      categoryError = error;
+
+    } else if (businessCategory === 'mobile_service') {
+      // Mobile service provider data
+      const mobileServiceData = {
+        business_info_id: businessInfoId,
+        service_area: serviceArea || null,
+        travel_radius_km: travelRadiusKm || null,
+        work_location: workLocation || null,
+        business_hours: businessHours || [],
+      };
+
+      console.log('[onboarding POST] Upserting mobile_service_info:', mobileServiceData);
+      
+      const { data, error } = await supabase
+        .from('mobile_service_info')
+        .upsert(mobileServiceData, { onConflict: 'business_info_id' })
+        .select();
+      
+      categoryResult = data;
+      categoryError = error;
+
+    } else if (businessCategory === 'job_seeker') {
+      // Job seeker data
+      const jobSeekerData = {
+        business_info_id: businessInfoId,
+        years_of_experience: yearsOfExperience || null,
+        has_certificate: hasCertificate || false,
+        preferred_city: preferredCity || null,
+        bio: bio || null,
+      };
+
+      console.log('[onboarding POST] Upserting job_seeker_info:', jobSeekerData);
+      
+      const { data, error } = await supabase
+        .from('job_seeker_info')
+        .upsert(jobSeekerData, { onConflict: 'business_info_id' })
+        .select();
+      
+      categoryResult = data;
+      categoryError = error;
+    }
+
+    if (categoryError) {
+      console.error('[onboarding POST] Category data error:', categoryError);
+      return NextResponse.json({ 
+        error: 'Failed to save category data',
+        details: categoryError.message,
+      }, { status: 500 });
+    }
+
+    console.log('[onboarding POST] Category data saved:', categoryResult);
+    
+    return NextResponse.json({ 
+      success: true, 
+      businessInfo: businessInfoResult,
+      categoryData: categoryResult 
+    });
   } catch (error) {
     console.error('[onboarding POST] Error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

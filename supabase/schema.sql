@@ -82,32 +82,51 @@ CREATE TRIGGER update_business_profile_updated_at
   EXECUTE FUNCTION update_updated_at_column();
 
 -- ============================================
--- BUSINESS INFO (onboarding data)
+-- USER PROFILE (for normal users - customers)
 -- ============================================
--- Stores business category, professional type, work location, business hours, and job seeker info
+CREATE TABLE IF NOT EXISTS user_profile (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE UNIQUE,
+  phone TEXT,
+  address TEXT,
+  city TEXT,
+  profile_image_url TEXT,
+  preferred_language TEXT DEFAULT 'en',
+  notification_enabled BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_profile_user_id ON user_profile(user_id);
+
+ALTER TABLE user_profile ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can view own profile" ON user_profile;
+CREATE POLICY "Users can view own profile"
+  ON user_profile FOR SELECT
+  USING (true);
+
+DROP TRIGGER IF EXISTS update_user_profile_updated_at ON user_profile;
+CREATE TRIGGER update_user_profile_updated_at
+  BEFORE UPDATE ON user_profile
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================
+-- BUSINESS INFO (base onboarding data - common to all business types)
+-- ============================================
 CREATE TABLE IF NOT EXISTS business_info (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   user_id UUID REFERENCES users(id) ON DELETE CASCADE UNIQUE,
-  business_category TEXT CHECK (business_category IN ('shop_salon_owner', 'mobile_service', 'job_seeker')),
+  business_category TEXT NOT NULL CHECK (business_category IN ('shop_salon_owner', 'mobile_service', 'job_seeker')),
   professional_type TEXT NOT NULL CHECK (professional_type IN ('barber', 'hairdresser', 'stylist', 'colorist', 'other')),
-  work_location TEXT CHECK (work_location IS NULL OR work_location IN ('my_place', 'client_location', 'both')),
-  business_hours JSONB DEFAULT '[]'::jsonb,
-  years_of_experience TEXT CHECK (years_of_experience IS NULL OR years_of_experience IN ('less_than_1', '1_to_3', '3_to_5', '5_to_10', 'more_than_10')),
-  has_certificate BOOLEAN,
   onboarding_completed BOOLEAN DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- business_hours JSONB format example:
--- [
---   {"dayOfWeek": 0, "isOpen": false, "openTime": null, "closeTime": null},
---   {"dayOfWeek": 1, "isOpen": true, "openTime": "10:00", "closeTime": "19:00"},
---   {"dayOfWeek": 2, "isOpen": true, "openTime": "10:00", "closeTime": "19:00"},
---   ...
--- ]
-
 CREATE INDEX IF NOT EXISTS idx_business_info_user_id ON business_info(user_id);
+CREATE INDEX IF NOT EXISTS idx_business_info_category ON business_info(business_category);
 
 ALTER TABLE business_info ENABLE ROW LEVEL SECURITY;
 
@@ -119,6 +138,106 @@ CREATE POLICY "Business info viewable by everyone"
 DROP TRIGGER IF EXISTS update_business_info_updated_at ON business_info;
 CREATE TRIGGER update_business_info_updated_at
   BEFORE UPDATE ON business_info
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================
+-- SHOP/SALON INFO (for shop_salon_owner category)
+-- ============================================
+-- Physical location business owners
+CREATE TABLE IF NOT EXISTS shop_salon_info (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  business_info_id UUID REFERENCES business_info(id) ON DELETE CASCADE UNIQUE,
+  business_name TEXT,
+  address TEXT,
+  city TEXT,
+  phone TEXT,
+  work_location TEXT CHECK (work_location IN ('my_place', 'client_location', 'both')),
+  business_hours JSONB DEFAULT '[]'::jsonb,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- business_hours JSONB format example:
+-- [
+--   {"dayOfWeek": 0, "isOpen": false, "openTime": null, "closeTime": null},
+--   {"dayOfWeek": 1, "isOpen": true, "openTime": "10:00", "closeTime": "19:00"},
+--   ...
+-- ]
+
+CREATE INDEX IF NOT EXISTS idx_shop_salon_info_business_info_id ON shop_salon_info(business_info_id);
+
+ALTER TABLE shop_salon_info ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Shop salon info viewable by everyone" ON shop_salon_info;
+CREATE POLICY "Shop salon info viewable by everyone"
+  ON shop_salon_info FOR SELECT
+  USING (true);
+
+DROP TRIGGER IF EXISTS update_shop_salon_info_updated_at ON shop_salon_info;
+CREATE TRIGGER update_shop_salon_info_updated_at
+  BEFORE UPDATE ON shop_salon_info
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================
+-- MOBILE SERVICE INFO (for mobile_service category)
+-- ============================================
+-- Mobile service providers who travel to clients
+CREATE TABLE IF NOT EXISTS mobile_service_info (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  business_info_id UUID REFERENCES business_info(id) ON DELETE CASCADE UNIQUE,
+  service_area TEXT,
+  travel_radius_km INTEGER,
+  work_location TEXT CHECK (work_location IN ('my_place', 'client_location', 'both')),
+  business_hours JSONB DEFAULT '[]'::jsonb,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_mobile_service_info_business_info_id ON mobile_service_info(business_info_id);
+
+ALTER TABLE mobile_service_info ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Mobile service info viewable by everyone" ON mobile_service_info;
+CREATE POLICY "Mobile service info viewable by everyone"
+  ON mobile_service_info FOR SELECT
+  USING (true);
+
+DROP TRIGGER IF EXISTS update_mobile_service_info_updated_at ON mobile_service_info;
+CREATE TRIGGER update_mobile_service_info_updated_at
+  BEFORE UPDATE ON mobile_service_info
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================
+-- JOB SEEKER INFO (for job_seeker category)
+-- ============================================
+-- Job seekers looking for employment
+CREATE TABLE IF NOT EXISTS job_seeker_info (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  business_info_id UUID REFERENCES business_info(id) ON DELETE CASCADE UNIQUE,
+  years_of_experience TEXT CHECK (years_of_experience IN ('less_than_1', '1_to_3', '3_to_5', '5_to_10', 'more_than_10')),
+  has_certificate BOOLEAN DEFAULT false,
+  preferred_city TEXT,
+  resume_url TEXT,
+  bio TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_job_seeker_info_business_info_id ON job_seeker_info(business_info_id);
+
+ALTER TABLE job_seeker_info ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Job seeker info viewable by everyone" ON job_seeker_info;
+CREATE POLICY "Job seeker info viewable by everyone"
+  ON job_seeker_info FOR SELECT
+  USING (true);
+
+DROP TRIGGER IF EXISTS update_job_seeker_info_updated_at ON job_seeker_info;
+CREATE TRIGGER update_job_seeker_info_updated_at
+  BEFORE UPDATE ON job_seeker_info
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
@@ -136,26 +255,34 @@ CREATE TRIGGER update_business_info_updated_at
 -- ALTER TABLE users ADD COLUMN IF NOT EXISTS first_name TEXT;
 -- ALTER TABLE users ADD COLUMN IF NOT EXISTS last_name TEXT;
 
--- -- Add business_category column if migrating from foreign key
--- ALTER TABLE business_info ADD COLUMN IF NOT EXISTS business_category TEXT;
--- ALTER TABLE business_info DROP CONSTRAINT IF EXISTS business_info_business_category_check;
--- ALTER TABLE business_info ADD CONSTRAINT business_info_business_category_check 
---   CHECK (business_category IS NULL OR business_category IN ('shop_salon_owner', 'mobile_service', 'job_seeker'));
--- ALTER TABLE business_info DROP COLUMN IF EXISTS business_category_id;
+-- ============================================
+-- MIGRATION: From single business_info to separate tables
+-- ============================================
+-- If you have existing data in business_info with work_location, business_hours, etc.
+-- Run these to migrate to the new structure:
 
--- -- Fix work_location constraint (allow NULL for job seekers)
--- ALTER TABLE business_info DROP CONSTRAINT IF EXISTS barber_business_info_work_location_check;
--- ALTER TABLE business_info DROP CONSTRAINT IF EXISTS business_info_work_location_check;
--- ALTER TABLE business_info ALTER COLUMN work_location DROP NOT NULL;
--- ALTER TABLE business_info ADD CONSTRAINT business_info_work_location_check 
---   CHECK (work_location IS NULL OR work_location IN ('my_place', 'client_location', 'both'));
+-- -- Step 1: Create the new tables (already done if you ran the schema above)
 
--- -- Add job seeker columns
--- ALTER TABLE business_info ADD COLUMN IF NOT EXISTS years_of_experience TEXT;
--- ALTER TABLE business_info ADD COLUMN IF NOT EXISTS has_certificate BOOLEAN;
--- ALTER TABLE business_info DROP CONSTRAINT IF EXISTS business_info_years_of_experience_check;
--- ALTER TABLE business_info ADD CONSTRAINT business_info_years_of_experience_check 
---   CHECK (years_of_experience IS NULL OR years_of_experience IN ('less_than_1', '1_to_3', '3_to_5', '5_to_10', 'more_than_10'));
+-- -- Step 2: Migrate shop_salon_owner data
+-- INSERT INTO shop_salon_info (business_info_id, work_location, business_hours)
+-- SELECT id, work_location, business_hours
+-- FROM business_info
+-- WHERE business_category = 'shop_salon_owner';
 
--- -- Drop unused business_category lookup table
--- DROP TABLE IF EXISTS business_category CASCADE;
+-- -- Step 3: Migrate mobile_service data
+-- INSERT INTO mobile_service_info (business_info_id, work_location, business_hours)
+-- SELECT id, work_location, business_hours
+-- FROM business_info
+-- WHERE business_category = 'mobile_service';
+
+-- -- Step 4: Migrate job_seeker data
+-- INSERT INTO job_seeker_info (business_info_id, years_of_experience, has_certificate)
+-- SELECT id, years_of_experience, has_certificate
+-- FROM business_info
+-- WHERE business_category = 'job_seeker';
+
+-- -- Step 5: Drop old columns from business_info (optional - do after verifying migration)
+-- ALTER TABLE business_info DROP COLUMN IF EXISTS work_location;
+-- ALTER TABLE business_info DROP COLUMN IF EXISTS business_hours;
+-- ALTER TABLE business_info DROP COLUMN IF EXISTS years_of_experience;
+-- ALTER TABLE business_info DROP COLUMN IF EXISTS has_certificate;

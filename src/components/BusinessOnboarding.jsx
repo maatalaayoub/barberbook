@@ -2,7 +2,26 @@
 
 import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
-import { Store, Car, Briefcase, Award, Clock } from 'lucide-react';
+import { 
+  Store, 
+  MapPin, 
+  Search, 
+  Award, 
+  Clock, 
+  Scissors, 
+  Sparkles, 
+  Palette, 
+  UserCircle,
+  Star,
+  TrendingUp,
+  Trophy,
+  Crown,
+  GraduationCap,
+  Check,
+  ChevronRight,
+  Brush,
+  Hand
+} from 'lucide-react';
 
 const DAYS_OF_WEEK = [
   { id: 0, name: 'Sunday' },
@@ -16,39 +35,48 @@ const DAYS_OF_WEEK = [
 
 const BUSINESS_CATEGORIES = [
   { 
-    id: 'shop_salon_owner', 
-    name: 'Shop or salon owner', 
+    id: 'salon_owner', 
+    name: 'Salon Owner', 
     description: 'You own or manage a physical location where clients visit',
-    icon: 'store'
+    icon: Store,
+    gradient: 'from-violet-500 to-purple-600',
+    bgLight: 'bg-violet-50',
+    borderActive: 'border-violet-500'
   },
   { 
     id: 'mobile_service', 
-    name: 'Mobile service provider', 
+    name: 'Mobile Service Provider', 
     description: 'You travel to client locations to provide services',
-    icon: 'car'
+    icon: MapPin,
+    gradient: 'from-blue-500 to-cyan-600',
+    bgLight: 'bg-blue-50',
+    borderActive: 'border-blue-500'
   },
   { 
     id: 'job_seeker', 
-    name: 'Job seeker', 
+    name: 'Job Seeker', 
     description: 'You are looking for employment opportunities in the industry',
-    icon: 'briefcase'
+    icon: Search,
+    gradient: 'from-emerald-500 to-teal-600',
+    bgLight: 'bg-emerald-50',
+    borderActive: 'border-emerald-500'
   },
 ];
 
 const PROFESSIONAL_TYPES = [
-  { id: 'barber', name: 'Barber', description: 'Specializing in men\'s haircuts, beard trims, and grooming.' },
-  { id: 'hairdresser', name: 'Hairdresser', description: 'Expert in all types of hair styling and treatments.' },
-  { id: 'stylist', name: 'Stylist', description: 'Creative hair design and fashion-forward looks.' },
-  { id: 'colorist', name: 'Colorist', description: 'Specializing in hair coloring and highlighting techniques.' },
-  { id: 'other', name: 'Other', description: 'Other hair care professional services.' },
+  { id: 'barber', name: 'Barber', description: 'Specializing in men\'s haircuts, beard trims, and grooming.', icon: null, customIcon: '/images/icons-barber.png', color: 'text-slate-700', bg: 'bg-slate-100' },
+  { id: 'hairdresser', name: 'Hairdresser', description: 'Expert in all types of hair styling and treatments.', icon: null, customIcon: '/images/icons-hairdresser.png', color: 'text-pink-600', bg: 'bg-pink-100' },
+  { id: 'makeup', name: 'Makeup', description: 'Professional makeup artist for all occasions.', icon: null, customIcon: '/images/icon-makeup.png', color: 'text-rose-600', bg: 'bg-rose-100' },
+  { id: 'nails', name: 'Nails', description: 'Manicure, pedicure, and nail art services.', icon: null, customIcon: '/images/icon-nails.png', color: 'text-purple-600', bg: 'bg-purple-100' },
+  { id: 'massage', name: 'Massage', description: 'Relaxation and therapeutic massage treatments.', icon: null, customIcon: '/images/icon-massage.png', color: 'text-teal-600', bg: 'bg-teal-100' },
 ];
 
 const YEARS_OF_EXPERIENCE = [
-  { id: 'less_than_1', name: 'Less than 1 year', description: 'Just starting out in the industry' },
-  { id: '1_to_3', name: '1-3 years', description: 'Building foundational skills and experience' },
-  { id: '3_to_5', name: '3-5 years', description: 'Established professional with solid experience' },
-  { id: '5_to_10', name: '5-10 years', description: 'Experienced professional with deep expertise' },
-  { id: 'more_than_10', name: '10+ years', description: 'Senior professional with extensive experience' },
+  { id: 'less_than_1', name: 'Less than 1 year', description: 'Just starting out in the industry', icon: Star, color: 'text-gray-500', bg: 'bg-gray-100' },
+  { id: '1_to_3', name: '1-3 years', description: 'Building foundational skills and experience', icon: TrendingUp, color: 'text-blue-500', bg: 'bg-blue-100' },
+  { id: '3_to_5', name: '3-5 years', description: 'Established professional with solid experience', icon: Award, color: 'text-emerald-500', bg: 'bg-emerald-100' },
+  { id: '5_to_10', name: '5-10 years', description: 'Experienced professional with deep expertise', icon: Trophy, color: 'text-amber-500', bg: 'bg-amber-100' },
+  { id: 'more_than_10', name: '10+ years', description: 'Senior professional with extensive experience', icon: Crown, color: 'text-violet-500', bg: 'bg-violet-100' },
 ];
 
 const WORK_LOCATIONS = [
@@ -97,16 +125,16 @@ export default function BusinessOnboarding({ userName, onComplete }) {
   // Determine total steps and step content based on business category
   const getTotalSteps = () => {
     if (businessCategory === 'job_seeker') return 4;
-    return 3; // shop_salon_owner and mobile_service
+    return 3; // salon_owner and mobile_service
   };
   const totalSteps = getTotalSteps();
 
   // Map logical steps to actual step content
-  // For shop_salon_owner: 1=Category, 2=ProfessionalType (services), 3=BusinessHours
+  // For salon_owner: 1=Category, 2=ProfessionalType (services), 3=BusinessHours
   // For mobile_service: 1=Category, 2=ProfessionalType (services), 3=BusinessHours
   // For job_seeker: 1=Category, 2=ProfessionalType, 3=YearsOfExperience, 4=Certificate
   const getStepContent = () => {
-    if (businessCategory === 'shop_salon_owner' || businessCategory === 'mobile_service') {
+    if (businessCategory === 'salon_owner' || businessCategory === 'mobile_service') {
       return {
         1: 'category',
         2: 'professional_type',
@@ -218,7 +246,7 @@ export default function BusinessOnboarding({ userName, onComplete }) {
       };
 
       // Set work location and business hours based on category
-      if (businessCategory === 'shop_salon_owner') {
+      if (businessCategory === 'salon_owner') {
         requestBody.workLocation = 'my_place';
         requestBody.businessHours = businessHours;
       } else if (businessCategory === 'mobile_service') {
@@ -278,26 +306,30 @@ export default function BusinessOnboarding({ userName, onComplete }) {
   };
 
   return (
-    <div className="min-h-[calc(100vh-80px)] flex items-center justify-center py-12 px-4">
+    <div className="min-h-[calc(100vh-80px)] flex items-center justify-center py-8 sm:py-12 px-4">
       <div className="w-full max-w-lg">
         {/* Progress indicator */}
-        <div className="mb-8">
-          <div className="flex items-center justify-center gap-2 mb-4">
+        <div className="mb-6 sm:mb-8">
+          <div className="flex items-center justify-center">
             {Array.from({ length: totalSteps }, (_, i) => i + 1).map((step) => (
               <div key={step} className="flex items-center">
                 <div 
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
+                  className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-300 ${
                     step === currentStep 
-                      ? 'bg-[#D4AF37] text-white' 
+                      ? 'bg-amber-400 text-white ring-4 ring-amber-100' 
                       : step < currentStep 
                         ? 'bg-green-500 text-white' 
-                        : 'bg-gray-200 text-gray-500'
+                        : 'bg-gray-100 text-gray-400 border-2 border-gray-200'
                   }`}
                 >
-                  {step < currentStep ? '✓' : step}
+                  {step < currentStep ? (
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                  ) : step}
                 </div>
                 {step < totalSteps && (
-                  <div className={`w-8 h-1 mx-1 rounded ${
+                  <div className={`w-10 sm:w-14 h-0.5 transition-all duration-300 ${
                     step < currentStep ? 'bg-green-500' : 'bg-gray-200'
                   }`} />
                 )}
@@ -308,7 +340,7 @@ export default function BusinessOnboarding({ userName, onComplete }) {
 
         {/* Step: Business Category */}
         {currentStepContent === 'category' && (
-          <div className="bg-white rounded-2xl shadow-xl p-8">
+          <div className="bg-white rounded-[5px] shadow-2xl shadow-gray-200/50 p-8 border border-gray-100">
             <h2 className="text-2xl font-bold text-gray-900 text-center mb-2">
               Welcome, {displayName}!
             </h2>
@@ -316,29 +348,35 @@ export default function BusinessOnboarding({ userName, onComplete }) {
               What best describes your business?
             </p>
 
-            <div className="space-y-3">
+            <div className="space-y-4">
               {BUSINESS_CATEGORIES.map((category) => {
-                const IconComponent = category.icon === 'store' ? Store : category.icon === 'car' ? Car : Briefcase;
+                const IconComponent = category.icon;
+                const isSelected = businessCategory === category.id;
                 return (
                   <button
                     key={category.id}
                     onClick={() => setBusinessCategory(category.id)}
-                    className={`w-full flex items-start gap-4 p-4 rounded-xl border-2 transition-all text-left ${
-                      businessCategory === category.id 
-                        ? 'border-[#D4AF37] bg-amber-50' 
-                        : 'border-gray-200 hover:border-gray-300 bg-white'
+                    className={`group w-full flex items-center gap-4 p-5 rounded-[5px] border transition-all duration-300 text-left ${
+                      isSelected 
+                        ? 'border-amber-400 bg-white' 
+                        : 'border-gray-100 hover:border-gray-200 bg-white hover:bg-gray-50'
                     }`}
                   >
-                    <div className={`mt-0.5 w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                      businessCategory === category.id 
-                        ? 'bg-[#D4AF37] text-white' 
-                        : 'bg-gray-100 text-gray-500'
-                    }`}>
-                      <IconComponent className="w-5 h-5" />
+                    <div className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 bg-gray-100 group-hover:bg-gray-200 transition-all duration-300">
+                      <IconComponent className="w-7 h-7 text-gray-500 group-hover:text-gray-700" />
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{category.name}</h3>
-                      <p className="text-sm text-gray-500 mt-0.5">{category.description}</p>
+                    <div className="flex-1 min-w-0">
+                      <h3 className={`font-semibold text-lg transition-colors ${
+                        isSelected ? 'text-gray-900' : 'text-gray-700 group-hover:text-gray-900'
+                      }`}>{category.name}</h3>
+                      <p className="text-sm text-gray-500 mt-0.5 line-clamp-2">{category.description}</p>
+                    </div>
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
+                      isSelected 
+                        ? 'bg-amber-400' 
+                        : 'bg-gray-100 group-hover:bg-gray-200'
+                    }`}>
+                      {isSelected && <Check className="w-4 h-4 text-white" />}
                     </div>
                   </button>
                 );
@@ -348,74 +386,83 @@ export default function BusinessOnboarding({ userName, onComplete }) {
             <button
               onClick={handleNext}
               disabled={!canContinue()}
-              className={`w-full mt-8 py-4 rounded-xl font-semibold text-white transition-colors ${
+              className={`w-full mt-6 sm:mt-8 py-3 sm:py-4 rounded-[5px] font-semibold text-white transition-all text-sm sm:text-base ${
                 canContinue() 
-                  ? 'bg-gray-900 hover:bg-gray-800' 
+                  ? 'bg-amber-400 hover:bg-amber-500' 
                   : 'bg-gray-300 cursor-not-allowed'
               }`}
             >
-              CONTINUE
+              Continue
             </button>
           </div>
         )}
 
         {/* Step: Professional Type */}
         {currentStepContent === 'professional_type' && (
-          <div className="bg-white rounded-2xl shadow-xl p-8">
+          <div className="bg-white rounded-[5px] shadow-2xl shadow-gray-200/50 p-8 border border-gray-100">
             <h2 className="text-2xl font-bold text-gray-900 text-center mb-2">
-              What type of professional are you, {displayName}?
+              What's your specialty?
             </h2>
             <p className="text-gray-500 text-center mb-8">
               Select the option that best describes your work
             </p>
 
             <div className="space-y-3">
-              {PROFESSIONAL_TYPES.map((type) => (
-                <button
-                  key={type.id}
-                  onClick={() => setProfessionalType(type.id)}
-                  className={`w-full flex items-start gap-4 p-4 rounded-xl border-2 transition-all text-left ${
-                    professionalType === type.id 
-                      ? 'border-[#D4AF37] bg-amber-50' 
-                      : 'border-gray-200 hover:border-gray-300 bg-white'
-                  }`}
-                >
-                  <div className={`mt-0.5 w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 ${
-                    professionalType === type.id 
-                      ? 'bg-[#D4AF37] text-white' 
-                      : 'bg-gray-100'
-                  }`}>
-                    {professionalType === type.id && (
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">{type.name}</h3>
-                    <p className="text-sm text-gray-500 mt-0.5">{type.description}</p>
-                  </div>
-                </button>
-              ))}
+              {PROFESSIONAL_TYPES.map((type) => {
+                const IconComponent = type.icon;
+                const isSelected = professionalType === type.id;
+                return (
+                  <button
+                    key={type.id}
+                    onClick={() => setProfessionalType(type.id)}
+                    className={`group w-full flex items-center gap-4 p-4 rounded-[5px] border transition-all duration-300 text-left ${
+                      isSelected 
+                        ? 'border-amber-400 bg-white' 
+                        : 'border-gray-100 hover:border-gray-200 bg-white hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 bg-gray-100 group-hover:bg-gray-200 transition-all">
+                      {type.customIcon ? (
+                        <img src={type.customIcon} alt={type.name} className="w-8 h-8" />
+                      ) : (
+                        <IconComponent className="w-6 h-6 text-gray-500 group-hover:text-gray-700" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className={`font-semibold transition-colors ${
+                        isSelected ? 'text-gray-900' : 'text-gray-700 group-hover:text-gray-900'
+                      }`}>{type.name}</h3>
+                      <p className="text-sm text-gray-500 mt-0.5 line-clamp-1">{type.description}</p>
+                    </div>
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
+                      isSelected 
+                        ? 'bg-amber-400' 
+                        : 'bg-gray-100 group-hover:bg-gray-200'
+                    }`}>
+                      {isSelected && <Check className="w-4 h-4 text-white" />}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
 
-            <div className="flex gap-3 mt-8">
+            <div className="flex gap-3 mt-6 sm:mt-8">
               <button
                 onClick={handleBack}
-                className="px-6 py-4 rounded-xl font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
+                className="px-4 sm:px-6 py-3 sm:py-4 rounded-[5px] font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all text-sm sm:text-base"
               >
                 Back
               </button>
               <button
                 onClick={handleNext}
                 disabled={!canContinue()}
-                className={`flex-1 py-4 rounded-xl font-semibold text-white transition-colors ${
+                className={`flex-1 py-3 sm:py-4 rounded-[5px] font-semibold text-white transition-all text-sm sm:text-base ${
                   canContinue() 
-                    ? 'bg-gray-900 hover:bg-gray-800' 
+                    ? 'bg-amber-400 hover:bg-amber-500' 
                     : 'bg-gray-300 cursor-not-allowed'
                 }`}
               >
-                CONTINUE
+                Continue
               </button>
             </div>
           </div>
@@ -423,66 +470,66 @@ export default function BusinessOnboarding({ userName, onComplete }) {
 
         {/* Step: Years of Experience (for job seekers) */}
         {currentStepContent === 'years_of_experience' && (
-          <div className="bg-white rounded-2xl shadow-xl p-8">
-            <div className="flex justify-center mb-4">
-              <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center">
-                <Clock className="w-8 h-8 text-[#D4AF37]" />
-              </div>
-            </div>
+          <div className="bg-white rounded-[5px] shadow-2xl shadow-gray-200/50 p-8 border border-gray-100">
             <h2 className="text-2xl font-bold text-gray-900 text-center mb-2">
-              How many years of experience do you have?
+              How many years of experience?
             </h2>
             <p className="text-gray-500 text-center mb-8">
-              Select your level of experience in the {PROFESSIONAL_TYPES.find(t => t.id === professionalType)?.name || 'selected'} field
+              Select your level of experience as a {PROFESSIONAL_TYPES.find(t => t.id === professionalType)?.name || 'professional'}
             </p>
 
             <div className="space-y-3">
-              {YEARS_OF_EXPERIENCE.map((exp) => (
-                <button
-                  key={exp.id}
-                  onClick={() => setYearsOfExperience(exp.id)}
-                  className={`w-full flex items-start gap-4 p-4 rounded-xl border-2 transition-all text-left ${
-                    yearsOfExperience === exp.id 
-                      ? 'border-[#D4AF37] bg-amber-50' 
-                      : 'border-gray-200 hover:border-gray-300 bg-white'
-                  }`}
-                >
-                  <div className={`mt-0.5 w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 ${
-                    yearsOfExperience === exp.id 
-                      ? 'bg-[#D4AF37] text-white' 
-                      : 'bg-gray-100'
-                  }`}>
-                    {yearsOfExperience === exp.id && (
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">{exp.name}</h3>
-                    <p className="text-sm text-gray-500 mt-0.5">{exp.description}</p>
-                  </div>
-                </button>
-              ))}
+              {YEARS_OF_EXPERIENCE.map((exp) => {
+                const IconComponent = exp.icon;
+                const isSelected = yearsOfExperience === exp.id;
+                return (
+                  <button
+                    key={exp.id}
+                    onClick={() => setYearsOfExperience(exp.id)}
+                    className={`group w-full flex items-center gap-4 p-4 rounded-[5px] border transition-all duration-300 text-left ${
+                      isSelected 
+                        ? 'border-amber-400 bg-white' 
+                        : 'border-gray-100 hover:border-gray-200 bg-white hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 bg-gray-100 group-hover:bg-gray-200 transition-all">
+                      <IconComponent className="w-6 h-6 text-gray-500 group-hover:text-gray-700" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className={`font-semibold transition-colors ${
+                        isSelected ? 'text-gray-900' : 'text-gray-700 group-hover:text-gray-900'
+                      }`}>{exp.name}</h3>
+                      <p className="text-sm text-gray-500 mt-0.5 line-clamp-1">{exp.description}</p>
+                    </div>
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
+                      isSelected 
+                        ? 'bg-amber-400' 
+                        : 'bg-gray-100 group-hover:bg-gray-200'
+                    }`}>
+                      {isSelected && <Check className="w-4 h-4 text-white" />}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
 
-            <div className="flex gap-3 mt-8">
+            <div className="flex gap-3 mt-6 sm:mt-8">
               <button
                 onClick={handleBack}
-                className="px-6 py-4 rounded-xl font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
+                className="px-4 sm:px-6 py-3 sm:py-4 rounded-[5px] font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all text-sm sm:text-base"
               >
                 Back
               </button>
               <button
                 onClick={handleNext}
                 disabled={!canContinue()}
-                className={`flex-1 py-4 rounded-xl font-semibold text-white transition-colors ${
+                className={`flex-1 py-3 sm:py-4 rounded-[5px] font-semibold text-white transition-all text-sm sm:text-base ${
                   canContinue() 
-                    ? 'bg-gray-900 hover:bg-gray-800' 
+                    ? 'bg-amber-400 hover:bg-amber-500' 
                     : 'bg-gray-300 cursor-not-allowed'
                 }`}
               >
-                CONTINUE
+                Continue
               </button>
             </div>
           </div>
@@ -490,12 +537,7 @@ export default function BusinessOnboarding({ userName, onComplete }) {
 
         {/* Step: Certificate/Diploma (for job seekers) */}
         {currentStepContent === 'certificate' && (
-          <div className="bg-white rounded-2xl shadow-xl p-8">
-            <div className="flex justify-center mb-4">
-              <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center">
-                <Award className="w-8 h-8 text-[#D4AF37]" />
-              </div>
-            </div>
+          <div className="bg-white rounded-[5px] shadow-2xl shadow-gray-200/50 p-8 border border-gray-100">
             <h2 className="text-2xl font-bold text-gray-900 text-center mb-2">
               Professional Certification
             </h2>
@@ -503,54 +545,56 @@ export default function BusinessOnboarding({ userName, onComplete }) {
               Do you have a certificate or diploma in {PROFESSIONAL_TYPES.find(t => t.id === professionalType)?.name || 'your profession'}?
             </p>
 
-            <div className="space-y-3">
+            <div className="space-y-4">
               <button
                 onClick={() => setHasCertificate(true)}
-                className={`w-full flex items-start gap-4 p-4 rounded-xl border-2 transition-all text-left ${
+                className={`group w-full flex items-center gap-4 p-5 rounded-[5px] border transition-all duration-300 text-left ${
                   hasCertificate === true 
-                    ? 'border-[#D4AF37] bg-amber-50' 
-                    : 'border-gray-200 hover:border-gray-300 bg-white'
+                    ? 'border-amber-400 bg-white' 
+                    : 'border-gray-100 hover:border-gray-200 bg-white hover:bg-gray-50'
                 }`}
               >
-                <div className={`mt-0.5 w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 ${
-                  hasCertificate === true 
-                    ? 'bg-[#D4AF37] text-white' 
-                    : 'bg-gray-100'
-                }`}>
-                  {hasCertificate === true && (
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
+                <div className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 bg-gray-100 group-hover:bg-gray-200 transition-all">
+                  <Award className="w-7 h-7 text-gray-500 group-hover:text-gray-700" />
                 </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">Yes, I have a certificate or diploma</h3>
-                  <p className="text-sm text-gray-500 mt-0.5">I have formal education or certification in this field</p>
+                <div className="flex-1 min-w-0">
+                  <h3 className={`font-semibold text-lg transition-colors ${
+                    hasCertificate === true ? 'text-gray-900' : 'text-gray-700 group-hover:text-gray-900'
+                  }`}>Yes, I'm certified</h3>
+                  <p className="text-sm text-gray-500 mt-0.5">I have formal education or certification</p>
+                </div>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
+                  hasCertificate === true 
+                    ? 'bg-amber-400' 
+                    : 'bg-gray-100 group-hover:bg-gray-200'
+                }`}>
+                  {hasCertificate === true && <Check className="w-5 h-5 text-white" />}
                 </div>
               </button>
 
               <button
                 onClick={() => setHasCertificate(false)}
-                className={`w-full flex items-start gap-4 p-4 rounded-xl border-2 transition-all text-left ${
+                className={`group w-full flex items-center gap-4 p-5 rounded-[5px] border transition-all duration-300 text-left ${
                   hasCertificate === false 
-                    ? 'border-[#D4AF37] bg-amber-50' 
-                    : 'border-gray-200 hover:border-gray-300 bg-white'
+                    ? 'border-amber-400 bg-white' 
+                    : 'border-gray-100 hover:border-gray-200 bg-white hover:bg-gray-50'
                 }`}
               >
-                <div className={`mt-0.5 w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 ${
-                  hasCertificate === false 
-                    ? 'bg-[#D4AF37] text-white' 
-                    : 'bg-gray-100'
-                }`}>
-                  {hasCertificate === false && (
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
+                <div className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 bg-gray-100 group-hover:bg-gray-200 transition-all">
+                  <UserCircle className="w-7 h-7 text-gray-500 group-hover:text-gray-700" />
                 </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">No, I learned through experience</h3>
-                  <p className="text-sm text-gray-500 mt-0.5">I developed my skills through hands-on training and practice</p>
+                <div className="flex-1 min-w-0">
+                  <h3 className={`font-semibold text-lg transition-colors ${
+                    hasCertificate === false ? 'text-gray-900' : 'text-gray-700 group-hover:text-gray-900'
+                  }`}>No, not yet</h3>
+                  <p className="text-sm text-gray-500 mt-0.5">I learned through experience and practice</p>
+                </div>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
+                  hasCertificate === false 
+                    ? 'bg-amber-400' 
+                    : 'bg-gray-100 group-hover:bg-gray-200'
+                }`}>
+                  {hasCertificate === false && <Check className="w-5 h-5 text-white" />}
                 </div>
               </button>
             </div>
@@ -561,23 +605,23 @@ export default function BusinessOnboarding({ userName, onComplete }) {
               </div>
             )}
 
-            <div className="flex gap-3 mt-8">
+            <div className="flex gap-3 mt-6 sm:mt-8">
               <button
                 onClick={handleBack}
-                className="px-6 py-4 rounded-xl font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
+                className="px-4 sm:px-6 py-3 sm:py-4 rounded-[5px] font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all text-sm sm:text-base"
               >
                 Back
               </button>
               <button
                 onClick={handleSubmit}
                 disabled={!canContinue() || isSubmitting}
-                className={`flex-1 py-4 rounded-xl font-semibold text-white transition-colors ${
+                className={`flex-1 py-3 sm:py-4 rounded-[5px] font-semibold text-white transition-all text-sm sm:text-base ${
                   canContinue() && !isSubmitting 
-                    ? 'bg-gray-900 hover:bg-gray-800' 
+                    ? 'bg-amber-400 hover:bg-amber-500' 
                     : 'bg-gray-300 cursor-not-allowed'
                 }`}
               >
-                {isSubmitting ? 'CREATING...' : 'CREATE ACCOUNT'}
+                {isSubmitting ? 'Creating...' : 'Complete Setup'}
               </button>
             </div>
           </div>
@@ -585,11 +629,11 @@ export default function BusinessOnboarding({ userName, onComplete }) {
 
         {/* Step: Business Hours */}
         {currentStepContent === 'business_hours' && (
-          <div className="bg-white rounded-2xl shadow-xl p-8">
-            <h2 className="text-2xl font-bold text-gray-900 text-center mb-2">
-              Your Business Hours
+          <div className="bg-white rounded-[5px] shadow-2xl shadow-gray-200/50 p-4 sm:p-6 md:p-8 border border-gray-100">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 text-center mb-2">
+              Set Your Schedule
             </h2>
-            <p className="text-gray-500 text-center mb-6">
+            <p className="text-gray-500 text-center mb-6 text-sm sm:text-base">
               When can clients book with you?
             </p>
 
@@ -600,65 +644,70 @@ export default function BusinessOnboarding({ userName, onComplete }) {
                 const isEditing = editingDay === day.id;
 
                 return (
-                  <div key={day.id}>
-                    <div className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50">
+                  <div key={day.id} className="border border-gray-100 rounded-[5px] overflow-hidden">
+                    <div className={`flex items-center justify-between p-3 sm:p-4 transition-all ${
+                      isOpen ? 'bg-amber-50/50' : 'bg-gray-50'
+                    }`}>
                       {/* Toggle and Day Name */}
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 sm:gap-3">
                         <button
                           onClick={() => toggleDayOpen(day.id)}
-                          className={`w-12 h-7 rounded-full transition-colors relative ${
-                            isOpen ? 'bg-green-500' : 'bg-gray-300'
+                          className={`w-10 sm:w-12 h-6 sm:h-7 rounded-full transition-colors relative flex-shrink-0 ${
+                            isOpen ? 'bg-amber-400' : 'bg-gray-300'
                           }`}
                         >
-                          <div className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-transform ${
-                            isOpen ? 'left-6' : 'left-1'
+                          <div className={`absolute top-0.5 sm:top-1 w-5 h-5 rounded-full bg-white shadow transition-transform ${
+                            isOpen ? 'left-4 sm:left-6' : 'left-0.5 sm:left-1'
                           }`} />
                         </button>
-                        <span className="font-medium text-gray-900">{day.name}</span>
+                        <span className={`font-medium text-sm sm:text-base ${isOpen ? 'text-gray-900' : 'text-gray-500'}`}>{day.name}</span>
                       </div>
 
                       {/* Hours or Closed */}
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 sm:gap-2">
                         {isOpen ? (
                           <>
-                            <span className="text-gray-600">
+                            <span className="text-gray-600 text-xs sm:text-sm font-medium hidden xs:inline">
                               {formatTime(dayHours?.openTime)} - {formatTime(dayHours?.closeTime)}
+                            </span>
+                            <span className="text-gray-600 text-xs font-medium xs:hidden">
+                              {dayHours?.openTime} - {dayHours?.closeTime}
                             </span>
                             <button
                               onClick={() => setEditingDay(isEditing ? null : day.id)}
-                              className="p-1 text-gray-400 hover:text-gray-600"
+                              className={`p-1.5 rounded-full transition-all ${isEditing ? 'bg-amber-100 text-amber-600 rotate-90' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
                             >
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-4 h-4 sm:w-5 sm:h-5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                               </svg>
                             </button>
                           </>
                         ) : (
-                          <span className="text-red-500 font-medium">Closed</span>
+                          <span className="text-gray-400 text-xs sm:text-sm font-medium">Closed</span>
                         )}
                       </div>
                     </div>
 
                     {/* Time picker when editing */}
                     {isEditing && isOpen && (
-                      <div className="ml-16 mr-4 mb-2 p-4 bg-gray-50 rounded-xl">
-                        <div className="flex gap-4">
+                      <div className="p-3 sm:p-4 bg-white border-t border-gray-100">
+                        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                           <div className="flex-1">
-                            <label className="block text-sm font-medium text-gray-600 mb-1">Open</label>
+                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Opens at</label>
                             <input
                               type="time"
                               value={dayHours?.openTime || '10:00'}
                               onChange={(e) => updateDayHours(day.id, 'openTime', e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#D4AF37] text-gray-900"
+                              className="w-full px-3 py-2.5 border border-gray-200 rounded-[5px] focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent text-gray-900 bg-white text-sm"
                             />
                           </div>
                           <div className="flex-1">
-                            <label className="block text-sm font-medium text-gray-600 mb-1">Close</label>
+                            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Closes at</label>
                             <input
                               type="time"
                               value={dayHours?.closeTime || '19:00'}
                               onChange={(e) => updateDayHours(day.id, 'closeTime', e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#D4AF37] text-gray-900"
+                              className="w-full px-3 py-2.5 border border-gray-200 rounded-[5px] focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent text-gray-900 bg-white text-sm"
                             />
                           </div>
                         </div>
@@ -670,28 +719,41 @@ export default function BusinessOnboarding({ userName, onComplete }) {
             </div>
 
             {submitError && (
-              <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl">
-                <p className="text-red-700 text-sm">{submitError}</p>
+              <div className="mt-4 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-[5px] flex items-center gap-3">
+                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <svg className="w-3 h-3 sm:w-4 sm:h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
+                <p className="text-red-700 text-xs sm:text-sm font-medium">{submitError}</p>
               </div>
             )}
 
-            <div className="flex gap-3 mt-8">
+            <div className="flex gap-3 mt-6 sm:mt-8">
               <button
                 onClick={handleBack}
-                className="px-6 py-4 rounded-xl font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
+                className="px-4 sm:px-6 py-3 sm:py-4 rounded-[5px] font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all text-sm sm:text-base"
               >
                 Back
               </button>
               <button
                 onClick={handleSubmit}
                 disabled={!canContinue() || isSubmitting}
-                className={`flex-1 py-4 rounded-xl font-semibold text-white transition-colors ${
+                className={`flex-1 py-3 sm:py-4 rounded-[5px] font-semibold text-white transition-all text-sm sm:text-base ${
                   canContinue() && !isSubmitting
-                    ? 'bg-gray-900 hover:bg-gray-800' 
+                    ? 'bg-amber-400 hover:bg-amber-500' 
                     : 'bg-gray-300 cursor-not-allowed'
                 }`}
               >
-                {isSubmitting ? 'Saving...' : 'CREATE ACCOUNT'}
+                {isSubmitting ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Creating...
+                  </span>
+                ) : 'Complete Setup'}
               </button>
             </div>
           </div>

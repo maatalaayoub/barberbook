@@ -7,7 +7,7 @@ async function getCategoryData(supabase, businessInfoId, category) {
   if (!businessInfoId || !category) return null;
   
   const tableMap = {
-    'shop_salon_owner': 'shop_salon_info',
+    'salon_owner': 'shop_salon_info',
     'mobile_service': 'mobile_service_info',
     'job_seeker': 'job_seeker_info'
   };
@@ -129,7 +129,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Business category is required' }, { status: 400 });
     }
 
-    const validProfessionalTypes = ['barber', 'hairdresser', 'stylist', 'colorist', 'other'];
+    const validProfessionalTypes = ['barber', 'hairdresser', 'makeup', 'nails', 'massage'];
     if (!validProfessionalTypes.includes(professionalType)) {
       console.error('[onboarding POST] Invalid professionalType:', professionalType);
       return NextResponse.json({ 
@@ -138,7 +138,7 @@ export async function POST(request) {
       }, { status: 400 });
     }
 
-    const validBusinessCategories = ['shop_salon_owner', 'mobile_service', 'job_seeker'];
+    const validBusinessCategories = ['salon_owner', 'mobile_service', 'job_seeker'];
     if (!validBusinessCategories.includes(businessCategory)) {
       console.error('[onboarding POST] Invalid businessCategory:', businessCategory);
       return NextResponse.json({ 
@@ -199,8 +199,8 @@ export async function POST(request) {
     let categoryResult = null;
     let categoryError = null;
 
-    if (businessCategory === 'shop_salon_owner') {
-      // Shop/Salon owner data
+    if (businessCategory === 'salon_owner') {
+      // Salon owner data
       const shopSalonData = {
         business_info_id: businessInfoId,
         business_name: businessName || null,

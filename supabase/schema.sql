@@ -118,8 +118,8 @@ CREATE TRIGGER update_user_profile_updated_at
 CREATE TABLE IF NOT EXISTS business_info (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   user_id UUID REFERENCES users(id) ON DELETE CASCADE UNIQUE,
-  business_category TEXT NOT NULL CHECK (business_category IN ('shop_salon_owner', 'mobile_service', 'job_seeker')),
-  professional_type TEXT NOT NULL CHECK (professional_type IN ('barber', 'hairdresser', 'stylist', 'colorist', 'other')),
+  business_category TEXT NOT NULL CHECK (business_category IN ('salon_owner', 'mobile_service', 'job_seeker')),
+  professional_type TEXT NOT NULL CHECK (professional_type IN ('barber', 'hairdresser', 'makeup', 'nails', 'massage')),
   onboarding_completed BOOLEAN DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -142,7 +142,7 @@ CREATE TRIGGER update_business_info_updated_at
   EXECUTE FUNCTION update_updated_at_column();
 
 -- ============================================
--- SHOP/SALON INFO (for shop_salon_owner category)
+-- SHOP/SALON INFO (for salon_owner category)
 -- ============================================
 -- Physical location business owners
 CREATE TABLE IF NOT EXISTS shop_salon_info (
@@ -263,11 +263,11 @@ CREATE TRIGGER update_job_seeker_info_updated_at
 
 -- -- Step 1: Create the new tables (already done if you ran the schema above)
 
--- -- Step 2: Migrate shop_salon_owner data
+-- -- Step 2: Migrate salon_owner data
 -- INSERT INTO shop_salon_info (business_info_id, work_location, business_hours)
 -- SELECT id, work_location, business_hours
 -- FROM business_info
--- WHERE business_category = 'shop_salon_owner';
+-- WHERE business_category = 'salon_owner';
 
 -- -- Step 3: Migrate mobile_service data
 -- INSERT INTO mobile_service_info (business_info_id, work_location, business_hours)

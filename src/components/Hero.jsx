@@ -4,9 +4,10 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Map, Menu, X, ChevronDown, Globe, User, LayoutDashboard, Settings, Scissors, Home, GraduationCap, ShoppingBag, Briefcase, LogOut } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import ReactCountryFlag from 'react-country-flag';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useUser, SignOutButton, useClerk } from '@clerk/nextjs';
+import { useUser, SignOutButton } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { useRole } from '@/hooks/useRole';
 
@@ -20,7 +21,6 @@ export default function Hero() {
   const { t, locale, changeLanguage } = useLanguage();
   const { isSignedIn, user, isLoaded: isClerkLoaded } = useUser();
   const { role: userRole, isBarber, isLoaded: isRoleLoaded } = useRole();
-  const clerk = useClerk();
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDesktopSideMenuOpen, setIsDesktopSideMenuOpen] = useState(false);
@@ -388,16 +388,14 @@ export default function Hero() {
                 <div className="flex-1 overflow-y-auto">
                   {/* Profile Card */}
                   <div className="p-5">
-                    <div className="rounded-[4px] bg-gradient-to-br from-[#FDF8E8] to-[#F5EED6] border border-[#D4AF37]/20 overflow-hidden">
+                    <div className="rounded-xl bg-white border border-gray-200 overflow-hidden">
                       {/* Profile Info - Clickable */}
-                      <button
-                        onClick={() => {
-                          clerk.openUserProfile();
-                          setIsDesktopSideMenuOpen(false);
-                        }}
-                        className="w-full flex items-center gap-4 p-4 cursor-pointer transition-all hover:bg-[#D4AF37]/5 group"
+                      <Link
+                        href={isBarber ? `/${locale}/business/profile` : `/${locale}/profile`}
+                        onClick={() => setIsDesktopSideMenuOpen(false)}
+                        className="w-full flex items-center gap-4 p-4 cursor-pointer transition-all hover:bg-gray-50 group"
                       >
-                        <div className="w-12 h-12 rounded-[4px] ring-2 ring-[#D4AF37] ring-offset-2 ring-offset-[#FDF8E8] overflow-hidden shrink-0 shadow-md">
+                        <div className="w-12 h-12 rounded-xl ring-2 ring-[#D4AF37] ring-offset-2 ring-offset-white overflow-hidden shrink-0 shadow-md">
                           <img 
                             src={user?.imageUrl} 
                             alt={user?.firstName || 'Profile'} 
@@ -412,12 +410,12 @@ export default function Hero() {
                             {user?.emailAddresses?.[0]?.emailAddress}
                           </p>
                         </div>
-                        <div className="flex items-center justify-center w-7 h-7 rounded-[4px] bg-[#D4AF37]/10 text-[#D4AF37] group-hover:bg-[#D4AF37] group-hover:text-white transition-all shrink-0">
+                        <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-gray-100 text-gray-500 group-hover:bg-[#D4AF37] group-hover:text-white transition-all shrink-0">
                           <ChevronDown className={`h-3.5 w-3.5 ${locale === 'ar' ? 'rotate-90' : '-rotate-90'}`} />
                         </div>
-                      </button>
+                      </Link>
                       {/* Divider */}
-                      <div className="h-px bg-[#D4AF37]/20" />
+                      <div className="h-px bg-gray-200" />
                       {/* Logout Button */}
                       <SignOutButton redirectUrl={`/${locale}`}>
                         <button className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-600 transition-all hover:bg-red-50 hover:text-red-600 group">
@@ -539,17 +537,15 @@ export default function Hero() {
               <div className="rounded-[4px] bg-white shadow-xl border border-gray-100 mb-6 overflow-hidden">
                 {/* Profile Section - Only show when signed in */}
                 {isSignedIn && user && (
-                  <div className="p-4 bg-gradient-to-br from-[#FDF8E8] to-[#F5EED6] border-b border-[#D4AF37]/20">
-                    <div className="rounded-[4px] bg-white/80 border border-[#D4AF37]/20 overflow-hidden">
+                  <div className="p-4 border-b border-gray-200">
+                    <div className="rounded-xl bg-white border border-gray-200 overflow-hidden">
                       {/* Profile Info - Clickable */}
-                      <button
-                        onClick={() => {
-                          clerk.openUserProfile();
-                          setIsMobileMenuOpen(false);
-                        }}
-                        className="w-full flex items-center gap-3 p-3 cursor-pointer transition-all hover:bg-[#D4AF37]/5 group"
+                      <Link
+                        href={isBarber ? `/${locale}/business/profile` : `/${locale}/profile`}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="w-full flex items-center gap-3 p-3 cursor-pointer transition-all hover:bg-gray-50 group"
                       >
-                        <div className="w-10 h-10 rounded-[4px] ring-2 ring-[#D4AF37] ring-offset-1 ring-offset-white overflow-hidden shrink-0 shadow-sm">
+                        <div className="w-10 h-10 rounded-xl ring-2 ring-[#D4AF37] ring-offset-1 ring-offset-white overflow-hidden shrink-0 shadow-sm">
                           <img 
                             src={user?.imageUrl} 
                             alt={user?.firstName || 'Profile'} 
@@ -564,12 +560,12 @@ export default function Hero() {
                             {user?.emailAddresses?.[0]?.emailAddress}
                           </p>
                         </div>
-                        <div className="flex items-center justify-center w-6 h-6 rounded-[4px] bg-[#D4AF37]/10 text-[#D4AF37] group-hover:bg-[#D4AF37] group-hover:text-white transition-all shrink-0">
+                        <div className="flex items-center justify-center w-6 h-6 rounded-lg bg-gray-100 text-gray-500 group-hover:bg-[#D4AF37] group-hover:text-white transition-all shrink-0">
                           <ChevronDown className={`h-3 w-3 ${locale === 'ar' ? 'rotate-90' : '-rotate-90'}`} />
                         </div>
-                      </button>
+                      </Link>
                       {/* Divider */}
-                      <div className="h-px bg-[#D4AF37]/20" />
+                      <div className="h-px bg-gray-200" />
                       {/* Logout Button */}
                       <SignOutButton redirectUrl={`/${locale}`}>
                         <button className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-gray-600 transition-all hover:bg-red-50 hover:text-red-600 group">

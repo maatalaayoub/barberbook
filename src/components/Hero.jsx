@@ -395,7 +395,7 @@ export default function Hero() {
                         onClick={() => setIsDesktopSideMenuOpen(false)}
                         className="w-full flex items-center gap-4 p-4 cursor-pointer transition-all hover:bg-gray-50 group"
                       >
-                        <div className="w-12 h-12 rounded-xl ring-2 ring-[#D4AF37] ring-offset-2 ring-offset-white overflow-hidden shrink-0 shadow-md">
+                        <div className="w-12 h-12 rounded-full ring-2 ring-gray-300 ring-offset-2 ring-offset-white overflow-hidden shrink-0 shadow-md">
                           <img 
                             src={user?.imageUrl} 
                             alt={user?.firstName || 'Profile'} 
@@ -545,7 +545,7 @@ export default function Hero() {
                         onClick={() => setIsMobileMenuOpen(false)}
                         className="w-full flex items-center gap-3 p-3 cursor-pointer transition-all hover:bg-gray-50 group"
                       >
-                        <div className="w-10 h-10 rounded-xl ring-2 ring-[#D4AF37] ring-offset-1 ring-offset-white overflow-hidden shrink-0 shadow-sm">
+                        <div className="w-10 h-10 rounded-full ring-2 ring-gray-300 ring-offset-1 ring-offset-white overflow-hidden shrink-0 shadow-sm">
                           <img 
                             src={user?.imageUrl} 
                             alt={user?.firstName || 'Profile'} 

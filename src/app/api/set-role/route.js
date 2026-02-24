@@ -201,12 +201,9 @@ export async function POST(request) {
 
     console.log('[set-role] User created successfully:', newUser);
 
-    // Create profile record based on role with first_name and last_name
-    const profileTable = role === 'business' ? 'business_profile' : 'user_profile';
-    console.log('[set-role] Creating profile in table:', profileTable);
-    
+    // Create profile record in user_profile (used for all users regardless of role)
     const { error: profileError } = await supabase
-      .from(profileTable)
+      .from('user_profile')
       .insert({
         user_id: newUser.id,
         first_name: firstName,

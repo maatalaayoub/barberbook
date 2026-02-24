@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2, Check } from 'lucide-react';
-import { useUser } from '@clerk/nextjs';
+import { X, Loader2, Check, User, Calendar, ChevronDown, Settings, AtSign, AlertCircle } from 'lucide-react';
+import { useUser, useClerk } from '@clerk/nextjs';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 const genderOptions = [
@@ -17,6 +17,7 @@ const translations = {
     title: 'Edit Profile',
     firstName: 'First Name',
     lastName: 'Last Name',
+    username: 'Username',
     birthday: 'Birthday',
     gender: 'Gender',
     selectGender: 'Select gender',
@@ -25,11 +26,22 @@ const translations = {
     saving: 'Saving...',
     error: 'Failed to update profile. Please try again.',
     success: 'Profile updated successfully!',
+    accountSettings: 'Account Settings',
+    firstNameHint: 'Enter your first name',
+    lastNameHint: 'Enter your last name',
+    usernameHint: 'e.g. john_doe',
+    birthdayHint: 'Your date of birth',
+    usernameAvailable: 'Username is available',
+    usernameTaken: 'Username is already taken',
+    usernameInvalid: '3–20 characters: letters, numbers, or underscores only',
+    usernameChecking: 'Checking availability...',
+    usernameSelf: 'This is your current username',
   },
   ar: {
     title: 'تعديل الملف الشخصي',
     firstName: 'الاسم الأول',
     lastName: 'اسم العائلة',
+    username: 'اسم المستخدم',
     birthday: 'تاريخ الميلاد',
     gender: 'الجنس',
     selectGender: 'اختر الجنس',
@@ -38,11 +50,22 @@ const translations = {
     saving: 'جاري الحفظ...',
     error: 'فشل تحديث الملف الشخصي. يرجى المحاولة مرة أخرى.',
     success: 'تم تحديث الملف الشخصي بنجاح!',
+    accountSettings: 'إعدادات الحساب',
+    firstNameHint: 'أدخل اسمك الأول',
+    lastNameHint: 'أدخل اسم عائلتك',
+    usernameHint: 'مثال: john_doe',
+    birthdayHint: 'تاريخ ميلادك',
+    usernameAvailable: 'اسم المستخدم متاح',
+    usernameTaken: 'اسم المستخدم مأخوذ بالفعل',
+    usernameInvalid: '3–20 حرفًا: حروف وأرقام وشرطات سفلية فقط',
+    usernameChecking: 'جاري التحقق من التوفر...',
+    usernameSelf: 'هذا هو اسم مستخدمك الحالي',
   },
   fr: {
     title: 'Modifier le profil',
     firstName: 'Prénom',
     lastName: 'Nom',
+    username: "Nom d'utilisateur",
     birthday: 'Date de naissance',
     gender: 'Genre',
     selectGender: 'Sélectionner',
@@ -51,22 +74,38 @@ const translations = {
     saving: 'Enregistrement...',
     error: 'Échec de la mise à jour du profil. Veuillez réessayer.',
     success: 'Profil mis à jour avec succès!',
+    accountSettings: 'Paramètres du compte',
+    firstNameHint: 'Entrez votre prénom',
+    lastNameHint: 'Entrez votre nom de famille',
+    usernameHint: 'ex: john_doe',
+    birthdayHint: 'Votre date de naissance',
+    usernameAvailable: "Nom d'utilisateur disponible",
+    usernameTaken: "Ce nom d'utilisateur est déjà pris",
+    usernameInvalid: '3–20 caractères : lettres, chiffres ou underscores uniquement',
+    usernameChecking: 'Vérification de la disponibilité...',
+    usernameSelf: "C'est votre nom d'utilisateur actuel",
   },
 };
 
 export default function EditProfileDialog({ isOpen, onClose }) {
   const { user } = useUser();
+  const { openUserProfile } = useClerk();
   const { isRTL, language } = useLanguage();
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  
+
+  // username availability state
+  const [usernameStatus, setUsernameStatus] = useState(null); // null|'checking'|'available'|'taken'|'invalid'|'self'
+  const debounceRef = useRef(null);
+
   const labels = translations[language] || translations.en;
-  
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
+    username: '',
     birthday: '',
     gender: '',
   });
@@ -75,10 +114,11 @@ export default function EditProfileDialog({ isOpen, onClose }) {
   useEffect(() => {
     const fetchProfileData = async () => {
       if (!isOpen || !user) return;
-      
+
       setIsFetching(true);
       setError('');
-      
+      setUsernameStatus(null);
+
       try {
         const response = await fetch('/api/user-profile');
         if (response.ok) {
@@ -86,24 +126,25 @@ export default function EditProfileDialog({ isOpen, onClose }) {
           setFormData({
             firstName: data.firstName || user.firstName || '',
             lastName: data.lastName || user.lastName || '',
+            username: data.username || '',
             birthday: data.birthday || '',
             gender: data.gender || '',
           });
         } else {
-          // Fallback to Clerk data
           setFormData({
             firstName: user.firstName || '',
             lastName: user.lastName || '',
+            username: '',
             birthday: '',
             gender: '',
           });
         }
       } catch (err) {
         console.error('Error fetching profile:', err);
-        // Fallback to Clerk data
         setFormData({
           firstName: user.firstName || '',
           lastName: user.lastName || '',
+          username: '',
           birthday: '',
           gender: '',
         });
@@ -115,13 +156,33 @@ export default function EditProfileDialog({ isOpen, onClose }) {
     fetchProfileData();
   }, [isOpen, user]);
 
+  const checkUsername = useCallback(async (value) => {
+    const trimmed = value.trim().toLowerCase();
+    if (!trimmed) { setUsernameStatus(null); return; }
+    if (!/^[a-z0-9_]{3,20}$/.test(trimmed)) { setUsernameStatus('invalid'); return; }
+    setUsernameStatus('checking');
+    try {
+      const res = await fetch(`/api/check-username?username=${encodeURIComponent(trimmed)}`);
+      const data = await res.json();
+      if (data.self) setUsernameStatus('self');
+      else if (data.available) setUsernameStatus('available');
+      else setUsernameStatus('taken');
+    } catch { setUsernameStatus(null); }
+  }, []);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    if (name === 'username') {
+      setUsernameStatus(null);
+      clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => checkUsername(value), 500);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (usernameStatus === 'taken' || usernameStatus === 'invalid') return;
     setIsLoading(true);
     setError('');
     setSuccess(false);
@@ -142,13 +203,15 @@ export default function EditProfileDialog({ isOpen, onClose }) {
         body: JSON.stringify({
           firstName: formData.firstName,
           lastName: formData.lastName,
+          username: formData.username || undefined,
           birthday: formData.birthday || null,
           gender: formData.gender || null,
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update profile in database');
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to update profile in database');
       }
 
       setSuccess(true);
@@ -158,7 +221,7 @@ export default function EditProfileDialog({ isOpen, onClose }) {
       }, 1500);
     } catch (err) {
       console.error('Error updating profile:', err);
-      setError(labels.error);
+      setError(err.message || labels.error);
     } finally {
       setIsLoading(false);
     }
@@ -168,6 +231,29 @@ export default function EditProfileDialog({ isOpen, onClose }) {
     if (language === 'ar') return option.labelAr;
     if (language === 'fr') return option.labelFr;
     return option.labelEn;
+  };
+
+  const inputBorderForUsername = () => {
+    if (usernameStatus === 'available' || usernameStatus === 'self') return 'border-green-400 ring-1 ring-green-400';
+    if (usernameStatus === 'taken' || usernameStatus === 'invalid') return 'border-red-400 ring-1 ring-red-400';
+    return 'border-gray-200 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]';
+  };
+
+  const renderUsernameFeedback = () => {
+    if (!usernameStatus) return null;
+    const configs = {
+      checking: { color: 'text-gray-400', icon: <Loader2 className="h-3.5 w-3.5 animate-spin" />, text: labels.usernameChecking },
+      available: { color: 'text-green-600', icon: <Check className="h-3.5 w-3.5" />, text: labels.usernameAvailable },
+      self: { color: 'text-blue-500', icon: <Check className="h-3.5 w-3.5" />, text: labels.usernameSelf },
+      taken: { color: 'text-red-500', icon: <AlertCircle className="h-3.5 w-3.5" />, text: labels.usernameTaken },
+      invalid: { color: 'text-orange-500', icon: <AlertCircle className="h-3.5 w-3.5" />, text: labels.usernameInvalid },
+    };
+    const cfg = configs[usernameStatus];
+    return (
+      <p className={`flex items-center gap-1 mt-1.5 text-xs ${cfg.color} ${isRTL ? 'flex-row-reverse' : ''}`}>
+        {cfg.icon}{cfg.text}
+      </p>
+    );
   };
 
   return (
@@ -196,7 +282,7 @@ export default function EditProfileDialog({ isOpen, onClose }) {
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="flex items-center justify-between px-5 sm:px-6 py-4 sm:py-5 border-b border-gray-100 shrink-0">
+              <div className={`flex items-center justify-between px-5 sm:px-6 py-4 sm:py-5 border-b border-gray-100 shrink-0 ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <h2 className="text-lg sm:text-xl font-semibold text-gray-900">{labels.title}</h2>
                 <button
                   onClick={onClose}
@@ -209,7 +295,8 @@ export default function EditProfileDialog({ isOpen, onClose }) {
               {/* Form */}
               <form onSubmit={handleSubmit} className="p-5 sm:p-6 overflow-y-auto flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 {error && (
-                  <div className="mb-4 sm:mb-5 p-3 rounded-[5px] bg-red-50 text-red-600 text-sm">
+                  <div className="mb-4 sm:mb-5 p-3 rounded-[5px] bg-red-50 text-red-600 text-sm flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 shrink-0" />
                     {error}
                   </div>
                 )}
@@ -232,13 +319,17 @@ export default function EditProfileDialog({ isOpen, onClose }) {
                     <label className="block text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
                       {labels.firstName}
                     </label>
-                    <input
-                      type="text"
-                      name="firstName"
-                      value={formData.firstName}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2.5 sm:py-3 border border-gray-200 rounded-[5px] text-gray-900 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] outline-none transition-colors text-base"
-                    />
+                    <div className="relative">
+                      <User className={`absolute top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none ${isRTL ? 'right-3.5' : 'left-3.5'}`} />
+                      <input
+                        type="text"
+                        name="firstName"
+                        value={formData.firstName}
+                        onChange={handleChange}
+                        placeholder={labels.firstNameHint}
+                        className={`w-full py-2.5 sm:py-3 border border-gray-200 rounded-[5px] text-gray-900 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] outline-none transition-colors text-base placeholder:text-gray-400 ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'}`}
+                      />
+                    </div>
                   </div>
 
                   {/* Last Name */}
@@ -246,13 +337,40 @@ export default function EditProfileDialog({ isOpen, onClose }) {
                     <label className="block text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
                       {labels.lastName}
                     </label>
-                    <input
-                      type="text"
-                      name="lastName"
-                      value={formData.lastName}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2.5 sm:py-3 border border-gray-200 rounded-[5px] text-gray-900 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] outline-none transition-colors text-base"
-                    />
+                    <div className="relative">
+                      <User className={`absolute top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none ${isRTL ? 'right-3.5' : 'left-3.5'}`} />
+                      <input
+                        type="text"
+                        name="lastName"
+                        value={formData.lastName}
+                        onChange={handleChange}
+                        placeholder={labels.lastNameHint}
+                        className={`w-full py-2.5 sm:py-3 border border-gray-200 rounded-[5px] text-gray-900 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] outline-none transition-colors text-base placeholder:text-gray-400 ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'}`}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Username */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
+                      {labels.username}
+                    </label>
+                    <div className="relative">
+                      <AtSign className={`absolute top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none ${isRTL ? 'right-3.5' : 'left-3.5'}`} />
+                      <input
+                        type="text"
+                        name="username"
+                        value={formData.username}
+                        onChange={handleChange}
+                        placeholder={labels.usernameHint}
+                        autoComplete="off"
+                        autoCorrect="off"
+                        autoCapitalize="none"
+                        spellCheck={false}
+                        className={`w-full py-2.5 sm:py-3 border rounded-[5px] text-gray-900 outline-none transition-colors text-base placeholder:text-gray-400 ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} ${inputBorderForUsername()}`}
+                      />
+                    </div>
+                    {renderUsernameFeedback()}
                   </div>
 
                   {/* Birthday */}
@@ -260,13 +378,17 @@ export default function EditProfileDialog({ isOpen, onClose }) {
                     <label className="block text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
                       {labels.birthday}
                     </label>
-                    <input
-                      type="date"
-                      name="birthday"
-                      value={formData.birthday}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2.5 sm:py-3 border border-gray-200 rounded-[5px] text-gray-900 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] outline-none transition-colors text-base"
-                    />
+                    <div className="relative">
+                      <Calendar className={`absolute top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none ${isRTL ? 'right-3.5' : 'left-3.5'}`} />
+                      <input
+                        type="date"
+                        name="birthday"
+                        value={formData.birthday}
+                        onChange={handleChange}
+                        placeholder={labels.birthdayHint}
+                        className={`w-full py-2.5 sm:py-3 border border-gray-200 rounded-[5px] text-gray-900 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] outline-none transition-colors text-base ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'}`}
+                      />
+                    </div>
                   </div>
 
                   {/* Gender */}
@@ -274,19 +396,22 @@ export default function EditProfileDialog({ isOpen, onClose }) {
                     <label className="block text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
                       {labels.gender}
                     </label>
-                    <select
-                      name="gender"
-                      value={formData.gender}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2.5 sm:py-3 border border-gray-200 rounded-[5px] text-gray-900 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] outline-none transition-colors bg-white cursor-pointer text-base"
-                    >
-                      <option value="">{labels.selectGender}</option>
-                      {genderOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {getGenderLabel(option)}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="relative">
+                      <ChevronDown className={`absolute top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none ${isRTL ? 'left-3.5' : 'right-3.5'}`} />
+                      <select
+                        name="gender"
+                        value={formData.gender}
+                        onChange={handleChange}
+                        className={`w-full py-2.5 sm:py-3 border border-gray-200 rounded-[5px] text-gray-900 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] outline-none transition-colors bg-white cursor-pointer text-base appearance-none ${isRTL ? 'pr-4 pl-10' : 'pl-4 pr-10'}`}
+                      >
+                        <option value="">{labels.selectGender}</option>
+                        {genderOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {getGenderLabel(option)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 </div>
                 )}
@@ -302,7 +427,7 @@ export default function EditProfileDialog({ isOpen, onClose }) {
                   </button>
                   <button
                     type="submit"
-                    disabled={isLoading || isFetching}
+                    disabled={isLoading || isFetching || usernameStatus === 'taken' || usernameStatus === 'invalid' || usernameStatus === 'checking'}
                     className="px-3 sm:px-6 py-2.5 bg-green-500 sm:bg-white border border-green-500 sm:border-gray-300 text-white sm:text-gray-700 rounded-[90px] font-medium transition-all sm:hover:bg-green-500 sm:hover:text-white sm:hover:border-green-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     {isLoading ? (

@@ -52,50 +52,10 @@ CREATE TRIGGER update_users_updated_at
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
--- ============================================
--- BUSINESS PROFILE
--- ============================================
-CREATE TABLE IF NOT EXISTS business_profile (
-  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-  user_id UUID REFERENCES users(id) ON DELETE CASCADE UNIQUE,
-  first_name TEXT,
-  last_name TEXT,
-  business_name TEXT,
-  phone TEXT,
-  address TEXT,
-  city TEXT,
-  bio TEXT,
-  birthday DATE,
-  gender TEXT CHECK (gender IN ('male', 'female', 'prefer_not_to_say')),
-  profile_image_url TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-CREATE INDEX IF NOT EXISTS idx_business_profile_user_id ON business_profile(user_id);
-
-ALTER TABLE business_profile ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Business profiles are viewable by everyone" ON business_profile;
-CREATE POLICY "Business profiles are viewable by everyone"
-  ON business_profile FOR SELECT USING (true);
-
-DROP POLICY IF EXISTS "Allow insert business profile" ON business_profile;
-CREATE POLICY "Allow insert business profile"
-  ON business_profile FOR INSERT WITH CHECK (true);
-
-DROP POLICY IF EXISTS "Allow update business profile" ON business_profile;
-CREATE POLICY "Allow update business profile"
-  ON business_profile FOR UPDATE USING (true) WITH CHECK (true);
-
-DROP TRIGGER IF EXISTS update_business_profile_updated_at ON business_profile;
-CREATE TRIGGER update_business_profile_updated_at
-  BEFORE UPDATE ON business_profile
-  FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at_column();
+DROP TABLE IF EXISTS business_profile CASCADE;
 
 -- ============================================
--- USER PROFILE
+-- USER PROFILE (all users - business and regular)
 -- ============================================
 CREATE TABLE IF NOT EXISTS user_profile (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -105,6 +65,7 @@ CREATE TABLE IF NOT EXISTS user_profile (
   phone TEXT,
   address TEXT,
   city TEXT,
+  bio TEXT,
   birthday DATE,
   gender TEXT CHECK (gender IN ('male', 'female', 'prefer_not_to_say')),
   profile_image_url TEXT,
@@ -359,44 +320,10 @@ CREATE TRIGGER update_users_updated_at
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
--- ============================================
--- BUSINESS PROFILE (for business-specific data)
--- ============================================
-CREATE TABLE IF NOT EXISTS business_profile (
-  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-  user_id UUID REFERENCES users(id) ON DELETE CASCADE UNIQUE,
-  first_name TEXT,
-  last_name TEXT,
-  business_name TEXT,
-  phone TEXT,
-  address TEXT,
-  city TEXT,
-  bio TEXT,
-  birthday DATE,
-  gender TEXT CHECK (gender IN ('male', 'female', 'prefer_not_to_say')),
-  profile_image_url TEXT,
-  is_active BOOLEAN DEFAULT true,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
 
-CREATE INDEX IF NOT EXISTS idx_business_profile_user_id ON business_profile(user_id);
-
-ALTER TABLE business_profile ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Business profiles are viewable by everyone" ON business_profile;
-CREATE POLICY "Business profiles are viewable by everyone"
-  ON business_profile FOR SELECT
-  USING (true);
-
-DROP TRIGGER IF EXISTS update_business_profile_updated_at ON business_profile;
-CREATE TRIGGER update_business_profile_updated_at
-  BEFORE UPDATE ON business_profile
-  FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at_column();
 
 -- ============================================
--- USER PROFILE (for normal users - customers)
+-- USER PROFILE (all users - business and regular)
 -- ============================================
 CREATE TABLE IF NOT EXISTS user_profile (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -406,6 +333,7 @@ CREATE TABLE IF NOT EXISTS user_profile (
   phone TEXT,
   address TEXT,
   city TEXT,
+  bio TEXT,
   birthday DATE,
   gender TEXT CHECK (gender IN ('male', 'female', 'prefer_not_to_say')),
   profile_image_url TEXT,
@@ -423,6 +351,14 @@ DROP POLICY IF EXISTS "Users can view own profile" ON user_profile;
 CREATE POLICY "Users can view own profile"
   ON user_profile FOR SELECT
   USING (true);
+
+DROP POLICY IF EXISTS "Allow insert user profile" ON user_profile;
+CREATE POLICY "Allow insert user profile"
+  ON user_profile FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow update user profile" ON user_profile;
+CREATE POLICY "Allow update user profile"
+  ON user_profile FOR UPDATE USING (true) WITH CHECK (true);
 
 DROP TRIGGER IF EXISTS update_user_profile_updated_at ON user_profile;
 CREATE TRIGGER update_user_profile_updated_at
@@ -641,12 +577,12 @@ BEGIN
   -- Try base username first
   final_username := base_username;
   
-  -- Keep trying with incrementing numbers until we find a unique one
-  WHILE EXISTS (SELECT 1 FROM users WHERE username = final_username) LOOP
-    counter := counter + 1;
-    final_username := base_username || counter::TEXT;
-  END LOOP;
-  
-  RETURN final_username;
+    RETURN final_username;
 END;
 $$ LANGUAGE plpgsql;
+
+-- ============================================
+-- MIGRATIONS (idempotent column additions)
+-- ============================================
+ALTER TABLE user_profile ADD COLUMN IF NOT EXISTS cover_image_url TEXT;
+ALTER TABLE user_profile ADD COLUMN IF NOT EXISTS cover_image_position INTEGER DEFAULT 50;

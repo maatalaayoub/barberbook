@@ -8,14 +8,323 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- ============================================
 -- USERS TABLE
 -- ============================================
+CREATE TABLE IF NOT EXISTS users (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  clerk_id TEXT UNIQUE NOT NULL,
+  email TEXT,
+  username TEXT UNIQUE,
+  role TEXT NOT NULL CHECK (role IN ('user', 'business')),
+  onboarding_completed BOOLEAN DEFAULT false,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_users_clerk_id ON users(clerk_id);
+CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can view own data" ON users;
+CREATE POLICY "Users can view own data"
+  ON users FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Allow insert users" ON users;
+CREATE POLICY "Allow insert users"
+  ON users FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow update users" ON users;
+CREATE POLICY "Allow update users"
+  ON users FOR UPDATE USING (true) WITH CHECK (true);
+
+-- Function to update updated_at timestamp
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS update_users_updated_at ON users;
+CREATE TRIGGER update_users_updated_at
+  BEFORE UPDATE ON users
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================
+-- BUSINESS PROFILE
+-- ============================================
+CREATE TABLE IF NOT EXISTS business_profile (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE UNIQUE,
+  first_name TEXT,
+  last_name TEXT,
+  business_name TEXT,
+  phone TEXT,
+  address TEXT,
+  city TEXT,
+  bio TEXT,
+  birthday DATE,
+  gender TEXT CHECK (gender IN ('male', 'female', 'prefer_not_to_say')),
+  profile_image_url TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_business_profile_user_id ON business_profile(user_id);
+
+ALTER TABLE business_profile ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Business profiles are viewable by everyone" ON business_profile;
+CREATE POLICY "Business profiles are viewable by everyone"
+  ON business_profile FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Allow insert business profile" ON business_profile;
+CREATE POLICY "Allow insert business profile"
+  ON business_profile FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow update business profile" ON business_profile;
+CREATE POLICY "Allow update business profile"
+  ON business_profile FOR UPDATE USING (true) WITH CHECK (true);
+
+DROP TRIGGER IF EXISTS update_business_profile_updated_at ON business_profile;
+CREATE TRIGGER update_business_profile_updated_at
+  BEFORE UPDATE ON business_profile
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================
+-- USER PROFILE
+-- ============================================
+CREATE TABLE IF NOT EXISTS user_profile (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE UNIQUE,
+  first_name TEXT,
+  last_name TEXT,
+  phone TEXT,
+  address TEXT,
+  city TEXT,
+  birthday DATE,
+  gender TEXT CHECK (gender IN ('male', 'female', 'prefer_not_to_say')),
+  profile_image_url TEXT,
+  preferred_language TEXT DEFAULT 'en',
+  notification_enabled BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_profile_user_id ON user_profile(user_id);
+
+ALTER TABLE user_profile ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can view own profile" ON user_profile;
+CREATE POLICY "Users can view own profile"
+  ON user_profile FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Allow insert user profile" ON user_profile;
+CREATE POLICY "Allow insert user profile"
+  ON user_profile FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow update user profile" ON user_profile;
+CREATE POLICY "Allow update user profile"
+  ON user_profile FOR UPDATE USING (true) WITH CHECK (true);
+
+DROP TRIGGER IF EXISTS update_user_profile_updated_at ON user_profile;
+CREATE TRIGGER update_user_profile_updated_at
+  BEFORE UPDATE ON user_profile
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================
+-- BUSINESS INFO (onboarding data)
+-- ============================================
+CREATE TABLE IF NOT EXISTS business_info (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE UNIQUE,
+  business_category TEXT NOT NULL CHECK (business_category IN ('salon_owner', 'mobile_service', 'job_seeker')),
+  professional_type TEXT NOT NULL CHECK (professional_type IN ('barber', 'hairdresser', 'makeup', 'nails', 'massage')),
+  onboarding_completed BOOLEAN DEFAULT false,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_business_info_user_id ON business_info(user_id);
+CREATE INDEX IF NOT EXISTS idx_business_info_category ON business_info(business_category);
+
+ALTER TABLE business_info ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Business info viewable by everyone" ON business_info;
+CREATE POLICY "Business info viewable by everyone"
+  ON business_info FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Allow insert business info" ON business_info;
+CREATE POLICY "Allow insert business info"
+  ON business_info FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow update business info" ON business_info;
+CREATE POLICY "Allow update business info"
+  ON business_info FOR UPDATE USING (true) WITH CHECK (true);
+
+DROP TRIGGER IF EXISTS update_business_info_updated_at ON business_info;
+CREATE TRIGGER update_business_info_updated_at
+  BEFORE UPDATE ON business_info
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================
+-- SHOP/SALON INFO (for salon_owner category)
+-- ============================================
+CREATE TABLE IF NOT EXISTS shop_salon_info (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  business_info_id UUID REFERENCES business_info(id) ON DELETE CASCADE UNIQUE,
+  business_name TEXT,
+  address TEXT,
+  city TEXT,
+  phone TEXT,
+  work_location TEXT CHECK (work_location IN ('my_place', 'client_location', 'both')),
+  business_hours JSONB DEFAULT '[]'::jsonb,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_shop_salon_info_business_info_id ON shop_salon_info(business_info_id);
+
+ALTER TABLE shop_salon_info ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Shop salon info viewable by everyone" ON shop_salon_info;
+CREATE POLICY "Shop salon info viewable by everyone"
+  ON shop_salon_info FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Allow insert shop salon info" ON shop_salon_info;
+CREATE POLICY "Allow insert shop salon info"
+  ON shop_salon_info FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow update shop salon info" ON shop_salon_info;
+CREATE POLICY "Allow update shop salon info"
+  ON shop_salon_info FOR UPDATE USING (true) WITH CHECK (true);
+
+DROP TRIGGER IF EXISTS update_shop_salon_info_updated_at ON shop_salon_info;
+CREATE TRIGGER update_shop_salon_info_updated_at
+  BEFORE UPDATE ON shop_salon_info
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================
+-- MOBILE SERVICE INFO (for mobile_service category)
+-- ============================================
+CREATE TABLE IF NOT EXISTS mobile_service_info (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  business_info_id UUID REFERENCES business_info(id) ON DELETE CASCADE UNIQUE,
+  service_area TEXT,
+  travel_radius_km INTEGER,
+  work_location TEXT CHECK (work_location IN ('my_place', 'client_location', 'both')),
+  business_hours JSONB DEFAULT '[]'::jsonb,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_mobile_service_info_business_info_id ON mobile_service_info(business_info_id);
+
+ALTER TABLE mobile_service_info ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Mobile service info viewable by everyone" ON mobile_service_info;
+CREATE POLICY "Mobile service info viewable by everyone"
+  ON mobile_service_info FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Allow insert mobile service info" ON mobile_service_info;
+CREATE POLICY "Allow insert mobile service info"
+  ON mobile_service_info FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow update mobile service info" ON mobile_service_info;
+CREATE POLICY "Allow update mobile service info"
+  ON mobile_service_info FOR UPDATE USING (true) WITH CHECK (true);
+
+DROP TRIGGER IF EXISTS update_mobile_service_info_updated_at ON mobile_service_info;
+CREATE TRIGGER update_mobile_service_info_updated_at
+  BEFORE UPDATE ON mobile_service_info
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================
+-- JOB SEEKER INFO (for job_seeker category)
+-- ============================================
+CREATE TABLE IF NOT EXISTS job_seeker_info (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  business_info_id UUID REFERENCES business_info(id) ON DELETE CASCADE UNIQUE,
+  years_of_experience TEXT CHECK (years_of_experience IN ('less_than_1', '1_to_3', '3_to_5', '5_to_10', 'more_than_10')),
+  has_certificate BOOLEAN DEFAULT false,
+  preferred_city TEXT,
+  resume_url TEXT,
+  bio TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_job_seeker_info_business_info_id ON job_seeker_info(business_info_id);
+
+ALTER TABLE job_seeker_info ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Job seeker info viewable by everyone" ON job_seeker_info;
+CREATE POLICY "Job seeker info viewable by everyone"
+  ON job_seeker_info FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Allow insert job seeker info" ON job_seeker_info;
+CREATE POLICY "Allow insert job seeker info"
+  ON job_seeker_info FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow update job seeker info" ON job_seeker_info;
+CREATE POLICY "Allow update job seeker info"
+  ON job_seeker_info FOR UPDATE USING (true) WITH CHECK (true);
+
+DROP TRIGGER IF EXISTS update_job_seeker_info_updated_at ON job_seeker_info;
+CREATE TRIGGER update_job_seeker_info_updated_at
+  BEFORE UPDATE ON job_seeker_info
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================
+-- FUNCTION: Generate unique username from name
+-- ============================================
+CREATE OR REPLACE FUNCTION generate_username(first_name TEXT, last_name TEXT)
+RETURNS TEXT AS $$
+DECLARE
+  base_username TEXT;
+  final_username TEXT;
+  counter INTEGER := 0;
+BEGIN
+  base_username := LOWER(COALESCE(first_name, '') || COALESCE(last_name, ''));
+  base_username := REGEXP_REPLACE(base_username, '[^a-z0-9]', '', 'g');
+  IF base_username = '' THEN
+    base_username := 'user';
+  END IF;
+  final_username := base_username;
+  WHILE EXISTS (SELECT 1 FROM users WHERE username = final_username) LOOP
+    counter := counter + 1;
+    final_username := base_username || counter::TEXT;
+  END LOOP;
+  RETURN final_username;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Reload schema cache
+NOTIFY pgrst, 'reload schema';
+
+
+-- Enable UUID extension (usually already enabled)
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- ============================================
+-- USERS TABLE
+-- ============================================
 -- Stores user roles and basic info synced from Clerk
 CREATE TABLE IF NOT EXISTS users (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   clerk_id TEXT UNIQUE NOT NULL,
   email TEXT,
-  first_name TEXT,
-  last_name TEXT,
+  username TEXT UNIQUE,
   role TEXT NOT NULL CHECK (role IN ('user', 'business')),
+  onboarding_completed BOOLEAN DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -23,6 +332,7 @@ CREATE TABLE IF NOT EXISTS users (
 -- Create index for faster lookups by clerk_id
 CREATE INDEX IF NOT EXISTS idx_users_clerk_id ON users(clerk_id);
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 
 -- Enable Row Level Security
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
@@ -54,12 +364,16 @@ CREATE TRIGGER update_users_updated_at
 -- ============================================
 CREATE TABLE IF NOT EXISTS business_profile (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE UNIQUE,
+  first_name TEXT,
+  last_name TEXT,
   business_name TEXT,
   phone TEXT,
   address TEXT,
   city TEXT,
   bio TEXT,
+  birthday DATE,
+  gender TEXT CHECK (gender IN ('male', 'female', 'prefer_not_to_say')),
   profile_image_url TEXT,
   is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -87,9 +401,13 @@ CREATE TRIGGER update_business_profile_updated_at
 CREATE TABLE IF NOT EXISTS user_profile (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   user_id UUID REFERENCES users(id) ON DELETE CASCADE UNIQUE,
+  first_name TEXT,
+  last_name TEXT,
   phone TEXT,
   address TEXT,
   city TEXT,
+  birthday DATE,
+  gender TEXT CHECK (gender IN ('male', 'female', 'prefer_not_to_say')),
   profile_image_url TEXT,
   preferred_language TEXT DEFAULT 'en',
   notification_enabled BOOLEAN DEFAULT true,
@@ -286,3 +604,49 @@ CREATE TRIGGER update_job_seeker_info_updated_at
 -- ALTER TABLE business_info DROP COLUMN IF EXISTS business_hours;
 -- ALTER TABLE business_info DROP COLUMN IF EXISTS years_of_experience;
 -- ALTER TABLE business_info DROP COLUMN IF EXISTS has_certificate;
+
+-- ============================================
+-- MIGRATION: Add new columns for user profile
+-- ============================================
+-- Run these if you already have the tables and need to add the new columns:
+
+-- Add username to users table
+-- ALTER TABLE users ADD COLUMN IF NOT EXISTS username TEXT UNIQUE;
+-- CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+
+-- Add birthday and gender to user_profile table
+-- ALTER TABLE user_profile ADD COLUMN IF NOT EXISTS birthday DATE;
+-- ALTER TABLE user_profile ADD COLUMN IF NOT EXISTS gender TEXT CHECK (gender IN ('male', 'female', 'prefer_not_to_say'));
+
+-- ============================================
+-- FUNCTION: Generate unique username from name
+-- ============================================
+CREATE OR REPLACE FUNCTION generate_username(first_name TEXT, last_name TEXT)
+RETURNS TEXT AS $$
+DECLARE
+  base_username TEXT;
+  final_username TEXT;
+  counter INTEGER := 0;
+BEGIN
+  -- Create base username from first_name and last_name
+  base_username := LOWER(COALESCE(first_name, '') || COALESCE(last_name, ''));
+  -- Remove spaces and special characters
+  base_username := REGEXP_REPLACE(base_username, '[^a-z0-9]', '', 'g');
+  
+  -- If empty, use 'user' as default
+  IF base_username = '' THEN
+    base_username := 'user';
+  END IF;
+  
+  -- Try base username first
+  final_username := base_username;
+  
+  -- Keep trying with incrementing numbers until we find a unique one
+  WHILE EXISTS (SELECT 1 FROM users WHERE username = final_username) LOOP
+    counter := counter + 1;
+    final_username := base_username || counter::TEXT;
+  END LOOP;
+  
+  RETURN final_username;
+END;
+$$ LANGUAGE plpgsql;

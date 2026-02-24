@@ -2,9 +2,30 @@ import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 
-export async function GET() {
+// Helper: get userId either from session or Bearer token
+async function getUserId(request) {
+  const { userId } = await auth();
+  if (userId) return userId;
+  
+  const authHeader = request.headers.get('Authorization');
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.substring(7);
+    try {
+      const { verifyToken } = await import('@clerk/backend');
+      const payload = await verifyToken(token, {
+        secretKey: process.env.CLERK_SECRET_KEY,
+      });
+      if (payload?.sub) return payload.sub;
+    } catch (err) {
+      console.log('[get-role] Bearer token verification failed:', err.message);
+    }
+  }
+  return null;
+}
+
+export async function GET(request) {
   try {
-    const { userId } = await auth();
+    const userId = await getUserId(request);
     
     if (!userId) {
       return NextResponse.json(
@@ -28,7 +49,7 @@ export async function GET() {
     // Get user from Supabase
     const { data: user, error } = await supabase
       .from('users')
-      .select('id, role, email, created_at')
+      .select('id, role, email, onboarding_completed, created_at')
       .eq('clerk_id', userId)
       .single();
 
@@ -36,7 +57,7 @@ export async function GET() {
       if (error.code === 'PGRST116') {
         // No user found - no role assigned yet
         return NextResponse.json(
-          { role: null, hasRole: false },
+          { role: null, hasRole: false, onboardingCompleted: false },
           { status: 200 }
         );
       }
@@ -52,7 +73,8 @@ export async function GET() {
         role: user.role, 
         hasRole: true,
         userId: user.id,
-        email: user.email 
+        email: user.email,
+        onboardingCompleted: user.onboarding_completed || false
       },
       { status: 200 }
     );

@@ -1,49 +1,59 @@
 'use client';
 
-import { useUser } from '@clerk/nextjs';
+import { useUser, useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
 
-/**
- * Custom hook for role-based access control using Supabase
- * @param {Object} options
- * @param {'user' | 'business' | null} options.requiredRole - The role required to access the current page
- * @param {string} options.redirectTo - Where to redirect if role doesn't match
- * @returns {Object} Role information and utilities
- */
 export function useRole({ requiredRole = null, redirectTo = '/' } = {}) {
   const { user, isLoaded: isClerkLoaded, isSignedIn } = useUser();
+  const { getToken } = useAuth();
   const router = useRouter();
   
   const [role, setRole] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [supabaseUserId, setSupabaseUserId] = useState(null);
+  const [onboardingCompleted, setOnboardingCompleted] = useState(false);
+
+  // Helper to get auth headers with token
+  const getAuthHeaders = useCallback(async () => {
+    try {
+      const token = await getToken();
+      return token ? { 'Authorization': `Bearer ${token}` } : {};
+    } catch {
+      return {};
+    }
+  }, [getToken]);
 
   // Fetch role from Supabase
   const fetchRole = useCallback(async () => {
     if (!isSignedIn || !user) {
       setRole(null);
+      setOnboardingCompleted(false);
       setIsLoading(false);
       return;
     }
 
     try {
-      const response = await fetch('/api/get-role');
+      const authHeaders = await getAuthHeaders();
+      const response = await fetch('/api/get-role', { headers: authHeaders });
       const data = await response.json();
       
       if (response.ok) {
         setRole(data.role);
         setSupabaseUserId(data.userId || null);
+        setOnboardingCompleted(data.onboardingCompleted || false);
       } else {
         setRole(null);
+        setOnboardingCompleted(false);
       }
     } catch (error) {
       console.error('Error fetching role:', error);
       setRole(null);
+      setOnboardingCompleted(false);
     } finally {
       setIsLoading(false);
     }
-  }, [isSignedIn, user]);
+  }, [isSignedIn, user, getAuthHeaders]);
 
   useEffect(() => {
     if (isClerkLoaded) {
@@ -53,14 +63,13 @@ export function useRole({ requiredRole = null, redirectTo = '/' } = {}) {
 
   const isUser = role === 'user';
   const isBusiness = role === 'business';
-  const isBarber = role === 'business'; // Alias for backward compatibility
+  const isBarber = role === 'business';
   const hasRole = role !== null;
   const isLoaded = isClerkLoaded && !isLoading;
 
-  // Client-side role enforcement (backup to middleware)
+  // Client-side role enforcement
   useEffect(() => {
     if (!isLoaded) return;
-    
     if (requiredRole && role !== requiredRole) {
       router.push(redirectTo);
     }
@@ -70,9 +79,10 @@ export function useRole({ requiredRole = null, redirectTo = '/' } = {}) {
   const assignRole = useCallback(async (newRole) => {
     console.log('[useRole] assignRole called with:', newRole);
     try {
+      const authHeaders = await getAuthHeaders();
       const response = await fetch('/api/set-role', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders },
         body: JSON.stringify({ role: newRole }),
       });
       
@@ -94,13 +104,11 @@ export function useRole({ requiredRole = null, redirectTo = '/' } = {}) {
         setSupabaseUserId(data.userId || null);
         return { success: true, role: data.role };
       } else {
-        // If role already assigned (403), this is expected - just set the role
         if (response.status === 403 && data.role) {
           console.log('[useRole] Role already assigned:', data.role);
           setRole(data.role);
           return { success: false, error: data.error, role: data.role, alreadyAssigned: true };
         }
-        // Log actual errors
         console.error('[useRole] Error details:', JSON.stringify(data, null, 2));
         return { success: false, error: data.error, details: data.details, code: data.code };
       }
@@ -108,7 +116,7 @@ export function useRole({ requiredRole = null, redirectTo = '/' } = {}) {
       console.error('[useRole] Error assigning role:', error);
       return { success: false, error: 'Network error', details: error.message };
     }
-  }, []);
+  }, [getAuthHeaders]);
 
   // Refetch role data
   const refetch = useCallback(() => {
@@ -120,8 +128,9 @@ export function useRole({ requiredRole = null, redirectTo = '/' } = {}) {
     role,
     isUser,
     isBusiness,
-    isBarber, // Alias for backward compatibility
+    isBarber,
     hasRole,
+    onboardingCompleted,
     isLoaded,
     isLoading,
     isSignedIn,

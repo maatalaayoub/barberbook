@@ -1,23 +1,23 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useUser, useClerk } from '@clerk/nextjs';
+import { useUser } from '@clerk/nextjs';
 import { useParams, useRouter } from 'next/navigation';
 import { Menu, Home } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { ProfileHeader, ProfileSidebar } from '@/components/profile';
+import { ProfileHeader, ProfileSidebar, EditProfileDialog } from '@/components/profile';
 
 export default function UserProfilePage() {
   const params = useParams();
   const router = useRouter();
   const locale = params.locale || 'en';
   const { user, isLoaded, isSignedIn } = useUser();
-  const clerk = useClerk();
   const { t, isRTL } = useLanguage();
   
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [profileData, setProfileData] = useState({
     coverImage: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=1200&h=400&fit=crop',
     bio: '',
@@ -46,7 +46,7 @@ export default function UserProfilePage() {
   }
 
   const handleEditProfile = () => {
-    clerk.openUserProfile();
+    setIsEditProfileOpen(true);
   };
 
   return (
@@ -104,7 +104,11 @@ export default function UserProfilePage() {
         onEditProfilePicture={handleEditProfile}
       />
 
-
+      {/* Edit Profile Dialog */}
+      <EditProfileDialog 
+        isOpen={isEditProfileOpen} 
+        onClose={() => setIsEditProfileOpen(false)} 
+      />
     </div>
   );
 }

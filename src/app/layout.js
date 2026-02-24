@@ -53,6 +53,10 @@ export default function RootLayout({ children }) {
             right: '1rem',
             left: 'auto',
           },
+          // Hide profile photo, username, and "Update profile" from Clerk settings
+          profileSection__profile: {
+            display: 'none',
+          },
         },
       }}
     >

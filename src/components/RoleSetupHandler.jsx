@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useSearchParams, useParams, useRouter, usePathname } from 'next/navigation';
 import { useRole } from '@/hooks/useRole';
 
@@ -23,12 +23,19 @@ export default function RoleSetupHandler() {
   const pathname = usePathname();
   const locale = params.locale || 'en';
   const [setupComplete, setSetupComplete] = useState(false);
+  const setupAttempted = useRef(false);
 
   useEffect(() => {
     async function handleRoleSetup() {
       const setupParam = searchParams.get('setup');
       
-      console.log('[RoleSetupHandler] State:', { setupParam, isLoaded, isSignedIn, hasRole, role, pathname });
+      console.log('[RoleSetupHandler] State:', { setupParam, isLoaded, isSignedIn, hasRole, role, pathname, setupAttempted: setupAttempted.current });
+      
+      // Already completed or attempted in this session
+      if (setupComplete || setupAttempted.current) {
+        console.log('[RoleSetupHandler] Setup already attempted, skipping');
+        return;
+      }
       
       // IMPORTANT: Skip ALL business-related setup - handled by BusinessOnboarding
       if (setupParam === 'business' || pathname?.includes('/business/')) {
@@ -48,14 +55,11 @@ export default function RoleSetupHandler() {
         return;
       }
       
-      // Not signed in - redirect to appropriate sign up
+      // Not signed in - skip processing
+      // IMPORTANT: Don't redirect to sign-up, just wait - the user might have just signed up
+      // and the auth state might not be ready yet
       if (!isSignedIn) {
-        console.log('[RoleSetupHandler] Not signed in, redirecting to sign up');
-        if (setupParam === 'business') {
-          router.push(`/${locale}/auth/business/sign-up`);
-        } else {
-          router.push(`/${locale}/auth/user/sign-up`);
-        }
+        console.log('[RoleSetupHandler] Not signed in yet, waiting for auth...');
         return;
       }
 
@@ -74,11 +78,15 @@ export default function RoleSetupHandler() {
       // Business role is assigned after completing onboarding in BusinessOnboarding component
       if (!hasRole && setupParam === 'user') {
         console.log('[RoleSetupHandler] Assigning role:', setupParam);
+        setupAttempted.current = true;
         
         try {
           const result = await assignRole(setupParam);
           
           if (result.success || result.alreadyAssigned) {
+            // Normal users have onboarding_completed=true set directly in set-role API
+            // No need to call complete-onboarding here
+            
             // Clean URL first
             window.history.replaceState({}, '', `/${locale}`);
             // All users stay on home page after signup
@@ -95,7 +103,7 @@ export default function RoleSetupHandler() {
     }
 
     handleRoleSetup();
-  }, [isLoaded, isSignedIn, hasRole, role, searchParams, locale, assignRole, router]);
+  }, [isLoaded, isSignedIn, hasRole, role, searchParams, locale, assignRole, router, pathname, setupComplete]);
 
   // Don't render anything - role setup happens in the background
   return null;

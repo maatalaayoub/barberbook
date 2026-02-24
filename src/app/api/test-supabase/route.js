@@ -1,9 +1,17 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
+import { headers, cookies } from 'next/headers';
 
 export async function GET() {
   try {
     console.log('[test-supabase] Testing Supabase connection...');
+    
+    // Debug: Check cookies
+    const cookieStore = await cookies();
+    const allCookies = cookieStore.getAll();
+    const clerkCookies = allCookies.filter(c => c.name.includes('clerk') || c.name.includes('__session'));
+    console.log('[test-supabase] Clerk-related cookies:', clerkCookies.map(c => c.name));
     
     // Check environment variables
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -22,6 +30,13 @@ export async function GET() {
         }
       }, { status: 500 });
     }
+
+    // Get current user from Clerk
+    const { userId: clerkUserId } = await auth();
+    const user = await currentUser();
+    
+    console.log('[test-supabase] Clerk userId:', clerkUserId);
+    console.log('[test-supabase] User email:', user?.emailAddresses?.[0]?.emailAddress);
 
     const supabase = createServerSupabaseClient();
 
@@ -43,6 +58,17 @@ export async function GET() {
     }
 
     console.log('[test-supabase] Found', users?.length || 0, 'users');
+    
+    // Check if current Clerk user exists in database
+    let existingDbUser = null;
+    if (clerkUserId) {
+      const { data: dbUser } = await supabase
+        .from('users')
+        .select('*')
+        .eq('clerk_id', clerkUserId)
+        .single();
+      existingDbUser = dbUser;
+    }
 
     // Test 2: Try a test insert (will be rolled back)
     const testClerkId = 'test_' + Date.now();
@@ -88,7 +114,11 @@ export async function GET() {
       canRead: true,
       canInsert: true,
       existingUsers: users?.length || 0,
-      testInsertId: insertedUser.id
+      testInsertId: insertedUser.id,
+      clerkUserId: clerkUserId,
+      clerkCookiesFound: clerkCookies.map(c => c.name),
+      userInDatabase: existingDbUser ? true : false,
+      dbUser: existingDbUser
     });
 
   } catch (error) {

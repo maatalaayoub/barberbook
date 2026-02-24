@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useUser } from '@clerk/nextjs';
+import { useUser, useAuth } from '@clerk/nextjs';
 import { 
   Store, 
   MapPin, 
@@ -106,9 +106,11 @@ const DEFAULT_HOURS = DAYS_OF_WEEK.map(day => ({
 
 export default function BusinessOnboarding({ userName, onComplete }) {
   const { user } = useUser();
+  const { getToken } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
+  const [userCreated, setUserCreated] = useState(false);
   
   // Form data
   const [businessCategory, setBusinessCategory] = useState('');
@@ -121,6 +123,78 @@ export default function BusinessOnboarding({ userName, onComplete }) {
   const [hasCertificate, setHasCertificate] = useState(null);
 
   const displayName = userName || user?.firstName || 'there';
+  
+  // Create user in database immediately when component mounts
+  // With retry mechanism for cases where Clerk session isn't immediately available
+  useEffect(() => {
+    let retryCount = 0;
+    const maxRetries = 5;
+    const retryDelay = 1000; // 1 second
+    
+    async function createUserImmediately() {
+      if (userCreated) return;
+      
+      console.log('[BusinessOnboarding] Creating user in database (attempt', retryCount + 1, ')...');
+      try {
+        // Get Clerk session token to pass explicitly (fixes session sync issues after fresh signup)
+        const token = await getToken();
+        console.log('[BusinessOnboarding] Got Clerk token:', token ? 'yes' : 'NO TOKEN');
+        
+        const response = await fetch('/api/set-role', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify({ role: 'business' }),
+        });
+        
+        const data = await response.json();
+        console.log('[BusinessOnboarding] User creation response:', JSON.stringify(data, null, 2));
+        
+        // Check for auth error (userId is null) - this means session not ready yet
+        if (response.status === 401 && retryCount < maxRetries) {
+          retryCount++;
+          console.log('[BusinessOnboarding] Auth not ready, retrying in', retryDelay, 'ms...');
+          setTimeout(createUserImmediately, retryDelay);
+          return;
+        }
+        
+        if (response.ok) {
+          setUserCreated(true);
+          setSubmitError(null);
+          console.log('[BusinessOnboarding] User created successfully in database');
+        } else if (data.error === 'Role already assigned. Role cannot be changed.') {
+          setUserCreated(true);
+          setSubmitError(null);
+          console.log('[BusinessOnboarding] User already exists in database');
+        } else {
+          console.error('[BusinessOnboarding] Failed to create user:', data);
+          // Show ALL error details
+          const errorParts = [];
+          if (data.error) errorParts.push(data.error);
+          if (data.details) errorParts.push(`Details: ${data.details}`);
+          if (data.code) errorParts.push(`Code: ${data.code}`);
+          if (data.hint) errorParts.push(`Hint: ${data.hint}`);
+          setSubmitError(errorParts.join(' | ') || 'Unknown error creating user');
+        }
+      } catch (error) {
+        console.error('[BusinessOnboarding] Network error creating user:', error);
+        if (retryCount < maxRetries) {
+          retryCount++;
+          console.log('[BusinessOnboarding] Network error, retrying in', retryDelay, 'ms...');
+          setTimeout(createUserImmediately, retryDelay);
+          return;
+        }
+        setSubmitError(`Network error: ${error.message}`);
+      }
+    }
+    
+    // Initial delay to allow Clerk session to establish
+    const initialDelay = setTimeout(createUserImmediately, 500);
+    
+    return () => clearTimeout(initialDelay);
+  }, [userCreated]);
   
   // Determine total steps and step content based on business category
   const getTotalSteps = () => {
@@ -217,26 +291,11 @@ export default function BusinessOnboarding({ userName, onComplete }) {
     }
     
     try {
-      // First, assign the business role
-      console.log('[BusinessOnboarding] Assigning business role...');
-      const roleResponse = await fetch('/api/set-role', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role: 'business' }),
-      });
-
-      const roleData = await roleResponse.json();
-      console.log('[BusinessOnboarding] Role response:', JSON.stringify({ ok: roleResponse.ok, status: roleResponse.status, data: roleData }));
+      // User is already created on mount, so just save onboarding data
+      console.log('[BusinessOnboarding] User already created, saving onboarding data...');
       
-      if (!roleResponse.ok) {
-        // If role already assigned, continue (user might be retrying)
-        if (roleData.error !== 'Role already assigned. Role cannot be changed.') {
-          console.error('[BusinessOnboarding] Failed to assign role:', roleData.error);
-          setSubmitError(roleData.error || 'Failed to assign role');
-          return;
-        }
-        console.log('[BusinessOnboarding] Role already assigned, continuing...');
-      }
+      // Get token for auth
+      const token = await getToken();
 
       // Build request body based on business category
       const requestBody = {
@@ -261,7 +320,10 @@ export default function BusinessOnboarding({ userName, onComplete }) {
       console.log('[BusinessOnboarding] Saving onboarding data:', requestBody);
       const response = await fetch('/api/business/onboarding', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
         body: JSON.stringify(requestBody),
       });
 
@@ -280,6 +342,17 @@ export default function BusinessOnboarding({ userName, onComplete }) {
       console.log('[BusinessOnboarding] Onboarding response:', JSON.stringify({ ok: response.ok, status: response.status, data: responseData }));
       
       if (response.ok) {
+        // Mark onboarding as completed in users table
+        try {
+          await fetch('/api/complete-onboarding', { 
+            method: 'POST',
+            headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+          });
+          console.log('[BusinessOnboarding] Onboarding marked as completed');
+        } catch (err) {
+          console.error('[BusinessOnboarding] Failed to mark onboarding complete:', err);
+        }
+        
         // Dispatch event for layout to show sidebar
         window.dispatchEvent(new Event('onboarding-complete'));
         onComplete?.();

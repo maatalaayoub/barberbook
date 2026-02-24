@@ -1,14 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useUser, useClerk } from '@clerk/nextjs';
+import { useUser } from '@clerk/nextjs';
 import { useParams, useRouter } from 'next/navigation';
 import { Menu, Home } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useRole } from '@/hooks/useRole';
-import { ProfileHeader, ProfileSidebar } from '@/components/profile';
+import { ProfileHeader, ProfileSidebar, EditProfileDialog } from '@/components/profile';
 
 export default function BusinessProfilePage() {
   const params = useParams();
@@ -16,12 +16,12 @@ export default function BusinessProfilePage() {
   const locale = params.locale || 'en';
   const { user, isLoaded: isUserLoaded, isSignedIn } = useUser();
   const { isBarber, isLoaded: isRoleLoaded } = useRole();
-  const clerk = useClerk();
   const { t, isRTL } = useLanguage();
   
   const isLoaded = isUserLoaded && isRoleLoaded;
   
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [profileData, setProfileData] = useState({
     coverImage: 'https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?w=1200&h=400&fit=crop',
     businessName: 'Premium Barbershop',
@@ -61,7 +61,7 @@ export default function BusinessProfilePage() {
   }
 
   const handleEditProfile = () => {
-    clerk.openUserProfile();
+    setIsEditProfileOpen(true);
   };
 
   return (
@@ -120,7 +120,11 @@ export default function BusinessProfilePage() {
         onEditProfilePicture={handleEditProfile}
       />
 
-
+      {/* Edit Profile Dialog */}
+      <EditProfileDialog 
+        isOpen={isEditProfileOpen} 
+        onClose={() => setIsEditProfileOpen(false)} 
+      />
     </div>
   );
 }

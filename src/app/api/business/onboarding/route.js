@@ -2,6 +2,27 @@ import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 
+// Helper: get userId either from session or Bearer token
+async function getUserId(request) {
+  const { userId } = await auth();
+  if (userId) return userId;
+  
+  const authHeader = request.headers.get('Authorization');
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.substring(7);
+    try {
+      const { verifyToken } = await import('@clerk/backend');
+      const payload = await verifyToken(token, {
+        secretKey: process.env.CLERK_SECRET_KEY,
+      });
+      if (payload?.sub) return payload.sub;
+    } catch (err) {
+      console.log('[business/onboarding] Bearer token verification failed:', err.message);
+    }
+  }
+  return null;
+}
+
 // Helper to get category-specific data
 async function getCategoryData(supabase, businessInfoId, category) {
   if (!businessInfoId || !category) return null;
@@ -25,9 +46,9 @@ async function getCategoryData(supabase, businessInfoId, category) {
 }
 
 // GET - Check onboarding status and get data
-export async function GET() {
+export async function GET(request) {
   try {
-    const { userId } = await auth();
+    const userId = await getUserId(request);
     
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -88,7 +109,7 @@ export async function POST(request) {
   console.log('[onboarding POST] ====== START ======');
   
   try {
-    const { userId } = await auth();
+    const userId = await getUserId(request);
     console.log('[onboarding POST] Clerk userId:', userId);
     
     if (!userId) {

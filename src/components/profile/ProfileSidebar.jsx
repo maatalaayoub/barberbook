@@ -146,49 +146,49 @@ export default function ProfileSidebar({ isOpen, onClose }) {
                 <div className="grid grid-cols-2 gap-3">
                   <Link
                     href={`/${locale}/home-barber`}
-                    className="flex flex-col items-center gap-3 p-4 rounded-xl bg-gray-50 border border-gray-100 text-gray-700 transition-all hover:bg-[#D4AF37]/5 hover:border-[#D4AF37]/30 hover:shadow-sm group"
+                    className="flex flex-col items-center gap-3 p-4 rounded-[7px] bg-white border-2 border-gray-100 text-gray-700 transition-all hover:border-[#D4AF37] group"
                     onClick={onClose}
                   >
-                    <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-white shadow-sm border border-gray-100 group-hover:border-[#D4AF37]/30 group-hover:shadow-md transition-all">
-                      <Home className="h-5 w-5 text-gray-400 group-hover:text-[#D4AF37] transition-colors" />
+                    <div className="flex items-center justify-center w-12 h-12 rounded-[7px] bg-gray-50 group-hover:bg-[#D4AF37]/10 transition-all">
+                      <Home className="h-6 w-6 text-gray-500 group-hover:text-[#D4AF37] transition-colors" strokeWidth={1.5} />
                     </div>
-                    <span className="text-xs font-medium text-center text-gray-600 group-hover:text-gray-900">
+                    <span className="text-sm font-medium text-center text-gray-700 group-hover:text-gray-900">
                       {t('homeBarber') || 'Mobile barber'}
                     </span>
                   </Link>
                   <Link
                     href={`/${locale}/training`}
-                    className="flex flex-col items-center gap-3 p-4 rounded-xl bg-gray-50 border border-gray-100 text-gray-700 transition-all hover:bg-[#D4AF37]/5 hover:border-[#D4AF37]/30 hover:shadow-sm group"
+                    className="flex flex-col items-center gap-3 p-4 rounded-[7px] bg-white border-2 border-gray-100 text-gray-700 transition-all hover:border-[#D4AF37] group"
                     onClick={onClose}
                   >
-                    <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-white shadow-sm border border-gray-100 group-hover:border-[#D4AF37]/30 group-hover:shadow-md transition-all">
-                      <GraduationCap className="h-5 w-5 text-gray-400 group-hover:text-[#D4AF37] transition-colors" />
+                    <div className="flex items-center justify-center w-12 h-12 rounded-[7px] bg-gray-50 group-hover:bg-[#D4AF37]/10 transition-all">
+                      <GraduationCap className="h-6 w-6 text-gray-500 group-hover:text-[#D4AF37] transition-colors" strokeWidth={1.5} />
                     </div>
-                    <span className="text-xs font-medium text-center text-gray-600 group-hover:text-gray-900">
+                    <span className="text-sm font-medium text-center text-gray-700 group-hover:text-gray-900">
                       {t('barberTraining') || 'Learn barbering'}
                     </span>
                   </Link>
                   <Link
                     href={`/${locale}/shop`}
-                    className="flex flex-col items-center gap-3 p-4 rounded-xl bg-gray-50 border border-gray-100 text-gray-700 transition-all hover:bg-[#D4AF37]/5 hover:border-[#D4AF37]/30 hover:shadow-sm group"
+                    className="flex flex-col items-center gap-3 p-4 rounded-[7px] bg-white border-2 border-gray-100 text-gray-700 transition-all hover:border-[#D4AF37] group"
                     onClick={onClose}
                   >
-                    <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-white shadow-sm border border-gray-100 group-hover:border-[#D4AF37]/30 group-hover:shadow-md transition-all">
-                      <ShoppingBag className="h-5 w-5 text-gray-400 group-hover:text-[#D4AF37] transition-colors" />
+                    <div className="flex items-center justify-center w-12 h-12 rounded-[7px] bg-gray-50 group-hover:bg-[#D4AF37]/10 transition-all">
+                      <ShoppingBag className="h-6 w-6 text-gray-500 group-hover:text-[#D4AF37] transition-colors" strokeWidth={1.5} />
                     </div>
-                    <span className="text-xs font-medium text-center text-gray-600 group-hover:text-gray-900">
+                    <span className="text-sm font-medium text-center text-gray-700 group-hover:text-gray-900">
                       {t('shop') || 'Boutique'}
                     </span>
                   </Link>
                   <Link
                     href={`/${locale}/jobs`}
-                    className="flex flex-col items-center gap-3 p-4 rounded-xl bg-gray-50 border border-gray-100 text-gray-700 transition-all hover:bg-[#D4AF37]/5 hover:border-[#D4AF37]/30 hover:shadow-sm group"
+                    className="flex flex-col items-center gap-3 p-4 rounded-[7px] bg-white border-2 border-gray-100 text-gray-700 transition-all hover:border-[#D4AF37] group"
                     onClick={onClose}
                   >
-                    <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-white shadow-sm border border-gray-100 group-hover:border-[#D4AF37]/30 group-hover:shadow-md transition-all">
-                      <Briefcase className="h-5 w-5 text-gray-400 group-hover:text-[#D4AF37] transition-colors" />
+                    <div className="flex items-center justify-center w-12 h-12 rounded-[7px] bg-gray-50 group-hover:bg-[#D4AF37]/10 transition-all">
+                      <Briefcase className="h-6 w-6 text-gray-500 group-hover:text-[#D4AF37] transition-colors" strokeWidth={1.5} />
                     </div>
-                    <span className="text-xs font-medium text-center text-gray-600 group-hover:text-gray-900">
+                    <span className="text-sm font-medium text-center text-gray-700 group-hover:text-gray-900">
                       {t('jobs') || 'Emplois'}
                     </span>
                   </Link>
@@ -200,13 +200,13 @@ export default function ProfileSidebar({ isOpen, onClose }) {
                 <div className="px-5 pb-5">
                   <Link
                     href={`/${locale}/business/dashboard/settings`}
-                    className="flex items-center gap-3 w-full p-4 rounded-xl bg-gray-50 border border-gray-100 text-gray-600 transition-all hover:bg-[#D4AF37]/5 hover:border-[#D4AF37]/30"
+                    className="flex items-center gap-3 w-full px-4 py-3 rounded-[7px] bg-gray-50 text-gray-700 transition-all hover:bg-gray-100 hover:text-gray-900 group"
                     onClick={onClose}
                   >
-                    <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-white shadow-sm border border-gray-100">
-                      <Settings className="h-5 w-5 text-gray-400" />
+                    <div className="flex items-center justify-center w-8 h-8 rounded-[5px] bg-gray-50 group-hover:bg-[#D4AF37]/10 transition-all">
+                      <Settings className="h-5 w-5 text-gray-500 group-hover:text-[#D4AF37] transition-colors" strokeWidth={1.5} />
                     </div>
-                    <span className="font-medium">{t('settings') || 'Settings'}</span>
+                    <span className="font-medium text-sm">{t('settings') || 'Settings'}</span>
                   </Link>
                 </div>
               )}
@@ -224,16 +224,16 @@ export default function ProfileSidebar({ isOpen, onClose }) {
                         setCurrentLang(lang);
                         changeLanguage(lang.code);
                       }}
-                      className={`flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm font-medium transition-all ${
+                      className={`flex flex-1 items-center justify-center gap-2 rounded-[7px] py-2.5 text-sm font-medium border-2 transition-all ${
                         currentLang.code === lang.code 
-                          ? 'bg-[#D4AF37] text-white shadow-md' 
-                          : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700'
+                          ? 'bg-[#D4AF37] border-[#D4AF37] text-white' 
+                          : 'bg-white border-gray-100 text-gray-500 hover:border-gray-200 hover:text-gray-700'
                       }`}
                     >
                       <ReactCountryFlag 
                         countryCode={lang.countryCode} 
                         svg 
-                        style={{ width: '1.3em', height: '1.3em' }}
+                        style={{ width: '1.2em', height: '1.2em' }}
                       />
                       <span>{lang.code.toUpperCase()}</span>
                     </button>

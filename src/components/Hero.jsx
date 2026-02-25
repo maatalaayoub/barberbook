@@ -42,6 +42,38 @@ export default function Hero() {
     console.log('[Hero] Auth state:', { isLoaded, isSignedIn, isBarber, userRole, isRoleLoaded });
   }, [isLoaded, isSignedIn, isBarber, userRole, isRoleLoaded]);
   
+  // Mobile service rotating text state
+  const [mobileServiceIndex, setMobileServiceIndex] = useState(0);
+  const mobileServices = [
+    t('mobileService1') || 'Barbering',
+    t('mobileService2') || 'Hair Styling',
+    t('mobileService3') || 'Beauty',
+  ];
+  
+  // Learn service rotating text state
+  const [learnServiceIndex, setLearnServiceIndex] = useState(0);
+  const learnServices = [
+    t('learnService1') || 'Barbering',
+    t('learnService2') || 'Hair Styling',
+    t('learnService3') || 'Beauty',
+  ];
+  
+  // Mobile service rotation effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setMobileServiceIndex((prev) => (prev + 1) % mobileServices.length);
+    }, 2500);
+    return () => clearInterval(interval);
+  }, [mobileServices.length]);
+  
+  // Learn service rotation effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setLearnServiceIndex((prev) => (prev + 1) % learnServices.length);
+    }, 2500);
+    return () => clearInterval(interval);
+  }, [learnServices.length]);
+  
   // Typewriter effect state
   const [currentSentenceIndex, setCurrentSentenceIndex] = useState(0);
   const [displayedText, setDisplayedText] = useState('');
@@ -432,43 +464,43 @@ export default function Hero() {
                     <div className="grid grid-cols-2 gap-3">
                       <a
                         href={`/${locale}/home-barber`}
-                        className="flex flex-col items-center gap-3 p-4 rounded-[4px] bg-gray-50 border border-gray-100 text-gray-700 transition-all hover:bg-[#D4AF37]/5 hover:border-[#D4AF37]/30 hover:shadow-sm group"
+                        className="flex flex-col items-center gap-3 p-4 rounded-[7px] bg-white border-2 border-gray-100 text-gray-700 transition-all hover:border-[#D4AF37] group"
                         onClick={() => setIsDesktopSideMenuOpen(false)}
                       >
-                        <div className="flex items-center justify-center w-12 h-12 rounded-[4px] bg-white shadow-sm border border-gray-100 group-hover:border-[#D4AF37]/30 group-hover:shadow-md transition-all">
-                          <Home className="h-5 w-5 text-gray-400 group-hover:text-[#D4AF37] transition-colors" />
+                        <div className="flex items-center justify-center w-12 h-12 rounded-[7px] bg-gray-50 group-hover:bg-[#D4AF37]/10 transition-all">
+                          <Home className="h-6 w-6 text-gray-500 group-hover:text-[#D4AF37] transition-colors" strokeWidth={1.5} />
                         </div>
-                        <span className="text-xs font-medium text-center text-gray-600 group-hover:text-gray-900">{t('homeBarber') || 'Mobile barber'}</span>
+                        <span className="text-sm font-medium text-center text-gray-700 group-hover:text-gray-900">{t('homeBarber') || 'Mobile barber'}</span>
                       </a>
                       <a
                         href={`/${locale}/training`}
-                        className="flex flex-col items-center gap-3 p-4 rounded-[4px] bg-gray-50 border border-gray-100 text-gray-700 transition-all hover:bg-[#D4AF37]/5 hover:border-[#D4AF37]/30 hover:shadow-sm group"
+                        className="flex flex-col items-center gap-3 p-4 rounded-[7px] bg-white border-2 border-gray-100 text-gray-700 transition-all hover:border-[#D4AF37] group"
                         onClick={() => setIsDesktopSideMenuOpen(false)}
                       >
-                        <div className="flex items-center justify-center w-12 h-12 rounded-[4px] bg-white shadow-sm border border-gray-100 group-hover:border-[#D4AF37]/30 group-hover:shadow-md transition-all">
-                          <GraduationCap className="h-5 w-5 text-gray-400 group-hover:text-[#D4AF37] transition-colors" />
+                        <div className="flex items-center justify-center w-12 h-12 rounded-[7px] bg-gray-50 group-hover:bg-[#D4AF37]/10 transition-all">
+                          <GraduationCap className="h-6 w-6 text-gray-500 group-hover:text-[#D4AF37] transition-colors" strokeWidth={1.5} />
                         </div>
-                        <span className="text-xs font-medium text-center text-gray-600 group-hover:text-gray-900">{t('barberTraining') || 'Learn barbering'}</span>
+                        <span className="text-sm font-medium text-center text-gray-700 group-hover:text-gray-900">{t('barberTraining') || 'Learn barbering'}</span>
                       </a>
                       <a
                         href={`/${locale}/shop`}
-                        className="flex flex-col items-center gap-3 p-4 rounded-[4px] bg-gray-50 border border-gray-100 text-gray-700 transition-all hover:bg-[#D4AF37]/5 hover:border-[#D4AF37]/30 hover:shadow-sm group"
+                        className="flex flex-col items-center gap-3 p-4 rounded-[7px] bg-white border-2 border-gray-100 text-gray-700 transition-all hover:border-[#D4AF37] group"
                         onClick={() => setIsDesktopSideMenuOpen(false)}
                       >
-                        <div className="flex items-center justify-center w-12 h-12 rounded-[4px] bg-white shadow-sm border border-gray-100 group-hover:border-[#D4AF37]/30 group-hover:shadow-md transition-all">
-                          <ShoppingBag className="h-5 w-5 text-gray-400 group-hover:text-[#D4AF37] transition-colors" />
+                        <div className="flex items-center justify-center w-12 h-12 rounded-[7px] bg-gray-50 group-hover:bg-[#D4AF37]/10 transition-all">
+                          <ShoppingBag className="h-6 w-6 text-gray-500 group-hover:text-[#D4AF37] transition-colors" strokeWidth={1.5} />
                         </div>
-                        <span className="text-xs font-medium text-center text-gray-600 group-hover:text-gray-900">{t('shop') || 'Boutique'}</span>
+                        <span className="text-sm font-medium text-center text-gray-700 group-hover:text-gray-900">{t('shop') || 'Boutique'}</span>
                       </a>
                       <a
                         href={`/${locale}/jobs`}
-                        className="flex flex-col items-center gap-3 p-4 rounded-[4px] bg-gray-50 border border-gray-100 text-gray-700 transition-all hover:bg-[#D4AF37]/5 hover:border-[#D4AF37]/30 hover:shadow-sm group"
+                        className="flex flex-col items-center gap-3 p-4 rounded-[7px] bg-white border-2 border-gray-100 text-gray-700 transition-all hover:border-[#D4AF37] group"
                         onClick={() => setIsDesktopSideMenuOpen(false)}
                       >
-                        <div className="flex items-center justify-center w-12 h-12 rounded-[4px] bg-white shadow-sm border border-gray-100 group-hover:border-[#D4AF37]/30 group-hover:shadow-md transition-all">
-                          <Briefcase className="h-5 w-5 text-gray-400 group-hover:text-[#D4AF37] transition-colors" />
+                        <div className="flex items-center justify-center w-12 h-12 rounded-[7px] bg-gray-50 group-hover:bg-[#D4AF37]/10 transition-all">
+                          <Briefcase className="h-6 w-6 text-gray-500 group-hover:text-[#D4AF37] transition-colors" strokeWidth={1.5} />
                         </div>
-                        <span className="text-xs font-medium text-center text-gray-600 group-hover:text-gray-900">{t('jobs') || 'Emplois'}</span>
+                        <span className="text-sm font-medium text-center text-gray-700 group-hover:text-gray-900">{t('jobs') || 'Emplois'}</span>
                       </a>
                     </div>
                   </div>
@@ -478,13 +510,13 @@ export default function Hero() {
                     <div className="px-5 pb-5">
                       <a
                         href={`/${locale}/business/dashboard/settings`}
-                        className="flex items-center gap-3 w-full p-4 rounded-[4px] bg-gray-50 border border-gray-100 text-gray-600 transition-all hover:bg-[#D4AF37]/5 hover:border-[#D4AF37]/30"
+                        className="flex items-center gap-3 w-full px-4 py-3 rounded-[7px] bg-gray-50 text-gray-700 transition-all hover:bg-gray-100 hover:text-gray-900 group"
                         onClick={() => setIsDesktopSideMenuOpen(false)}
                       >
-                        <div className="flex items-center justify-center w-10 h-10 rounded-[4px] bg-white shadow-sm border border-gray-100">
-                          <Settings className="h-5 w-5 text-gray-400" />
+                        <div className="flex items-center justify-center w-8 h-8 rounded-[5px] bg-gray-50 group-hover:bg-[#D4AF37]/10 transition-all">
+                          <Settings className="h-5 w-5 text-gray-500 group-hover:text-[#D4AF37] transition-colors" strokeWidth={1.5} />
                         </div>
-                        <span className="font-medium">{t('settings') || 'Settings'}</span>
+                        <span className="font-medium text-sm">{t('settings') || 'Settings'}</span>
                       </a>
                     </div>
                   )}
@@ -500,16 +532,16 @@ export default function Hero() {
                             setCurrentLang(lang);
                             changeLanguage(lang.code);
                           }}
-                          className={`flex flex-1 items-center justify-center gap-2 rounded-[4px] py-3 text-sm font-medium transition-all ${
+                          className={`flex flex-1 items-center justify-center gap-2 rounded-[7px] py-2.5 text-sm font-medium border-2 transition-all ${
                             currentLang.code === lang.code 
-                              ? 'bg-[#D4AF37] text-white shadow-md' 
-                              : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700'
+                              ? 'bg-[#D4AF37] border-[#D4AF37] text-white' 
+                              : 'bg-white border-gray-100 text-gray-500 hover:border-gray-200 hover:text-gray-700'
                           }`}
                         >
                           <ReactCountryFlag 
                             countryCode={lang.countryCode} 
                             svg 
-                            style={{ width: '1.3em', height: '1.3em' }}
+                            style={{ width: '1.2em', height: '1.2em' }}
                           />
                           <span>{lang.code.toUpperCase()}</span>
                         </button>
@@ -729,27 +761,29 @@ export default function Hero() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-center max-w-4xl px-2 sm:px-0 w-full"
           >
-            {/* Title container with fixed height */}
-            <div className="h-[6rem] sm:h-[7rem] md:h-[8rem] lg:h-[9rem] flex items-center justify-center mb-10">
-              <h1 className="text-xl font-extrabold leading-tight tracking-tight text-white sm:text-2xl md:text-3xl lg:text-4xl max-w-3xl">
-                {(() => {
-                  const firstSpaceIndex = displayedText.indexOf(' ');
-                  if (firstSpaceIndex === -1) {
-                    // Only one word or typing the first word
-                    return <span className="text-[#D4AF37]">{displayedText}</span>;
-                  }
-                  const firstWord = displayedText.slice(0, firstSpaceIndex);
-                  const restOfText = displayedText.slice(firstSpaceIndex);
-                  return (
-                    <>
-                      <span className="text-[#D4AF37]">{firstWord}</span>
-                      <span className="text-white">{restOfText}</span>
-                    </>
-                  );
-                })()}
-                <span className="animate-pulse text-[#D4AF37]">|</span>
-              </h1>
-            </div>
+            {/* Title container with fixed height - hidden when logged in */}
+            {!isSignedIn && (
+              <div className="h-[6rem] sm:h-[7rem] md:h-[8rem] lg:h-[9rem] flex items-center justify-center mb-10">
+                <h1 className="text-xl font-extrabold leading-tight tracking-tight text-white sm:text-2xl md:text-3xl lg:text-4xl max-w-3xl">
+                  {(() => {
+                    const firstSpaceIndex = displayedText.indexOf(' ');
+                    if (firstSpaceIndex === -1) {
+                      // Only one word or typing the first word
+                      return <span className="text-[#D4AF37]">{displayedText}</span>;
+                    }
+                    const firstWord = displayedText.slice(0, firstSpaceIndex);
+                    const restOfText = displayedText.slice(firstSpaceIndex);
+                    return (
+                      <>
+                        <span className="text-[#D4AF37]">{firstWord}</span>
+                        <span className="text-white">{restOfText}</span>
+                      </>
+                    );
+                  })()}
+                  <span className="animate-pulse text-[#D4AF37]">|</span>
+                </h1>
+              </div>
+            )}
 
             {/* Search Bar */}
             <div className="mx-auto mb-10 max-w-2xl w-full">
@@ -779,34 +813,66 @@ export default function Hero() {
             </div>
 
             {/* Services - Grid on mobile, flex row on desktop */}
-            <div className="mt-8 grid grid-cols-2 gap-2 sm:flex sm:flex-nowrap sm:items-center sm:justify-center sm:gap-3">
+            <div className="mt-8 grid grid-cols-2 gap-2 place-items-center sm:flex sm:flex-nowrap sm:items-center sm:justify-center sm:gap-3">
               <a 
                 href="/mobile-barber" 
-                className="group flex items-center justify-center gap-2 rounded-[5px] bg-white/5 px-3 py-2.5 text-xs sm:text-sm text-gray-300 transition-all hover:bg-[#D4AF37] hover:text-[#0F172A]"
+                className="group inline-flex items-center justify-start gap-1.5 rounded-[5px] bg-white/5 px-3 py-2.5 text-xs sm:text-sm text-gray-300 transition-all hover:bg-[#D4AF37] hover:text-[#0F172A] w-full sm:w-[170px]"
               >
                 <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
                 </svg>
-                <span className="whitespace-nowrap">{t('bookMobileBarber')}</span>
+                <span className="flex items-center whitespace-nowrap">
+                  <span>{t('mobile')}</span>
+                  <span className="relative ml-1 inline-flex overflow-hidden">
+                    <AnimatePresence mode="popLayout">
+                      <motion.span
+                        key={mobileServiceIndex}
+                        initial={{ y: '100%', opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: '-100%', opacity: 0 }}
+                        transition={{ duration: 0.3, ease: 'easeInOut' }}
+                        className="block"
+                      >
+                        {mobileServices[mobileServiceIndex]}
+                      </motion.span>
+                    </AnimatePresence>
+                  </span>
+                </span>
               </a>
               
               <span className="hidden sm:inline text-gray-600">|</span>
               
               <a 
                 href="/learn-barbering" 
-                className="group flex items-center justify-center gap-2 rounded-[5px] bg-white/5 px-3 py-2.5 text-xs sm:text-sm text-gray-300 transition-all hover:bg-[#D4AF37] hover:text-[#0F172A]"
+                className="group inline-flex items-center justify-start gap-1.5 rounded-[5px] bg-white/5 px-3 py-2.5 text-xs sm:text-sm text-gray-300 transition-all hover:bg-[#D4AF37] hover:text-[#0F172A] w-full sm:w-[170px]"
               >
                 <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5" />
                 </svg>
-                <span className="whitespace-nowrap">{t('learnBarbering')}</span>
+                <span className="flex items-center whitespace-nowrap">
+                  <span>{t('learn')}</span>
+                  <span className="relative ml-1 inline-flex overflow-hidden">
+                    <AnimatePresence mode="popLayout">
+                      <motion.span
+                        key={learnServiceIndex}
+                        initial={{ y: '100%', opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: '-100%', opacity: 0 }}
+                        transition={{ duration: 0.3, ease: 'easeInOut' }}
+                        className="block"
+                      >
+                        {learnServices[learnServiceIndex]}
+                      </motion.span>
+                    </AnimatePresence>
+                  </span>
+                </span>
               </a>
               
               <span className="hidden sm:inline text-gray-600">|</span>
               
               <a 
                 href="/shop" 
-                className="group flex items-center justify-center gap-2 rounded-[5px] bg-white/5 px-3 py-2.5 text-xs sm:text-sm text-gray-300 transition-all hover:bg-[#D4AF37] hover:text-[#0F172A]"
+                className="group flex items-center justify-center gap-2 rounded-[5px] bg-white/5 px-3 py-2.5 text-xs sm:text-sm text-gray-300 transition-all hover:bg-[#D4AF37] hover:text-[#0F172A] w-full sm:w-auto"
               >
                 <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
@@ -818,7 +884,7 @@ export default function Hero() {
               
               <a 
                 href="/careers" 
-                className="group flex items-center justify-center gap-2 rounded-[5px] bg-white/5 px-3 py-2.5 text-xs sm:text-sm text-gray-300 transition-all hover:bg-[#D4AF37] hover:text-[#0F172A]"
+                className="group flex items-center justify-center gap-2 rounded-[5px] bg-white/5 px-3 py-2.5 text-xs sm:text-sm text-gray-300 transition-all hover:bg-[#D4AF37] hover:text-[#0F172A] w-full sm:w-auto"
               >
                 <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 14.15v4.25c0 1.094-.787 2.036-1.872 2.18-2.087.277-4.216.42-6.378.42s-4.291-.143-6.378-.42c-1.085-.144-1.872-1.086-1.872-2.18v-4.25m16.5 0a2.18 2.18 0 00.75-1.661V8.706c0-1.081-.768-2.015-1.837-2.175a48.114 48.114 0 00-3.413-.387m4.5 8.006c-.194.165-.42.295-.673.38A23.978 23.978 0 0112 15.75c-2.648 0-5.195-.429-7.577-1.22a2.016 2.016 0 01-.673-.38m0 0A2.18 2.18 0 013 12.489V8.706c0-1.081.768-2.015 1.837-2.175a48.111 48.111 0 013.413-.387m7.5 0V5.25A2.25 2.25 0 0013.5 3h-3a2.25 2.25 0 00-2.25 2.25v.894m7.5 0a48.667 48.667 0 00-7.5 0M12 12.75h.008v.008H12v-.008z" />

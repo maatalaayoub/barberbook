@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2, Check, User, Calendar, ChevronDown, Settings, AtSign, AlertCircle } from 'lucide-react';
+import { X, Loader2, Check, User, Calendar, ChevronDown, Settings, AtSign, AlertCircle, MapPin, Search } from 'lucide-react';
 import { useUser, useClerk } from '@clerk/nextjs';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -10,6 +10,26 @@ const genderOptions = [
   { value: 'male', labelEn: 'Male', labelAr: 'ذكر', labelFr: 'Homme' },
   { value: 'female', labelEn: 'Female', labelAr: 'أنثى', labelFr: 'Femme' },
   { value: 'prefer_not_to_say', labelEn: 'Prefer not to say', labelAr: 'أفضل عدم الإفصاح', labelFr: 'Je préfère ne pas dire' },
+];
+
+const moroccoCities = [
+  'Casablanca', 'Rabat', 'Fès', 'Marrakech', 'Tanger', 'Meknès', 'Agadir',
+  'Oujda', 'Kénitra', 'Tétouan', 'Salé', 'Temara', 'Safi', 'Mohammédia',
+  'Khouribga', 'El Jadida', 'Béni Mellal', 'Nador', 'Taza', 'Settat',
+  'Berrechid', 'Khémisset', 'Inezgane', 'Larache', 'Guelmim', 'Ksar El Kebir',
+  'Taourirt', 'Berkane', 'Sidi Kacem', 'Sidi Slimane', 'Errachidia',
+  'Guercif', 'Ouarzazate', 'Fquih Ben Salah', 'Tiznit', 'Tan-Tan',
+  'Sefrou', 'Ifrane', 'Azrou', 'Essaouira', 'Taroudant', 'Oulad Teima',
+  'Youssoufia', 'Midelt', 'Chefchaouen', 'Al Hoceïma', 'Ben Guerir',
+  'Asilah', 'Azemmour', 'Skhirat', 'Bir Jdid', 'Ouazzane',
+  'Tinghir', 'Zagora', 'Dakhla', 'Laâyoune', 'Boujdour', 'Smara',
+  'Es-Semara', 'Assa', 'Tata', 'Bouarfa', 'Fnideq', 'Martil',
+  'M\'diq', 'Imzouren', 'Driouch', 'Jerada', 'Ain Taoujdate',
+  'Moulay Idriss Zerhoun', 'Missour', 'Azilal', 'Demnate', 'Kasba Tadla',
+  'Souk El Arbaa', 'Mechra Bel Ksiri', 'Sidi Bennour', 'Ait Melloul',
+  'Biougra', 'Chichaoua', 'El Kelaa des Sraghna', 'Ben Slimane',
+  'Bouznika', 'Tifelt', 'Sidi Yahia El Gharb', 'Aïn Harrouda',
+  'Oued Zem', 'Bejaad'
 ];
 
 const translations = {
@@ -36,6 +56,10 @@ const translations = {
     usernameInvalid: '3–20 characters: letters, numbers, or underscores only',
     usernameChecking: 'Checking availability...',
     usernameSelf: 'This is your current username',
+    city: 'City',
+    selectCity: 'Select a city',
+    searchCity: 'Search city...',
+    noResults: 'No city found',
   },
   ar: {
     title: 'تعديل الملف الشخصي',
@@ -60,6 +84,10 @@ const translations = {
     usernameInvalid: '3–20 حرفًا: حروف وأرقام وشرطات سفلية فقط',
     usernameChecking: 'جاري التحقق من التوفر...',
     usernameSelf: 'هذا هو اسم مستخدمك الحالي',
+    city: 'المدينة',
+    selectCity: 'اختر المدينة',
+    searchCity: 'ابحث عن مدينة...',
+    noResults: 'لم يتم العثور على مدينة',
   },
   fr: {
     title: 'Modifier le profil',
@@ -84,6 +112,10 @@ const translations = {
     usernameInvalid: '3–20 caractères : lettres, chiffres ou underscores uniquement',
     usernameChecking: 'Vérification de la disponibilité...',
     usernameSelf: "C'est votre nom d'utilisateur actuel",
+    city: 'Ville',
+    selectCity: 'Sélectionner une ville',
+    searchCity: 'Rechercher une ville...',
+    noResults: 'Aucune ville trouvée',
   },
 };
 
@@ -100,6 +132,12 @@ export default function EditProfileDialog({ isOpen, onClose }) {
   const [usernameStatus, setUsernameStatus] = useState(null); // null|'checking'|'available'|'taken'|'invalid'|'self'
   const debounceRef = useRef(null);
 
+  // city dropdown state
+  const [isCityOpen, setIsCityOpen] = useState(false);
+  const [citySearch, setCitySearch] = useState('');
+  const cityRef = useRef(null);
+  const citySearchRef = useRef(null);
+
   const labels = translations[language] || translations.en;
 
   const [formData, setFormData] = useState({
@@ -108,6 +146,7 @@ export default function EditProfileDialog({ isOpen, onClose }) {
     username: '',
     birthday: '',
     gender: '',
+    city: '',
   });
 
   // Fetch profile data from database when dialog opens
@@ -129,6 +168,7 @@ export default function EditProfileDialog({ isOpen, onClose }) {
             username: data.username || '',
             birthday: data.birthday || '',
             gender: data.gender || '',
+            city: data.city || '',
           });
         } else {
           setFormData({
@@ -137,6 +177,7 @@ export default function EditProfileDialog({ isOpen, onClose }) {
             username: '',
             birthday: '',
             gender: '',
+            city: '',
           });
         }
       } catch (err) {
@@ -147,6 +188,7 @@ export default function EditProfileDialog({ isOpen, onClose }) {
           username: '',
           birthday: '',
           gender: '',
+          city: '',
         });
       } finally {
         setIsFetching(false);
@@ -206,6 +248,7 @@ export default function EditProfileDialog({ isOpen, onClose }) {
           username: formData.username || undefined,
           birthday: formData.birthday || null,
           gender: formData.gender || null,
+          city: formData.city || null,
         }),
       });
 
@@ -226,6 +269,29 @@ export default function EditProfileDialog({ isOpen, onClose }) {
       setIsLoading(false);
     }
   };
+
+  // Close city dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (cityRef.current && !cityRef.current.contains(event.target)) {
+        setIsCityOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Focus search when city dropdown opens
+  useEffect(() => {
+    if (isCityOpen && citySearchRef.current) {
+      setTimeout(() => citySearchRef.current?.focus(), 100);
+    }
+    if (!isCityOpen) setCitySearch('');
+  }, [isCityOpen]);
+
+  const filteredCities = moroccoCities.filter(city =>
+    city.toLowerCase().includes(citySearch.toLowerCase())
+  );
 
   const getGenderLabel = (option) => {
     if (language === 'ar') return option.labelAr;
@@ -389,6 +455,76 @@ export default function EditProfileDialog({ isOpen, onClose }) {
                         className={`w-full py-2.5 sm:py-3 border border-gray-200 rounded-[5px] text-gray-900 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] outline-none transition-colors text-base ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'}`}
                       />
                     </div>
+                  </div>
+
+                  {/* City */}
+                  <div ref={cityRef} className="relative">
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
+                      {labels.city}
+                    </label>
+                    <div className="relative">
+                      <MapPin className={`absolute top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none z-10 ${isRTL ? 'right-3.5' : 'left-3.5'}`} />
+                      <ChevronDown className={`absolute top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none z-10 transition-transform ${isCityOpen ? 'rotate-180' : ''} ${isRTL ? 'left-3.5' : 'right-3.5'}`} />
+                      <button
+                        type="button"
+                        onClick={() => setIsCityOpen(!isCityOpen)}
+                        className={`w-full flex items-center py-2.5 sm:py-3 border border-gray-200 rounded-[5px] text-base focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] outline-none transition-colors bg-white cursor-pointer ${isRTL ? 'pr-10 pl-10' : 'pl-10 pr-10'}`}
+                      >
+                        <span className={formData.city ? 'text-gray-900' : 'text-gray-400'}>
+                          {formData.city || labels.selectCity}
+                        </span>
+                      </button>
+                    </div>
+
+                    <AnimatePresence>
+                      {isCityOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -5 }}
+                          transition={{ duration: 0.15 }}
+                          className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-[5px] shadow-lg overflow-hidden"
+                        >
+                          {/* Search */}
+                          <div className="p-2 border-b border-gray-100">
+                            <div className="relative">
+                              <Search className={`absolute top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 ${isRTL ? 'right-3' : 'left-3'}`} />
+                              <input
+                                ref={citySearchRef}
+                                type="text"
+                                value={citySearch}
+                                onChange={(e) => setCitySearch(e.target.value)}
+                                placeholder={labels.searchCity}
+                                className={`w-full py-2 border border-gray-200 rounded-[5px] text-sm text-gray-900 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] outline-none placeholder:text-gray-400 ${isRTL ? 'pr-9 pl-3' : 'pl-9 pr-3'}`}
+                              />
+                            </div>
+                          </div>
+                          {/* City list */}
+                          <div className="max-h-48 overflow-y-auto">
+                            {filteredCities.length > 0 ? (
+                              filteredCities.map((city) => (
+                                <button
+                                  key={city}
+                                  type="button"
+                                  onClick={() => {
+                                    setFormData(prev => ({ ...prev, city }));
+                                    setIsCityOpen(false);
+                                  }}
+                                  className={`w-full flex items-center gap-2 px-4 py-2.5 text-sm transition-colors hover:bg-gray-50 ${isRTL ? 'text-right' : 'text-left'} ${
+                                    formData.city === city ? 'text-[#D4AF37] bg-[#D4AF37]/5 font-medium' : 'text-gray-700'
+                                  }`}
+                                >
+                                  {formData.city === city && <Check className="h-4 w-4 text-[#D4AF37] shrink-0" />}
+                                  <span>{city}</span>
+                                </button>
+                              ))
+                            ) : (
+                              <div className="px-4 py-3 text-sm text-gray-400 text-center">{labels.noResults}</div>
+                            )}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
 
                   {/* Gender */}

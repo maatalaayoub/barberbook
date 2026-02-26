@@ -200,7 +200,7 @@ export default function Hero() {
         }}
       />
 
-      <div className="relative mx-auto max-w-7xl px-6 sm:px-8 lg:px-8">
+      <div className="relative w-full px-6 sm:px-8 lg:px-8">
         <nav dir="ltr" className="flex items-center justify-between py-6">
           <motion.div 
             initial={{ opacity: 0, x: -20 }}
@@ -234,10 +234,10 @@ export default function Hero() {
             {isLoaded && isSignedIn && isBarber && (
               <a
                 href={dashboardUrl}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] border-2 border-[#D4AF37] bg-gradient-to-br from-[#D4AF37] to-[#F4CF67] text-[#0F172A] shadow-lg shadow-[#D4AF37]/20 transition-all hover:shadow-[#D4AF37]/40 hover:scale-105"
+                className="flex items-center gap-1.5 px-4 py-1.5 rounded-[90px] border border-white bg-transparent text-white transition-all hover:bg-white/10 hover:scale-105"
                 aria-label={t('dashboard') || 'Dashboard'}
               >
-                <Scissors className="h-3.5 w-3.5" />
+                <LayoutDashboard className="h-3.5 w-3.5" />
                 <span className="text-xs font-semibold">{t('dashboard') || 'Dashboard'}</span>
               </a>
             )}
@@ -274,7 +274,7 @@ export default function Hero() {
             )}
             
             {/* Auth Buttons Group */}
-            <div className="flex items-center gap-2 mr-4">
+            <div className="flex items-center gap-6 mr-4">
               {!isLoaded ? (
                 // Loading state
                 <div className="w-24 h-10 bg-gray-800/50 rounded-[15px] animate-pulse" />
@@ -285,13 +285,27 @@ export default function Hero() {
                   {isBarber && (
                     <a 
                       href={dashboardUrl}
-                      className="flex items-center gap-2 px-4 py-2 rounded-[10px] border-2 border-[#D4AF37] bg-gradient-to-br from-[#D4AF37] to-[#F4CF67] text-[#0F172A] shadow-lg shadow-[#D4AF37]/20 transition-all hover:shadow-[#D4AF37]/40 hover:scale-105"
+                      className="flex items-center gap-2 px-5 py-2 rounded-[90px] border border-white bg-transparent text-white transition-all hover:bg-white/10 hover:scale-105"
                       aria-label={t('dashboard') || 'Dashboard'}
                     >
-                      <Scissors className="h-4 w-4" />
+                      <LayoutDashboard className="h-4 w-4" />
                       <span className="text-sm font-semibold">{t('dashboard') || 'Dashboard'}</span>
                     </a>
                   )}
+
+                  {/* Profile Button - Direct Link */}
+                  <Link
+                    href={isBarber ? `/${locale}/business/profile` : `/${locale}/profile`}
+                    className="relative flex items-center justify-center p-0.5 rounded-full border-2 border-white/20 transition-all hover:border-[#D4AF37] hover:shadow-[0_0_15px_rgba(212,175,55,0.3)] focus:outline-none"
+                  >
+                    <div className="h-10 w-10 rounded-full overflow-hidden bg-gray-800">
+                      <img 
+                        src={user?.imageUrl} 
+                        alt={user?.firstName || 'Profile'} 
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                  </Link>
                   {/* Drawer icon - Show only for Arabic (RTL) on right side */}
                   {locale === 'ar' && (
                     <button

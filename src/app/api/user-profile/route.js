@@ -85,7 +85,7 @@ export async function PUT(request) {
     }
 
     const body = await request.json();
-    const { firstName, lastName, birthday, gender, username, coverImageUrl, coverImagePosition } = body;
+    const { firstName, lastName, birthday, gender, username, coverImageUrl, coverImagePosition, city } = body;
 
     const supabase = createServerSupabaseClient();
 
@@ -146,6 +146,7 @@ export async function PUT(request) {
     if (lastName !== undefined) profileData.last_name = lastName;
     if (birthday !== undefined) profileData.birthday = birthday || null;
     if (gender !== undefined) profileData.gender = gender || null;
+    if (city !== undefined) profileData.city = city || null;
     if (coverImageUrl !== undefined) profileData.cover_image_url = coverImageUrl; // null = delete
     if (coverImagePosition !== undefined) profileData.cover_image_position = coverImagePosition;
 

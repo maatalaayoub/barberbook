@@ -40,10 +40,26 @@ export default function UserProfilePage() {
           ...prev,
           coverImage: data.coverImageUrl || null,
           coverPosition: data.coverImagePosition ?? 50,
+          location: data.city || '',
         }));
       })
       .catch(() => {});
   }, [isLoaded, isSignedIn]);
+
+  // Refresh profile data after editing
+  const refreshProfile = () => {
+    fetch('/api/user-profile')
+      .then(r => r.json())
+      .then(data => {
+        setProfileData(prev => ({
+          ...prev,
+          coverImage: data.coverImageUrl || null,
+          coverPosition: data.coverImagePosition ?? 50,
+          location: data.city || '',
+        }));
+      })
+      .catch(() => {});
+  };
 
   // Show loading state
   if (!isLoaded) {
@@ -93,7 +109,10 @@ export default function UserProfilePage() {
       {/* Edit Profile Dialog */}
       <EditProfileDialog 
         isOpen={isEditProfileOpen} 
-        onClose={() => setIsEditProfileOpen(false)} 
+        onClose={() => {
+          setIsEditProfileOpen(false);
+          refreshProfile();
+        }} 
       />
     </div>
   );

@@ -62,7 +62,7 @@ export default function Hero() {
   useEffect(() => {
     const interval = setInterval(() => {
       setMobileServiceIndex((prev) => (prev + 1) % mobileServices.length);
-    }, 2500);
+    }, 4000);
     return () => clearInterval(interval);
   }, [mobileServices.length]);
   
@@ -70,7 +70,7 @@ export default function Hero() {
   useEffect(() => {
     const interval = setInterval(() => {
       setLearnServiceIndex((prev) => (prev + 1) % learnServices.length);
-    }, 2500);
+    }, 4000);
     return () => clearInterval(interval);
   }, [learnServices.length]);
   
@@ -836,21 +836,40 @@ export default function Hero() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
                 </svg>
                 <span className="flex items-center whitespace-nowrap">
-                  <span>{t('mobile')}</span>
-                  <span className="relative ml-1 inline-flex overflow-hidden">
-                    <AnimatePresence mode="popLayout">
-                      <motion.span
-                        key={mobileServiceIndex}
-                        initial={{ y: '100%', opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        exit={{ y: '-100%', opacity: 0 }}
-                        transition={{ duration: 0.3, ease: 'easeInOut' }}
-                        className="block"
-                      >
-                        {mobileServices[mobileServiceIndex]}
-                      </motion.span>
-                    </AnimatePresence>
-                  </span>
+                  {locale === 'ar' ? (
+                    <span className="relative inline-flex overflow-hidden">
+                      <AnimatePresence mode="popLayout">
+                        <motion.span
+                          key={mobileServiceIndex}
+                          initial={{ y: '110%', opacity: 0, scale: 0.8, filter: 'blur(4px)' }}
+                          animate={{ y: 0, opacity: 1, scale: 1, filter: 'blur(0px)' }}
+                          exit={{ y: '-110%', opacity: 0, scale: 0.8, filter: 'blur(4px)' }}
+                          transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                          className="block"
+                        >
+                          {mobileServices[mobileServiceIndex]}
+                        </motion.span>
+                      </AnimatePresence>
+                    </span>
+                  ) : (
+                    <>
+                      <span>{t('mobile')}</span>
+                      <span className="relative ms-1 inline-flex overflow-hidden">
+                        <AnimatePresence mode="popLayout">
+                          <motion.span
+                            key={mobileServiceIndex}
+                            initial={{ y: '110%', opacity: 0, scale: 0.8, filter: 'blur(4px)' }}
+                            animate={{ y: 0, opacity: 1, scale: 1, filter: 'blur(0px)' }}
+                            exit={{ y: '-110%', opacity: 0, scale: 0.8, filter: 'blur(4px)' }}
+                            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                            className="block"
+                          >
+                            {mobileServices[mobileServiceIndex]}
+                          </motion.span>
+                        </AnimatePresence>
+                      </span>
+                    </>
+                  )}
                 </span>
               </a>
               
@@ -864,21 +883,43 @@ export default function Hero() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5" />
                 </svg>
                 <span className="flex items-center whitespace-nowrap">
-                  <span>{t('learn')}</span>
-                  <span className="relative ml-1 inline-flex overflow-hidden">
-                    <AnimatePresence mode="popLayout">
-                      <motion.span
-                        key={learnServiceIndex}
-                        initial={{ y: '100%', opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        exit={{ y: '-100%', opacity: 0 }}
-                        transition={{ duration: 0.3, ease: 'easeInOut' }}
-                        className="block"
-                      >
-                        {learnServices[learnServiceIndex]}
-                      </motion.span>
-                    </AnimatePresence>
-                  </span>
+                  {locale === 'ar' ? (
+                    <>
+                      <span>{t('learn')}</span>
+                      <span className="relative ms-1 inline-flex overflow-hidden">
+                        <AnimatePresence mode="popLayout">
+                          <motion.span
+                            key={learnServiceIndex}
+                            initial={{ y: '110%', opacity: 0, scale: 0.8, filter: 'blur(4px)' }}
+                            animate={{ y: 0, opacity: 1, scale: 1, filter: 'blur(0px)' }}
+                            exit={{ y: '-110%', opacity: 0, scale: 0.8, filter: 'blur(4px)' }}
+                            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                            className="block"
+                          >
+                            {learnServices[learnServiceIndex]}
+                          </motion.span>
+                        </AnimatePresence>
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <span>{t('learn')}</span>
+                      <span className="relative ms-1 inline-flex overflow-hidden">
+                        <AnimatePresence mode="popLayout">
+                          <motion.span
+                            key={learnServiceIndex}
+                            initial={{ y: '110%', opacity: 0, scale: 0.8, filter: 'blur(4px)' }}
+                            animate={{ y: 0, opacity: 1, scale: 1, filter: 'blur(0px)' }}
+                            exit={{ y: '-110%', opacity: 0, scale: 0.8, filter: 'blur(4px)' }}
+                            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                            className="block"
+                          >
+                            {learnServices[learnServiceIndex]}
+                          </motion.span>
+                        </AnimatePresence>
+                      </span>
+                    </>
+                  )}
                 </span>
               </a>
               

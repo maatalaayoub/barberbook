@@ -22,16 +22,12 @@ export default function BusinessProfilePage() {
   const [profileData, setProfileData] = useState({
     coverImage: null,
     coverPosition: 50,
-    businessName: 'Premium Barbershop',
-    bio: 'Professional barbershop offering premium grooming services since 2015.',
-    location: 'New York, USA',
-    phone: '+1 (555) 123-4567',
-    email: 'contact@premiumbarbershop.com',
-    socialLinks: {
-      instagram: 'https://instagram.com/premiumbarbershop',
-      facebook: 'https://facebook.com/premiumbarbershop',
-      website: 'https://premiumbarbershop.com'
-    }
+    businessName: '',
+    bio: '',
+    location: '',
+    phone: '',
+    email: '',
+    socialLinks: {}
   });
 
   // Redirect if not signed in or not a business user
@@ -55,10 +51,26 @@ export default function BusinessProfilePage() {
           ...prev,
           coverImage: data.coverImageUrl || null,
           coverPosition: data.coverImagePosition ?? 50,
+          location: data.city || '',
         }));
       })
       .catch(() => {});
   }, [isLoaded, isSignedIn, isBarber]);
+
+  // Refresh profile data after editing
+  const refreshProfile = () => {
+    fetch('/api/user-profile')
+      .then(r => r.json())
+      .then(data => {
+        setProfileData(prev => ({
+          ...prev,
+          coverImage: data.coverImageUrl || null,
+          coverPosition: data.coverImagePosition ?? 50,
+          location: data.city || '',
+        }));
+      })
+      .catch(() => {});
+  };
 
   // Show loading state
   if (!isLoaded) {
@@ -109,7 +121,10 @@ export default function BusinessProfilePage() {
       {/* Edit Profile Dialog */}
       <EditProfileDialog 
         isOpen={isEditProfileOpen} 
-        onClose={() => setIsEditProfileOpen(false)} 
+        onClose={() => {
+          setIsEditProfileOpen(false);
+          refreshProfile();
+        }} 
       />
     </div>
   );

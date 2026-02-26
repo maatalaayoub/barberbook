@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2, Check, User, Calendar, ChevronDown, Settings, AtSign, AlertCircle, MapPin, Search } from 'lucide-react';
 import { useUser, useClerk } from '@clerk/nextjs';
@@ -138,6 +139,10 @@ export default function EditProfileDialog({ isOpen, onClose }) {
   const cityRef = useRef(null);
   const citySearchRef = useRef(null);
 
+  // gender dropdown state
+  const [isGenderOpen, setIsGenderOpen] = useState(false);
+  const genderRef = useRef(null);
+
   const labels = translations[language] || translations.en;
 
   const [formData, setFormData] = useState({
@@ -257,24 +262,33 @@ export default function EditProfileDialog({ isOpen, onClose }) {
         throw new Error(data.error || 'Failed to update profile in database');
       }
 
-      setSuccess(true);
+      // Close dialog first, then show toast after dialog exit animation
+      onClose();
       setTimeout(() => {
-        onClose();
-        setSuccess(false);
-      }, 1500);
+        setSuccess(true);
+        setTimeout(() => setSuccess(false), 3000);
+      }, 350);
     } catch (err) {
       console.error('Error updating profile:', err);
-      setError(err.message || labels.error);
+      // Close dialog first, then show error toast
+      onClose();
+      setTimeout(() => {
+        setError(err.message || labels.error);
+        setTimeout(() => setError(''), 4000);
+      }, 350);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Close city dropdown on outside click
+  // Close city & gender dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (cityRef.current && !cityRef.current.contains(event.target)) {
         setIsCityOpen(false);
+      }
+      if (genderRef.current && !genderRef.current.contains(event.target)) {
+        setIsGenderOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -322,7 +336,7 @@ export default function EditProfileDialog({ isOpen, onClose }) {
     );
   };
 
-  return (
+  const dialog = (
     <AnimatePresence>
       {isOpen && (
         <>
@@ -344,7 +358,7 @@ export default function EditProfileDialog({ isOpen, onClose }) {
             className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
           >
             <div 
-              className="w-full sm:max-w-md bg-white rounded-t-[5px] sm:rounded-[5px] shadow-xl max-h-[90vh] sm:max-h-[85vh] flex flex-col sm:mx-4"
+              className="w-full sm:max-w-md bg-white rounded-t-[3px] sm:rounded-[3px] shadow-xl max-h-[90vh] sm:max-h-[85vh] flex flex-col sm:mx-4"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
@@ -360,20 +374,6 @@ export default function EditProfileDialog({ isOpen, onClose }) {
 
               {/* Form */}
               <form onSubmit={handleSubmit} className="p-5 sm:p-6 overflow-y-auto flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                {error && (
-                  <div className="mb-4 sm:mb-5 p-3 rounded-[5px] bg-red-50 text-red-600 text-sm flex items-center gap-2">
-                    <AlertCircle className="h-4 w-4 shrink-0" />
-                    {error}
-                  </div>
-                )}
-
-                {success && (
-                  <div className="mb-4 sm:mb-5 p-3 rounded-[5px] bg-green-50 text-green-600 text-sm flex items-center gap-2">
-                    <Check className="h-4 w-4" />
-                    {labels.success}
-                  </div>
-                )}
-
                 {isFetching ? (
                   <div className="flex items-center justify-center py-12">
                     <Loader2 className="h-8 w-8 animate-spin text-[#D4AF37]" />
@@ -458,7 +458,7 @@ export default function EditProfileDialog({ isOpen, onClose }) {
                   </div>
 
                   {/* City */}
-                  <div ref={cityRef} className="relative">
+                  <div ref={cityRef} className={`relative transition-all ${isCityOpen ? 'pb-64' : ''}`}>
                     <label className="block text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
                       {labels.city}
                     </label>
@@ -528,26 +528,52 @@ export default function EditProfileDialog({ isOpen, onClose }) {
                   </div>
 
                   {/* Gender */}
-                  <div>
+                  <div ref={genderRef} className={`relative transition-all ${isGenderOpen ? 'pb-44' : ''}`}>
                     <label className="block text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
                       {labels.gender}
                     </label>
                     <div className="relative">
-                      <ChevronDown className={`absolute top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none ${isRTL ? 'left-3.5' : 'right-3.5'}`} />
-                      <select
-                        name="gender"
-                        value={formData.gender}
-                        onChange={handleChange}
-                        className={`w-full py-2.5 sm:py-3 border border-gray-200 rounded-[5px] text-gray-900 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] outline-none transition-colors bg-white cursor-pointer text-base appearance-none ${isRTL ? 'pr-4 pl-10' : 'pl-4 pr-10'}`}
+                      <User className={`absolute top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none z-10 ${isRTL ? 'right-3.5' : 'left-3.5'}`} />
+                      <ChevronDown className={`absolute top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none z-10 transition-transform ${isGenderOpen ? 'rotate-180' : ''} ${isRTL ? 'left-3.5' : 'right-3.5'}`} />
+                      <button
+                        type="button"
+                        onClick={() => setIsGenderOpen(!isGenderOpen)}
+                        className={`w-full flex items-center py-2.5 sm:py-3 border border-gray-200 rounded-[5px] text-base focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] outline-none transition-colors bg-white cursor-pointer ${isRTL ? 'pr-10 pl-10' : 'pl-10 pr-10'}`}
                       >
-                        <option value="">{labels.selectGender}</option>
-                        {genderOptions.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {getGenderLabel(option)}
-                          </option>
-                        ))}
-                      </select>
+                        <span className={formData.gender ? 'text-gray-900' : 'text-gray-400'}>
+                          {formData.gender ? getGenderLabel(genderOptions.find(o => o.value === formData.gender)) : labels.selectGender}
+                        </span>
+                      </button>
                     </div>
+
+                    <AnimatePresence>
+                      {isGenderOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -5 }}
+                          transition={{ duration: 0.15 }}
+                          className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-[5px] shadow-lg overflow-hidden"
+                        >
+                          {genderOptions.map((option) => (
+                            <button
+                              key={option.value}
+                              type="button"
+                              onClick={() => {
+                                setFormData(prev => ({ ...prev, gender: option.value }));
+                                setIsGenderOpen(false);
+                              }}
+                              className={`w-full flex items-center gap-2 px-4 py-2.5 text-sm transition-colors hover:bg-gray-50 ${isRTL ? 'text-right flex-row-reverse' : 'text-left'} ${
+                                formData.gender === option.value ? 'text-[#D4AF37] bg-[#D4AF37]/5 font-medium' : 'text-gray-700'
+                              }`}
+                            >
+                              {formData.gender === option.value && <Check className="h-4 w-4 text-[#D4AF37] shrink-0" />}
+                              <span>{getGenderLabel(option)}</span>
+                            </button>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 </div>
                 )}
@@ -582,5 +608,49 @@ export default function EditProfileDialog({ isOpen, onClose }) {
         </>
       )}
     </AnimatePresence>
+  );
+
+  // Toast notification portal
+  const toast = typeof document !== 'undefined' ? createPortal(
+    <AnimatePresence>
+      {(success || error) && (
+        <motion.div
+          initial={{ opacity: 0, y: 80, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 80, scale: 0.95 }}
+          transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] max-w-sm w-[90vw] pointer-events-auto"
+        >
+          <div className={`flex items-center gap-3 px-5 py-4 rounded-xl shadow-2xl border backdrop-blur-sm ${
+            success 
+              ? 'bg-white border-green-200 text-green-700' 
+              : 'bg-white border-red-200 text-red-700'
+          }`}>
+            <div className={`flex items-center justify-center w-8 h-8 rounded-full shrink-0 ${
+              success ? 'bg-green-100' : 'bg-red-100'
+            }`}>
+              {success ? <Check className="h-4 w-4 text-green-600" /> : <AlertCircle className="h-4 w-4 text-red-600" />}
+            </div>
+            <p className="text-sm font-medium flex-1">
+              {success ? labels.success : error}
+            </p>
+            <button 
+              onClick={() => { setSuccess(false); setError(''); }}
+              className="shrink-0 p-1 rounded-full hover:bg-gray-100 transition-colors"
+            >
+              <X className="h-3.5 w-3.5 text-gray-400" />
+            </button>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>,
+    document.body
+  ) : null;
+
+  return (
+    <>
+      {dialog}
+      {toast}
+    </>
   );
 }

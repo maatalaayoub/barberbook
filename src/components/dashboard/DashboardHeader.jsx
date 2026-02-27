@@ -43,9 +43,8 @@ export default function DashboardHeader() {
 
           {/* Right Section - Notifications & Profile */}
           <motion.div 
-            initial={{ opacity: 0, x: isRTL ? -20 : 20 }}
+            initial={false}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
             className={`flex items-center gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}
           >
             {/* Notifications */}

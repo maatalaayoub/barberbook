@@ -656,3 +656,51 @@ CREATE TRIGGER update_schedule_exceptions_updated_at
   BEFORE UPDATE ON schedule_exceptions
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================
+-- APPOINTMENTS TABLE
+-- ============================================
+CREATE TABLE IF NOT EXISTS appointments (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  business_info_id UUID REFERENCES business_info(id) ON DELETE CASCADE NOT NULL,
+  client_name TEXT NOT NULL,
+  client_phone TEXT,
+  service TEXT NOT NULL,
+  price NUMERIC(10,2),
+  start_time TIMESTAMP WITH TIME ZONE NOT NULL,
+  end_time TIMESTAMP WITH TIME ZONE NOT NULL,
+  status TEXT NOT NULL DEFAULT 'confirmed' CHECK (status IN ('confirmed', 'pending', 'completed', 'cancelled')),
+  notes TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_appointments_business_info_id ON appointments(business_info_id);
+CREATE INDEX IF NOT EXISTS idx_appointments_start_time ON appointments(start_time);
+CREATE INDEX IF NOT EXISTS idx_appointments_status ON appointments(status);
+
+ALTER TABLE appointments ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Appointments viewable by owner" ON appointments;
+CREATE POLICY "Appointments viewable by owner"
+  ON appointments FOR ALL
+  USING (
+    business_info_id IN (
+      SELECT bi.id FROM business_info bi
+      JOIN users u ON u.id = bi.user_id
+      WHERE u.clerk_id = auth.uid()::text
+    )
+  );
+
+-- Allow full access via service role (API routes use service role key)
+DROP POLICY IF EXISTS "Allow all for service role" ON appointments;
+CREATE POLICY "Allow all for service role"
+  ON appointments FOR ALL
+  USING (true)
+  WITH CHECK (true);
+
+DROP TRIGGER IF EXISTS update_appointments_updated_at ON appointments;
+CREATE TRIGGER update_appointments_updated_at
+  BEFORE UPDATE ON appointments
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();

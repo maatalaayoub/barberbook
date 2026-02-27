@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -25,30 +25,98 @@ const SERVICES = [
   { name: 'Shave', duration: 25, price: 40 },
 ];
 
-export default function NewAppointmentModal({ isOpen, onClose, onSave, defaultDate }) {
+function parseDateAndTime(dateStr) {
+  if (!dateStr) {
+    const now = new Date();
+    return {
+      date: now.toISOString().split('T')[0],
+      time: '09:00',
+    };
+  }
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) {
+    // dateStr might be just a date like "2026-02-27" without time
+    return {
+      date: dateStr.split('T')[0],
+      time: '09:00',
+    };
+  }
+  const hours = d.getHours().toString().padStart(2, '0');
+  const minutes = d.getMinutes().toString().padStart(2, '0');
+  // If time is midnight (00:00), it's likely just a date click — use default 09:00
+  const time = (hours === '00' && minutes === '00') ? '09:00' : `${hours}:${minutes}`;
+  return {
+    date: d.toISOString().split('T')[0],
+    time,
+  };
+}
+
+function computeEndTime(startTime, durationMinutes) {
+  const [h, m] = startTime.split(':').map(Number);
+  const totalMinutes = h * 60 + m + durationMinutes;
+  const endH = Math.floor(totalMinutes / 60) % 24;
+  const endM = totalMinutes % 60;
+  return `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
+}
+
+export default function NewAppointmentModal({ isOpen, onClose, onSave, defaultDate, defaultEndDate, isSaving }) {
   const [formData, setFormData] = useState({
     client: '',
     phone: '',
     service: '',
-    date: defaultDate
-      ? new Date(defaultDate).toISOString().split('T')[0]
-      : new Date().toISOString().split('T')[0],
-    time: defaultDate
-      ? new Date(defaultDate).toTimeString().slice(0, 5)
-      : '09:00',
+    date: new Date().toISOString().split('T')[0],
+    time: '09:00',
+    endTime: '09:30',
     notes: '',
     price: '',
   });
 
   const [errors, setErrors] = useState({});
 
+  // Reset form and populate date/time whenever the modal opens or defaultDate changes
+  const defaultEndDateStr = defaultEndDate || '';
+  const defaultDateStr = defaultDate || '';
+  useEffect(() => {
+    if (isOpen) {
+      const { date, time } = parseDateAndTime(defaultDateStr);
+      let endTime;
+      if (defaultEndDateStr) {
+        // Use the drag-selected end time
+        const parsed = parseDateAndTime(defaultEndDateStr);
+        endTime = parsed.time;
+      } else {
+        endTime = computeEndTime(time, 30);
+      }
+      setFormData({
+        client: '',
+        phone: '',
+        service: '',
+        date,
+        time,
+        endTime,
+        notes: '',
+        price: '',
+      });
+      setErrors({});
+    }
+  }, [isOpen, defaultDateStr, defaultEndDateStr]);
+
   const handleChange = (field, value) => {
     setFormData((prev) => {
       const updated = { ...prev, [field]: value };
-      // Auto-fill price when service is selected
+      // Auto-fill price and recalculate end time when service is selected
       if (field === 'service') {
         const svc = SERVICES.find((s) => s.name === value);
-        if (svc) updated.price = String(svc.price);
+        if (svc) {
+          updated.price = String(svc.price);
+          updated.endTime = computeEndTime(prev.time, svc.duration);
+        }
+      }
+      // Recalculate end time when start time changes
+      if (field === 'time') {
+        const svc = SERVICES.find((s) => s.name === prev.service);
+        const duration = svc ? svc.duration : 30;
+        updated.endTime = computeEndTime(value, duration);
       }
       return updated;
     });
@@ -72,7 +140,9 @@ export default function NewAppointmentModal({ isOpen, onClose, onSave, defaultDa
     const durationMinutes = svc ? svc.duration : 30;
 
     const start = new Date(`${formData.date}T${formData.time}:00`);
-    const end = new Date(start.getTime() + durationMinutes * 60000);
+    const end = formData.endTime
+      ? new Date(`${formData.date}T${formData.endTime}:00`)
+      : new Date(start.getTime() + durationMinutes * 60000);
 
     onSave({
       title: `${formData.service} — ${formData.client}`,
@@ -89,18 +159,6 @@ export default function NewAppointmentModal({ isOpen, onClose, onSave, defaultDa
         status: 'confirmed',
       },
     });
-
-    // Reset form
-    setFormData({
-      client: '',
-      phone: '',
-      service: '',
-      date: new Date().toISOString().split('T')[0],
-      time: '09:00',
-      notes: '',
-      price: '',
-    });
-    onClose();
   };
 
   const inputClass = (field) =>
@@ -209,25 +267,27 @@ export default function NewAppointmentModal({ isOpen, onClose, onSave, defaultDa
                 {errors.service && <p className="mt-1 text-xs text-red-500">{errors.service}</p>}
               </div>
 
-              {/* Date & Time row */}
+              {/* Date */}
+              <div>
+                <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-1.5">
+                  <CalendarDays className="w-3.5 h-3.5 text-gray-400" />
+                  Date <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => handleChange('date', e.target.value)}
+                  className={inputClass('date')}
+                />
+                {errors.date && <p className="mt-1 text-xs text-red-500">{errors.date}</p>}
+              </div>
+
+              {/* Start Time & End Time row */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-1.5">
-                    <CalendarDays className="w-3.5 h-3.5 text-gray-400" />
-                    Date <span className="text-red-400">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.date}
-                    onChange={(e) => handleChange('date', e.target.value)}
-                    className={inputClass('date')}
-                  />
-                  {errors.date && <p className="mt-1 text-xs text-red-500">{errors.date}</p>}
-                </div>
-                <div>
-                  <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-1.5">
                     <Clock className="w-3.5 h-3.5 text-gray-400" />
-                    Time <span className="text-red-400">*</span>
+                    Start Time <span className="text-red-400">*</span>
                   </label>
                   <input
                     type="time"
@@ -236,6 +296,19 @@ export default function NewAppointmentModal({ isOpen, onClose, onSave, defaultDa
                     className={inputClass('time')}
                   />
                   {errors.time && <p className="mt-1 text-xs text-red-500">{errors.time}</p>}
+                </div>
+                <div>
+                  <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-1.5">
+                    <Clock className="w-3.5 h-3.5 text-gray-400" />
+                    End Time <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="time"
+                    value={formData.endTime}
+                    onChange={(e) => handleChange('endTime', e.target.value)}
+                    className={inputClass('endTime')}
+                  />
+                  {errors.endTime && <p className="mt-1 text-xs text-red-500">{errors.endTime}</p>}
                 </div>
               </div>
 
@@ -280,9 +353,10 @@ export default function NewAppointmentModal({ isOpen, onClose, onSave, defaultDa
               </button>
               <button
                 onClick={handleSubmit}
-                className="w-full sm:flex-1 px-4 py-3 sm:py-2.5 bg-[#364153] hover:bg-[#2a3444] text-white rounded-[5px] font-medium text-sm transition-colors shadow-sm order-1 sm:order-2"
+                disabled={isSaving}
+                className="w-full sm:flex-1 px-4 py-3 sm:py-2.5 bg-[#364153] hover:bg-[#2a3444] text-white rounded-[5px] font-medium text-sm transition-colors shadow-sm order-1 sm:order-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Add Appointment
+                {isSaving ? 'Saving...' : 'Add Appointment'}
               </button>
             </div>
           </motion.div>

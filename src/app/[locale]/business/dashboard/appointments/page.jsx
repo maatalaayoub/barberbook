@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useRef, useCallback, useMemo } from 'react';
+import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus,
   CalendarDays,
@@ -25,18 +25,6 @@ const FullCalendarWrapper = dynamic(
   { ssr: false, loading: () => <div className="flex items-center justify-center h-96 text-gray-400">Loading calendar...</div> }
 );
 
-// ─── Helpers ────────────────────────────────────────────────
-function generateId() {
-  return `apt_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-}
-
-function today(offsetDays = 0, hour = 9, minute = 0) {
-  const d = new Date();
-  d.setDate(d.getDate() + offsetDays);
-  d.setHours(hour, minute, 0, 0);
-  return d.toISOString();
-}
-
 // ─── Status colours (full calendar event colours) ───────────
 const STATUS_COLORS = {
   confirmed: { bg: '#D4AF37', border: '#B8960C' },
@@ -45,169 +33,27 @@ const STATUS_COLORS = {
   cancelled: { bg: '#EF4444', border: '#DC2626' },
 };
 
-// ─── Demo appointments ──────────────────────────────────────
-const DEMO_EVENTS = [
-  {
-    id: generateId(),
-    title: 'Haircut — Ahmed Ben Ali',
-    start: today(0, 9, 0),
-    end: today(0, 9, 30),
-    backgroundColor: STATUS_COLORS.confirmed.bg,
-    borderColor: STATUS_COLORS.confirmed.border,
+// Convert a DB appointment row to a FullCalendar event object
+function toCalendarEvent(apt) {
+  const colors = STATUS_COLORS[apt.status] || STATUS_COLORS.confirmed;
+  return {
+    id: apt.id,
+    title: `${apt.service} — ${apt.client_name}`,
+    start: apt.start_time,
+    end: apt.end_time,
+    backgroundColor: colors.bg,
+    borderColor: colors.border,
+    editable: apt.status !== 'confirmed' && apt.status !== 'completed' && apt.status !== 'cancelled',
     extendedProps: {
-      client: 'Ahmed Ben Ali',
-      phone: '+212 661 234 567',
-      service: 'Haircut',
-      price: '50',
-      status: 'confirmed',
-      notes: 'Regular client, prefers short on sides',
+      client: apt.client_name,
+      phone: apt.client_phone || '',
+      service: apt.service,
+      price: apt.price != null ? String(apt.price) : '',
+      status: apt.status,
+      notes: apt.notes || '',
     },
-  },
-  {
-    id: generateId(),
-    title: 'Beard Trim — Youssef Alami',
-    start: today(0, 10, 30),
-    end: today(0, 11, 0),
-    backgroundColor: STATUS_COLORS.pending.bg,
-    borderColor: STATUS_COLORS.pending.border,
-    extendedProps: {
-      client: 'Youssef Alami',
-      phone: '+212 655 987 654',
-      service: 'Beard Trim',
-      price: '30',
-      status: 'pending',
-      notes: '',
-    },
-  },
-  {
-    id: generateId(),
-    title: 'Full Service — Karim Idrissi',
-    start: today(0, 14, 0),
-    end: today(0, 15, 0),
-    backgroundColor: STATUS_COLORS.confirmed.bg,
-    borderColor: STATUS_COLORS.confirmed.border,
-    extendedProps: {
-      client: 'Karim Idrissi',
-      phone: '+212 670 111 222',
-      service: 'Full Service',
-      price: '120',
-      status: 'confirmed',
-      notes: 'First visit',
-    },
-  },
-  {
-    id: generateId(),
-    title: 'Hair Coloring — Omar Saidi',
-    start: today(1, 11, 0),
-    end: today(1, 12, 0),
-    backgroundColor: STATUS_COLORS.confirmed.bg,
-    borderColor: STATUS_COLORS.confirmed.border,
-    extendedProps: {
-      client: 'Omar Saidi',
-      phone: '+212 678 333 444',
-      service: 'Hair Coloring',
-      price: '150',
-      status: 'confirmed',
-      notes: 'Blonde highlights',
-    },
-  },
-  {
-    id: generateId(),
-    title: 'Haircut & Beard — Mehdi Fassi',
-    start: today(1, 15, 0),
-    end: today(1, 15, 45),
-    backgroundColor: STATUS_COLORS.pending.bg,
-    borderColor: STATUS_COLORS.pending.border,
-    extendedProps: {
-      client: 'Mehdi Fassi',
-      phone: '+212 699 555 666',
-      service: 'Haircut & Beard',
-      price: '70',
-      status: 'pending',
-      notes: '',
-    },
-  },
-  {
-    id: generateId(),
-    title: 'Kids Haircut — Amine Tazi',
-    start: today(2, 10, 0),
-    end: today(2, 10, 20),
-    backgroundColor: STATUS_COLORS.confirmed.bg,
-    borderColor: STATUS_COLORS.confirmed.border,
-    extendedProps: {
-      client: 'Amine Tazi',
-      phone: '+212 644 777 888',
-      service: 'Kids Haircut',
-      price: '35',
-      status: 'confirmed',
-      notes: "For his son, age 8",
-    },
-  },
-  {
-    id: generateId(),
-    title: 'Shave — Hassan Bennani',
-    start: today(-1, 9, 30),
-    end: today(-1, 10, 0),
-    backgroundColor: STATUS_COLORS.completed.bg,
-    borderColor: STATUS_COLORS.completed.border,
-    extendedProps: {
-      client: 'Hassan Bennani',
-      phone: '+212 612 999 000',
-      service: 'Shave',
-      price: '40',
-      status: 'completed',
-      notes: '',
-    },
-  },
-  {
-    id: generateId(),
-    title: 'Haircut — Rachid El Amrani',
-    start: today(-2, 16, 0),
-    end: today(-2, 16, 30),
-    backgroundColor: STATUS_COLORS.cancelled.bg,
-    borderColor: STATUS_COLORS.cancelled.border,
-    extendedProps: {
-      client: 'Rachid El Amrani',
-      phone: '+212 677 222 111',
-      service: 'Haircut',
-      price: '50',
-      status: 'cancelled',
-      notes: 'Client cancelled last minute',
-    },
-  },
-  {
-    id: generateId(),
-    title: 'Hair Treatment — Nabil Chraibi',
-    start: today(3, 13, 0),
-    end: today(3, 13, 40),
-    backgroundColor: STATUS_COLORS.confirmed.bg,
-    borderColor: STATUS_COLORS.confirmed.border,
-    extendedProps: {
-      client: 'Nabil Chraibi',
-      phone: '+212 650 444 555',
-      service: 'Hair Treatment',
-      price: '100',
-      status: 'confirmed',
-      notes: 'Keratin treatment',
-    },
-  },
-  {
-    id: generateId(),
-    title: 'Haircut — Zakaria Lahlou',
-    start: today(4, 9, 0),
-    end: today(4, 9, 30),
-    backgroundColor: STATUS_COLORS.pending.bg,
-    borderColor: STATUS_COLORS.pending.border,
-    extendedProps: {
-      client: 'Zakaria Lahlou',
-      phone: '+212 688 666 777',
-      service: 'Haircut',
-      price: '50',
-      status: 'pending',
-      notes: '',
-    },
-  },
-];
+  };
+}
 
 // ─── Stat Cards ─────────────────────────────────────────────
 function StatCard({ icon: Icon, label, value, color }) {
@@ -243,13 +89,45 @@ function FilterPill({ label, active, onClick, color }) {
 // ─── Main Component ─────────────────────────────────────────
 export default function AppointmentsPage() {
   const calendarRef = useRef(null);
-  const [events, setEvents] = useState(DEMO_EVENTS);
+  const [events, setEvents] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isNewOpen, setIsNewOpen] = useState(false);
   const [newDefaultDate, setNewDefaultDate] = useState(null);
+  const [newDefaultEndDate, setNewDefaultEndDate] = useState(null);
   const [currentView, setCurrentView] = useState('timeGridWeek');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [toast, setToast] = useState(null);
+  const toastTimer = useRef(null);
+
+  const showToast = useCallback((message, type = 'error') => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToast({ message, type });
+    toastTimer.current = setTimeout(() => setToast(null), 3500);
+  }, []);
+
+  // ── Load appointments from database ──
+  useEffect(() => {
+    async function fetchAppointments() {
+      try {
+        const res = await fetch('/api/business/appointments');
+        if (res.ok) {
+          const data = await res.json();
+          const calendarEvents = (data.appointments || []).map(toCalendarEvent);
+          setEvents(calendarEvents);
+        } else {
+          console.error('[Appointments] Failed to fetch:', res.status);
+        }
+      } catch (err) {
+        console.error('[Appointments] Fetch error:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchAppointments();
+  }, []);
 
   // ── Stats ──
   const stats = useMemo(() => {
@@ -296,49 +174,145 @@ export default function AppointmentsPage() {
     setIsDetailOpen(true);
   }, []);
 
-  // ── Date click => open new ──
-  const handleDateClick = useCallback((info) => {
-    setNewDefaultDate(info.dateStr);
+  // ── Date click / drag select => open new ──
+  const handleSelect = useCallback((info) => {
+    const now = new Date();
+    const selectedStart = new Date(info.startStr);
+
+    if (info.allDay) {
+      // Month view: block past dates, allow today
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      if (selectedStart < todayStart) {
+        showToast('Cannot create an appointment for a past date.');
+        const api = calendarRef.current?.getApi();
+        if (api) api.unselect();
+        return;
+      }
+    } else {
+      // Time grid: block past times
+      if (selectedStart < now) {
+        showToast('Cannot create an appointment for a past date or time.');
+        const api = calendarRef.current?.getApi();
+        if (api) api.unselect();
+        return;
+      }
+    }
+
+    setNewDefaultDate(info.startStr);
+    setNewDefaultEndDate(info.endStr);
     setIsNewOpen(true);
-  }, []);
+    // Unselect the calendar highlight
+    const api = calendarRef.current?.getApi();
+    if (api) api.unselect();
+  }, [showToast]);
 
-  // ── Drag & drop => reschedule ──
-  const handleEventDrop = useCallback((info) => {
+  // ── Drag & drop => reschedule (persist to DB) ──
+  const handleEventDrop = useCallback(async (info) => {
+    const status = info.event.extendedProps?.status;
+    if (status === 'confirmed') {
+      showToast('Confirmed appointments cannot be moved.');
+      info.revert();
+      return;
+    }
+    if (status === 'completed' || status === 'cancelled') {
+      info.revert();
+      return;
+    }
+    const newStart = info.event.start.toISOString();
+    const newEnd = info.event.end?.toISOString() || newStart;
+    // Optimistic update
     setEvents((prev) =>
       prev.map((e) =>
-        e.id === info.event.id
-          ? {
-              ...e,
-              start: info.event.start.toISOString(),
-              end: info.event.end?.toISOString() || e.end,
-            }
-          : e
+        e.id === info.event.id ? { ...e, start: newStart, end: newEnd } : e
       )
     );
-  }, []);
+    try {
+      await fetch('/api/business/appointments', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: info.event.id, start_time: newStart, end_time: newEnd }),
+      });
+    } catch (err) {
+      console.error('[Appointments] Drop update failed:', err);
+      info.revert();
+    }
+  }, [showToast]);
 
-  // ── Resize ──
-  const handleEventResize = useCallback((info) => {
+  // ── Resize (persist to DB) ──
+  const handleEventResize = useCallback(async (info) => {
+    const status = info.event.extendedProps?.status;
+    if (status === 'confirmed') {
+      showToast('Confirmed appointments cannot be resized.');
+      info.revert();
+      return;
+    }
+    if (status === 'completed' || status === 'cancelled') {
+      info.revert();
+      return;
+    }
+    const newStart = info.event.start.toISOString();
+    const newEnd = info.event.end?.toISOString() || newStart;
     setEvents((prev) =>
       prev.map((e) =>
-        e.id === info.event.id
-          ? {
-              ...e,
-              start: info.event.start.toISOString(),
-              end: info.event.end?.toISOString() || e.end,
-            }
-          : e
+        e.id === info.event.id ? { ...e, start: newStart, end: newEnd } : e
       )
     );
-  }, []);
+    try {
+      await fetch('/api/business/appointments', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: info.event.id, start_time: newStart, end_time: newEnd }),
+      });
+    } catch (err) {
+      console.error('[Appointments] Resize update failed:', err);
+      info.revert();
+    }
+  }, [showToast]);
 
-  // ── Add new event ──
-  const handleAddEvent = useCallback((eventData) => {
-    setEvents((prev) => [...prev, { ...eventData, id: generateId() }]);
-  }, []);
+  // ── Add new event (save to DB) ──
+  const handleAddEvent = useCallback(async (eventData) => {
+    // Safety check: prevent saving past appointments
+    if (new Date(eventData.start) < new Date()) {
+      showToast('Cannot create an appointment for a past date or time.');
+      return;
+    }
+    setIsSaving(true);
+    try {
+      const res = await fetch('/api/business/appointments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          client_name: eventData.extendedProps.client,
+          client_phone: eventData.extendedProps.phone,
+          service: eventData.extendedProps.service,
+          price: eventData.extendedProps.price,
+          start_time: eventData.start,
+          end_time: eventData.end,
+          status: eventData.extendedProps.status || 'confirmed',
+          notes: eventData.extendedProps.notes,
+        }),
+      });
 
-  // ── Mark complete ──
-  const handleComplete = useCallback((eventId) => {
+      if (res.ok) {
+        const data = await res.json();
+        const calendarEvent = toCalendarEvent(data.appointment);
+        setEvents((prev) => [...prev, calendarEvent]);
+        setIsNewOpen(false);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        console.error('[Appointments] Save failed:', res.status, err);
+        showToast(err.error || 'Failed to save appointment. Please try again.');
+      }
+    } catch (err) {
+      console.error('[Appointments] Save error:', err);
+      showToast('Failed to save appointment. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  }, [showToast]);
+
+  // ── Mark complete (persist to DB) ──
+  const handleComplete = useCallback(async (eventId) => {
     setEvents((prev) =>
       prev.map((e) =>
         e.id === eventId
@@ -351,10 +325,19 @@ export default function AppointmentsPage() {
           : e
       )
     );
+    try {
+      await fetch('/api/business/appointments', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: eventId, status: 'completed' }),
+      });
+    } catch (err) {
+      console.error('[Appointments] Complete update failed:', err);
+    }
   }, []);
 
-  // ── Cancel ──
-  const handleCancelAppointment = useCallback((eventId) => {
+  // ── Cancel (persist to DB) ──
+  const handleCancelAppointment = useCallback(async (eventId) => {
     setEvents((prev) =>
       prev.map((e) =>
         e.id === eventId
@@ -367,6 +350,15 @@ export default function AppointmentsPage() {
           : e
       )
     );
+    try {
+      await fetch('/api/business/appointments', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: eventId, status: 'cancelled' }),
+      });
+    } catch (err) {
+      console.error('[Appointments] Cancel update failed:', err);
+    }
   }, []);
 
   // ── View buttons config ──
@@ -390,6 +382,7 @@ export default function AppointmentsPage() {
         <button
           onClick={() => {
             setNewDefaultDate(null);
+            setNewDefaultEndDate(null);
             setIsNewOpen(true);
           }}
           className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#364153] hover:bg-[#2a3444] text-white rounded-[5px] font-medium text-sm transition-colors shadow-sm"
@@ -469,14 +462,23 @@ export default function AppointmentsPage() {
 
         {/* Calendar */}
         <div className="p-2 sm:p-4 fc-custom">
-          <FullCalendarWrapper
-            ref={calendarRef}
-            events={filteredEvents}
-            onEventClick={handleEventClick}
-            onDateClick={handleDateClick}
-            onEventDrop={handleEventDrop}
-            onEventResize={handleEventResize}
-          />
+          {isLoading ? (
+            <div className="flex items-center justify-center h-96 text-gray-400">
+              <div className="text-center space-y-3">
+                <div className="w-8 h-8 border-2 border-gray-300 border-t-amber-500 rounded-full animate-spin mx-auto" />
+                <p className="text-sm">Loading appointments...</p>
+              </div>
+            </div>
+          ) : (
+            <FullCalendarWrapper
+              ref={calendarRef}
+              events={filteredEvents}
+              onEventClick={handleEventClick}
+              onSelect={handleSelect}
+              onEventDrop={handleEventDrop}
+              onEventResize={handleEventResize}
+            />
+          )}
         </div>
       </motion.div>
 
@@ -494,7 +496,32 @@ export default function AppointmentsPage() {
         onClose={() => setIsNewOpen(false)}
         onSave={handleAddEvent}
         defaultDate={newDefaultDate}
+        defaultEndDate={newDefaultEndDate}
+        isSaving={isSaving}
       />
+
+      {/* ── Toast Notification ── */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 40 }}
+            className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] px-5 py-3 rounded-[5px] shadow-lg text-sm font-medium flex items-center gap-2 ${
+              toast.type === 'error'
+                ? 'bg-red-600 text-white'
+                : 'bg-emerald-600 text-white'
+            }`}
+          >
+            {toast.type === 'error' ? (
+              <XCircle className="w-4 h-4 flex-shrink-0" />
+            ) : (
+              <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+            )}
+            {toast.message}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

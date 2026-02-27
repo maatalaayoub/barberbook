@@ -188,16 +188,18 @@ export default function AppointmentDetailModal({
             {appointment.extendedProps?.status !== 'completed' &&
               appointment.extendedProps?.status !== 'cancelled' && (
                 <div className="px-4 sm:px-6 pb-4 sm:pb-6 flex flex-col sm:flex-row gap-2 sm:gap-3">
-                  <button
-                    onClick={() => {
-                      onComplete(appointment.id);
-                      onClose();
-                    }}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 sm:py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-[5px] font-medium text-sm transition-colors shadow-sm"
-                  >
-                    <CheckCircle2 className="w-4 h-4" />
-                    Mark Complete
-                  </button>
+                  {new Date(appointment.start) <= new Date() && (
+                    <button
+                      onClick={() => {
+                        onComplete(appointment.id);
+                        onClose();
+                      }}
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 sm:py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-[5px] font-medium text-sm transition-colors shadow-sm"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      Mark Complete
+                    </button>
+                  )}
                   <button
                     onClick={() => {
                       onCancel(appointment.id);

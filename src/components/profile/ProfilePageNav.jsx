@@ -24,11 +24,11 @@ export default function ProfilePageNav({ locale, onMenuClick, isRTL, t }) {
 
             <Link href={`/${locale}`}>
               <Image
-                src="/images/logo-booq.png"
-                alt="Booq"
+                src="/images/white_logo.png"
+                alt="Coiffly"
                 width={100}
                 height={30}
-                className="h-8 w-auto brightness-0 invert"
+                className="h-8 w-auto"
                 priority
               />
             </Link>

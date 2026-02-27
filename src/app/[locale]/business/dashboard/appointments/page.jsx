@@ -212,8 +212,8 @@ const DEMO_EVENTS = [
 // ─── Stat Cards ─────────────────────────────────────────────
 function StatCard({ icon: Icon, label, value, color }) {
   return (
-    <div className="flex items-center gap-3 p-4 bg-white rounded-xl border border-gray-100 shadow-sm">
-      <div className={`flex items-center justify-center w-10 h-10 rounded-xl ${color}`}>
+    <div className="flex items-center gap-3 p-4 bg-white rounded-[5px] border border-gray-200">
+      <div className={`flex items-center justify-center w-10 h-10 rounded-[5px] ${color}`}>
         <Icon className="w-5 h-5 text-white" />
       </div>
       <div>
@@ -411,7 +411,7 @@ export default function AppointmentsPage() {
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
+        className="bg-white rounded-[5px] border border-gray-200 overflow-hidden"
       >
         {/* Toolbar */}
         <div className="px-4 sm:px-6 py-4 border-b border-gray-100">

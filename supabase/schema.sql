@@ -624,6 +624,7 @@ CREATE TABLE IF NOT EXISTS schedule_exceptions (
   title TEXT NOT NULL,
   type TEXT NOT NULL CHECK (type IN ('break', 'lunch_break', 'closure', 'holiday', 'vacation', 'other')),
   date DATE NOT NULL,
+  end_date DATE,
   start_time TIME,
   end_time TIME,
   is_full_day BOOLEAN DEFAULT false,

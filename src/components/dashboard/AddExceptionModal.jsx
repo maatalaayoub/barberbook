@@ -29,10 +29,13 @@ const EXCEPTION_TYPES = [
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 export default function AddExceptionModal({ isOpen, onClose, onSave, defaultDate }) {
+  const today = new Date().toISOString().split('T')[0];
+
   const [formData, setFormData] = useState({
     title: 'Break',
     type: 'break',
-    date: defaultDate || new Date().toISOString().split('T')[0],
+    date: defaultDate || today,
+    endDate: '',
     startTime: '',
     endTime: '',
     isFullDay: false,
@@ -42,6 +45,15 @@ export default function AddExceptionModal({ isOpen, onClose, onSave, defaultDate
   });
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
+
+  // Helper: get current time as HH:mm string
+  const getNowTime = () => {
+    const now = new Date();
+    return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  };
+
+  // Helper: check if selected date is today
+  const isToday = formData.date === today;
 
   // Sync defaultDate prop when modal opens with a different date
   useEffect(() => {
@@ -64,6 +76,13 @@ export default function AddExceptionModal({ isOpen, onClose, onSave, defaultDate
         updated.startTime = '';
         updated.endTime = '';
       }
+      if (field === 'isFullDay' && !value) {
+        updated.endDate = '';
+      }
+      // If date changes and endDate is before date, reset endDate
+      if (field === 'date' && updated.endDate && updated.endDate < value) {
+        updated.endDate = '';
+      }
       return updated;
     });
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: '' }));
@@ -72,12 +91,48 @@ export default function AddExceptionModal({ isOpen, onClose, onSave, defaultDate
   const validate = () => {
     const e = {};
     if (!formData.title.trim()) e.title = 'Title is required';
-    if (!formData.date) e.date = 'Date is required';
-    if (!formData.isFullDay && !formData.startTime) e.startTime = 'Start time required';
-    if (!formData.isFullDay && !formData.endTime) e.endTime = 'End time required';
-    if (!formData.isFullDay && formData.startTime && formData.endTime && formData.startTime >= formData.endTime) {
-      e.endTime = 'End must be after start';
+    if (!formData.date) {
+      e.date = 'Date is required';
+    } else if (formData.date < today) {
+      e.date = 'Cannot select a past date';
     }
+
+    // Full-day: validate endDate if provided
+    if (formData.isFullDay && formData.endDate && formData.endDate < formData.date) {
+      e.endDate = 'End date must be after start date';
+    }
+
+    if (!formData.isFullDay) {
+      if (!formData.startTime) e.startTime = 'Start time required';
+      if (!formData.endTime) e.endTime = 'End time required';
+
+      if (formData.startTime && formData.endTime) {
+        // Check times are not in the past (only for today)
+        if (formData.date === today) {
+          const nowTime = getNowTime();
+          if (formData.startTime < nowTime) {
+            e.startTime = 'Cannot select a past time';
+          }
+          if (formData.endTime < nowTime) {
+            e.endTime = 'Cannot select a past time';
+          }
+        }
+
+        // Check end > start
+        if (formData.startTime >= formData.endTime) {
+          e.endTime = 'End must be after start';
+        } else {
+          // Check minimum 5-minute gap
+          const [sh, sm] = formData.startTime.split(':').map(Number);
+          const [eh, em] = formData.endTime.split(':').map(Number);
+          const diffMinutes = (eh * 60 + em) - (sh * 60 + sm);
+          if (diffMinutes < 5) {
+            e.endTime = 'Minimum 5-minute difference required';
+          }
+        }
+      }
+    }
+
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -90,6 +145,7 @@ export default function AddExceptionModal({ isOpen, onClose, onSave, defaultDate
         title: formData.title,
         type: formData.type,
         date: formData.date,
+        endDate: formData.isFullDay && formData.endDate ? formData.endDate : null,
         isFullDay: formData.isFullDay,
         startTime: formData.isFullDay ? null : formData.startTime,
         endTime: formData.isFullDay ? null : formData.endTime,
@@ -102,6 +158,7 @@ export default function AddExceptionModal({ isOpen, onClose, onSave, defaultDate
         title: 'Break',
         type: 'break',
         date: new Date().toISOString().split('T')[0],
+        endDate: '',
         startTime: '',
         endTime: '',
         isFullDay: false,
@@ -211,16 +268,35 @@ export default function AddExceptionModal({ isOpen, onClose, onSave, defaultDate
               <div>
                 <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-1.5">
                   <CalendarDays className="w-3.5 h-3.5 text-gray-400" />
-                  Date <span className="text-red-400">*</span>
+                  {formData.isFullDay ? 'Start Date' : 'Date'} <span className="text-red-400">*</span>
                 </label>
                 <input
                   type="date"
                   value={formData.date}
+                  min={today}
                   onChange={(e) => handleChange('date', e.target.value)}
                   className={inputClass('date')}
                 />
                 {errors.date && <p className="mt-1 text-xs text-red-500">{errors.date}</p>}
               </div>
+
+              {/* End Date (only for full day) */}
+              {formData.isFullDay && (
+                <div>
+                  <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-1.5">
+                    <CalendarDays className="w-3.5 h-3.5 text-gray-400" />
+                    End Date <span className="text-xs text-gray-400 font-normal">(optional, for multi-day)</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.endDate}
+                    min={formData.date || today}
+                    onChange={(e) => handleChange('endDate', e.target.value)}
+                    className={inputClass('endDate')}
+                  />
+                  {errors.endDate && <p className="mt-1 text-xs text-red-500">{errors.endDate}</p>}
+                </div>
+              )}
 
               {/* Full day toggle */}
               <label className="flex items-center gap-3 cursor-pointer">
@@ -250,6 +326,7 @@ export default function AddExceptionModal({ isOpen, onClose, onSave, defaultDate
                     <input
                       type="time"
                       value={formData.startTime}
+                      min={isToday ? getNowTime() : undefined}
                       onChange={(e) => handleChange('startTime', e.target.value)}
                       className={inputClass('startTime')}
                     />
@@ -263,6 +340,7 @@ export default function AddExceptionModal({ isOpen, onClose, onSave, defaultDate
                     <input
                       type="time"
                       value={formData.endTime}
+                      min={isToday ? getNowTime() : undefined}
                       onChange={(e) => handleChange('endTime', e.target.value)}
                       className={inputClass('endTime')}
                     />

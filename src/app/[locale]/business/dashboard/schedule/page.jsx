@@ -213,10 +213,18 @@ export default function SchedulePage() {
       };
 
       if (ex.is_full_day) {
+        // Multi-day: use end_date + 1 day (FullCalendar exclusive end)
+        let endDate = ex.date;
+        if (ex.end_date) {
+          const d = new Date(ex.end_date + 'T00:00:00');
+          d.setDate(d.getDate() + 1);
+          endDate = d.toISOString().split('T')[0];
+        }
         events.push({
           id: ex.id,
           title: ex.title,
           start: ex.date,
+          end: ex.end_date ? endDate : undefined,
           allDay: true,
           backgroundColor: color.bg,
           borderColor: color.border,
@@ -331,7 +339,7 @@ export default function SchedulePage() {
           className="space-y-6"
         >
           {/* Working Hours Card */}
-          <div className="bg-white rounded-[5px] border border-gray-100 shadow-sm overflow-hidden">
+          <div className="bg-white rounded-[5px] border border-gray-200 overflow-hidden">
             <div className="px-4 sm:px-6 py-4 border-b border-gray-100 flex items-center justify-between">
               <h2 className="text-base font-semibold text-gray-900">Weekly Working Hours</h2>
               <button
@@ -401,7 +409,7 @@ export default function SchedulePage() {
           </div>
 
           {/* Exceptions List */}
-          <div className="bg-white rounded-[5px] border border-gray-100 shadow-sm overflow-hidden">
+          <div className="bg-white rounded-[5px] border border-gray-200 overflow-hidden">
             <div className="px-4 sm:px-6 py-4 border-b border-gray-100">
               <h2 className="text-base font-semibold text-gray-900">Schedule Exceptions</h2>
               <p className="text-xs text-gray-400 mt-0.5">Breaks, closures, holidays, and other non-working times</p>
@@ -434,8 +442,15 @@ export default function SchedulePage() {
                             month: 'short',
                             day: 'numeric',
                           })}
+                          {ex.end_date && ex.end_date !== ex.date && (
+                            <> — {new Date(ex.end_date + 'T00:00:00').toLocaleDateString('en-US', {
+                              weekday: 'short',
+                              month: 'short',
+                              day: 'numeric',
+                            })}</>
+                          )}
                           {ex.is_full_day
-                            ? ' — Full day'
+                            ? (!ex.end_date || ex.end_date === ex.date ? ' — Full day' : '')
                             : ` — ${ex.start_time} to ${ex.end_time}`}
                           {ex.recurring && (
                             <span className="ml-1 text-amber-600">
@@ -472,7 +487,7 @@ export default function SchedulePage() {
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-[5px] border border-gray-100 shadow-sm overflow-hidden"
+          className="bg-white rounded-[5px] border border-gray-200 overflow-hidden"
         >
           {/* Toolbar */}
           <div className="px-4 sm:px-6 py-4 border-b border-gray-100">

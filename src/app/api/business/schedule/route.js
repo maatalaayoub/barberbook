@@ -134,7 +134,7 @@ export async function POST(request) {
     if (!ctx) return NextResponse.json({ error: 'Business not found' }, { status: 404 });
 
     const body = await request.json();
-    const { title, type, date, startTime, endTime, isFullDay, recurring, recurringDay, notes } = body;
+    const { title, type, date, endDate, startTime, endTime, isFullDay, recurring, recurringDay, notes } = body;
 
     if (!title || !type || !date) {
       return NextResponse.json({ error: 'title, type, and date are required' }, { status: 400 });
@@ -152,6 +152,7 @@ export async function POST(request) {
       title,
       type,
       date,
+      end_date: fullDay && endDate ? endDate : null,
       start_time: fullDay ? null : (startTime || null),
       end_time: fullDay ? null : (endTime || null),
       is_full_day: fullDay,

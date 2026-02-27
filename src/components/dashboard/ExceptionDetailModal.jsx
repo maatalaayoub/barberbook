@@ -40,7 +40,6 @@ const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frid
 
 export default function ExceptionDetailModal({ isOpen, onClose, exception, onDelete }) {
   const [deleting, setDeleting] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
 
   if (!exception) return null;
 
@@ -48,10 +47,6 @@ export default function ExceptionDetailModal({ isOpen, onClose, exception, onDel
   const colorInfo = EXCEPTION_COLORS[exception.type] || EXCEPTION_COLORS.other;
 
   const handleDelete = async () => {
-    if (!confirmDelete) {
-      setConfirmDelete(true);
-      return;
-    }
     setDeleting(true);
     try {
       await onDelete(exception.id);
@@ -62,13 +57,21 @@ export default function ExceptionDetailModal({ isOpen, onClose, exception, onDel
   };
 
   const handleClose = () => {
-    setConfirmDelete(false);
     setDeleting(false);
     onClose();
   };
 
   const formattedDate = exception.date
     ? new Date(exception.date + 'T00:00:00').toLocaleDateString('en-US', {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+      })
+    : '';
+
+  const formattedEndDate = exception.end_date && exception.end_date !== exception.date
+    ? new Date(exception.end_date + 'T00:00:00').toLocaleDateString('en-US', {
         weekday: 'long',
         month: 'long',
         day: 'numeric',
@@ -143,9 +146,14 @@ export default function ExceptionDetailModal({ isOpen, onClose, exception, onDel
               <div className="flex items-start gap-3">
                 <CalendarDays className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="text-sm font-medium text-gray-900">{formattedDate}</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {formattedDate}
+                    {formattedEndDate && <> — {formattedEndDate}</>}
+                  </p>
                   <p className="text-xs text-gray-500">
-                    {exception.is_full_day ? 'Full day' : `${formatTime(exception.start_time)} — ${formatTime(exception.end_time)}`}
+                    {exception.is_full_day
+                      ? (formattedEndDate ? 'Multiple days' : 'Full day')
+                      : `${formatTime(exception.start_time)} — ${formatTime(exception.end_time)}`}
                   </p>
                 </div>
               </div>
@@ -199,18 +207,14 @@ export default function ExceptionDetailModal({ isOpen, onClose, exception, onDel
               <button
                 onClick={handleDelete}
                 disabled={deleting}
-                className={`w-full sm:flex-1 px-4 py-3 sm:py-2.5 rounded-[5px] font-medium text-sm transition-colors shadow-sm order-1 sm:order-2 flex items-center justify-center gap-2 ${
-                  confirmDelete
-                    ? 'bg-red-600 hover:bg-red-700 text-white'
-                    : 'bg-red-50 hover:bg-red-100 text-red-600 border border-red-200'
-                } disabled:opacity-50`}
+                className="w-full sm:flex-1 px-4 py-3 sm:py-2.5 rounded-[5px] font-medium text-sm transition-colors shadow-sm order-1 sm:order-2 flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white disabled:opacity-50"
               >
                 {deleting ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <Trash2 className="w-4 h-4" />
                 )}
-                {deleting ? 'Deleting...' : confirmDelete ? 'Confirm Delete' : 'Delete Exception'}
+                {deleting ? 'Deleting...' : 'Delete Exception'}
               </button>
             </div>
           </motion.div>

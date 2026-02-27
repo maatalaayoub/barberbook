@@ -108,12 +108,12 @@ export default function Sidebar() {
             href={item.href}
             className={`flex items-center gap-3 px-2 py-2.5 rounded-lg transition-colors duration-200 ${
               isActive(item.href)
-                ? 'bg-amber-50 text-amber-600'
-                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                ? 'bg-[#364153]/10 text-[#364153]'
+                : 'text-[#364153]/70 hover:bg-[#364153]/5 hover:text-[#364153]'
             }`}
             title={(!forMobile && !isExpanded) ? item.label : undefined}
           >
-            <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive(item.href) ? 'text-amber-500' : 'text-gray-400'}`} />
+            <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive(item.href) ? 'text-[#364153]' : 'text-[#364153]/50'}`} />
             <span className={`font-medium text-sm whitespace-nowrap transition-all duration-300 ${
               (!forMobile && !isExpanded) ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'
             }`}>
@@ -131,15 +131,15 @@ export default function Sidebar() {
             href={item.href}
             className={`flex items-center gap-3 px-2 py-2.5 rounded-lg transition-colors duration-200 ${
               isActive(item.href)
-                ? 'bg-amber-50 text-amber-600'
-                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                ? 'bg-[#364153]/10 text-[#364153]'
+                : 'text-[#364153]/70 hover:bg-[#364153]/5 hover:text-[#364153]'
             }`}
             title={(!forMobile && !isExpanded) ? item.label : undefined}
           >
             <div className="relative flex-shrink-0">
-              <item.icon className={`w-5 h-5 ${isActive(item.href) ? 'text-amber-500' : 'text-gray-400'}`} />
+              <item.icon className={`w-5 h-5 ${isActive(item.href) ? 'text-[#364153]' : 'text-[#364153]/50'}`} />
               {item.badge && (
-                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-amber-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-[#364153] text-white text-[10px] font-bold rounded-full flex items-center justify-center">
                   {item.badge}
                 </span>
               )}

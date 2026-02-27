@@ -10,7 +10,31 @@ export default function DashboardLayout({ children }) {
   const { isRTL } = useLanguage();
   const [onboardingCompleted, setOnboardingCompleted] = useState(null);
 
-  // Listen for onboarding status updates from page
+  // Check onboarding status directly from the API
+  useEffect(() => {
+    async function checkOnboarding() {
+      try {
+        const response = await fetch('/api/business/onboarding');
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json') && response.ok) {
+          const data = await response.json();
+          setOnboardingCompleted(data.onboardingCompleted);
+        } else {
+          // If API fails, default to showing the full layout
+          setOnboardingCompleted(true);
+        }
+      } catch (error) {
+        console.error('Error checking onboarding:', error);
+        setOnboardingCompleted(true);
+      }
+    }
+
+    if (isLoaded) {
+      checkOnboarding();
+    }
+  }, [isLoaded]);
+
+  // Also listen for onboarding status updates from child pages (e.g. after completing onboarding)
   useEffect(() => {
     const handleOnboardingStatus = (event) => {
       setOnboardingCompleted(event.detail.completed);

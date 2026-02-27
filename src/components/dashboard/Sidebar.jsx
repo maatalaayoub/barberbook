@@ -59,7 +59,7 @@ export default function Sidebar() {
     },
     { 
       icon: Scissors, 
-      label: t('dashboard.sidebar.services') || 'Services', 
+      label: t('dashboard.sidebar.services') || 'Services et Prix', 
       href: `/${locale}/business/dashboard/services` 
     },
     { 

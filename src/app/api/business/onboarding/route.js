@@ -125,11 +125,13 @@ export async function POST(request) {
       businessHours, 
       yearsOfExperience,
       hasCertificate,
-      // Shop/salon specific
+      // Shop/salon & mobile service shared
       businessName,
       address,
       city,
       phone,
+      latitude,
+      longitude,
       // Mobile service specific
       serviceArea,
       travelRadiusKm,
@@ -228,6 +230,8 @@ export async function POST(request) {
         address: address || null,
         city: city || null,
         phone: phone || null,
+        latitude: latitude || null,
+        longitude: longitude || null,
         work_location: workLocation || null,
         business_hours: businessHours || [],
       };
@@ -246,6 +250,12 @@ export async function POST(request) {
       // Mobile service provider data
       const mobileServiceData = {
         business_info_id: businessInfoId,
+        business_name: businessName || null,
+        address: address || null,
+        city: city || null,
+        phone: phone || null,
+        latitude: latitude || null,
+        longitude: longitude || null,
         service_area: serviceArea || null,
         travel_radius_km: travelRadiusKm || null,
         work_location: workLocation || null,

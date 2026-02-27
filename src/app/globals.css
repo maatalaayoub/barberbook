@@ -1,4 +1,10 @@
 @import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+/* Keep Leaflet map and controls below other UI elements */
+.leaflet-container {
+  z-index: 0 !important;
+}
 
 :root {
   --background: #ffffff;
@@ -42,3 +48,156 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #b8982f;
 }
+
+/* ─── FullCalendar Custom Theme ─── */
+.fc-custom .fc {
+  --fc-border-color: #f1f5f9;
+  --fc-today-bg-color: #fffbeb;
+  --fc-now-indicator-color: #D4AF37;
+  --fc-page-bg-color: transparent;
+  --fc-neutral-bg-color: #fafafa;
+  --fc-list-event-hover-bg-color: #fffbeb;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Day header */
+.fc-custom .fc .fc-col-header-cell {
+  padding: 10px 0;
+  background: #fafbfc;
+  border-bottom: 2px solid #f1f5f9;
+}
+.fc-custom .fc .fc-col-header-cell-cushion {
+  color: #64748b;
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  text-decoration: none;
+}
+
+/* Time slot labels */
+.fc-custom .fc .fc-timegrid-slot-label-cushion {
+  color: #94a3b8;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Time grid lines */
+.fc-custom .fc .fc-timegrid-slot {
+  height: 3rem;
+}
+.fc-custom .fc td,
+.fc-custom .fc th {
+  border-color: #f1f5f9;
+}
+
+/* Today column */
+.fc-custom .fc .fc-day-today {
+  background: #fffdf5 !important;
+}
+.fc-custom .fc .fc-col-header-cell.fc-day-today .fc-col-header-cell-cushion {
+  color: #D4AF37;
+}
+
+/* Now indicator */
+.fc-custom .fc .fc-timegrid-now-indicator-line {
+  border-color: #D4AF37;
+  border-width: 2px;
+}
+.fc-custom .fc .fc-timegrid-now-indicator-arrow {
+  border-color: #D4AF37;
+}
+
+/* Events */
+.fc-custom .fc .fc-event {
+  border-radius: 8px;
+  border-left-width: 3px;
+  padding: 2px 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: box-shadow 0.2s, transform 0.15s;
+}
+.fc-custom .fc .fc-event:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  transform: translateY(-1px);
+}
+.fc-custom .fc .fc-event-main {
+  padding: 1px 2px;
+}
+.fc-custom .fc .fc-event-time {
+  font-size: 0.7rem;
+  opacity: 0.85;
+}
+.fc-custom .fc .fc-event-title {
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+/* Drag mirror */
+.fc-custom .fc .fc-event-mirror {
+  opacity: 0.7;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+/* Day grid (month view) */
+.fc-custom .fc .fc-daygrid-day-number {
+  color: #475569;
+  font-weight: 500;
+  font-size: 0.85rem;
+  padding: 8px;
+  text-decoration: none;
+}
+.fc-custom .fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+  background: #D4AF37;
+  color: white;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.fc-custom .fc .fc-daygrid-more-link {
+  color: #D4AF37;
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+/* List view */
+.fc-custom .fc .fc-list {
+  border: none;
+}
+.fc-custom .fc .fc-list-day-cushion {
+  background: #fafbfc;
+  padding: 10px 16px;
+}
+.fc-custom .fc .fc-list-day-text,
+.fc-custom .fc .fc-list-day-side-text {
+  color: #475569;
+  font-weight: 600;
+  text-decoration: none;
+}
+.fc-custom .fc .fc-list-event td {
+  padding: 10px 16px;
+  border-color: #f1f5f9;
+}
+.fc-custom .fc .fc-list-event-dot {
+  border-radius: 50%;
+}
+
+/* Scrollbar in calendar */
+.fc-custom .fc .fc-scroller::-webkit-scrollbar {
+  width: 6px;
+}
+.fc-custom .fc .fc-scroller::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 3px;
+}
+
+/* Remove default FC button styles (we use our own toolbar) */
+.fc-custom .fc .fc-toolbar {
+  display: none !important;
+}
+

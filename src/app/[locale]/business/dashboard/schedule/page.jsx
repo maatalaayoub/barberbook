@@ -1,0 +1,572 @@
+'use client';
+
+import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
+import dynamic from 'next/dynamic';
+import { motion } from 'framer-motion';
+import {
+  Plus,
+  Clock,
+  CalendarDays,
+  Save,
+  Coffee,
+  Utensils,
+  XCircle,
+  Palmtree,
+  Plane,
+  HelpCircle,
+  Trash2,
+  Loader2,
+  RotateCw,
+  ChevronLeft,
+  ChevronRight,
+  List,
+} from 'lucide-react';
+import AddExceptionModal from '@/components/dashboard/AddExceptionModal';
+import ExceptionDetailModal from '@/components/dashboard/ExceptionDetailModal';
+
+// Dynamic import FullCalendar wrapper
+const FullCalendarWrapper = dynamic(
+  () => import('@/components/dashboard/ScheduleCalendarWrapper'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center h-96 text-gray-400">
+        Loading calendar...
+      </div>
+    ),
+  }
+);
+
+// ─── Constants ──────────────────────────────────────────────
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const DAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+const EXCEPTION_ICONS = {
+  break: Coffee,
+  lunch_break: Utensils,
+  closure: XCircle,
+  holiday: Palmtree,
+  vacation: Plane,
+  other: HelpCircle,
+};
+
+const EXCEPTION_COLORS = {
+  break: { bg: '#3B82F6', border: '#2563EB' },
+  lunch_break: { bg: '#F97316', border: '#EA580C' },
+  closure: { bg: '#EF4444', border: '#DC2626' },
+  holiday: { bg: '#10B981', border: '#059669' },
+  vacation: { bg: '#8B5CF6', border: '#7C3AED' },
+  other: { bg: '#6B7280', border: '#4B5563' },
+};
+
+const DEFAULT_HOURS = DAY_NAMES.map((_, i) => ({
+  dayOfWeek: i,
+  isOpen: i >= 1 && i <= 5, // Mon-Fri open
+  openTime: '09:00',
+  closeTime: '19:00',
+}));
+
+// ─── Main Component ─────────────────────────────────────────
+export default function SchedulePage() {
+  const calendarRef = useRef(null);
+  const [businessHours, setBusinessHours] = useState(DEFAULT_HOURS);
+  const [exceptions, setExceptions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalDefaultDate, setModalDefaultDate] = useState(null);
+  const [activeTab, setActiveTab] = useState('hours'); // 'hours' | 'calendar'
+  const [currentView, setCurrentView] = useState('dayGridMonth');
+  const [deletingId, setDeletingId] = useState(null);
+  const [selectedExc, setSelectedExc] = useState(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+
+  // ── Fetch data from API ──
+  useEffect(() => {
+    async function fetchSchedule() {
+      try {
+        const res = await fetch('/api/business/schedule');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.businessHours?.length > 0) {
+            setBusinessHours(data.businessHours);
+          }
+          setExceptions(data.exceptions || []);
+        }
+      } catch (err) {
+        console.error('Failed to fetch schedule:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchSchedule();
+  }, []);
+
+  // ── Save working hours ──
+  const saveHours = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch('/api/business/schedule', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ businessHours }),
+      });
+      if (res.ok) {
+        setHasChanges(false);
+      }
+    } catch (err) {
+      console.error('Failed to save hours:', err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // ── Update a day's hours ──
+  const updateDay = (dayIndex, field, value) => {
+    setBusinessHours((prev) =>
+      prev.map((d) =>
+        d.dayOfWeek === dayIndex ? { ...d, [field]: value } : d
+      )
+    );
+    setHasChanges(true);
+  };
+
+  // ── Add exception via API ──
+  const addException = async (exceptionData) => {
+    const res = await fetch('/api/business/schedule', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(exceptionData),
+    });
+    if (res.ok) {
+      const { exception } = await res.json();
+      setExceptions((prev) => [...prev, exception]);
+    } else {
+      throw new Error('Failed to add exception');
+    }
+  };
+
+  // ── Delete exception via API ──
+  const deleteException = async (id) => {
+    setDeletingId(id);
+    // Allow spinner to render before fetch
+    await new Promise((r) => setTimeout(r, 0));
+    try {
+      const res = await fetch(`/api/business/schedule?id=${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        // Brief delay so the user sees the spinner
+        await new Promise((r) => setTimeout(r, 400));
+        setExceptions((prev) => prev.filter((e) => e.id !== id));
+      }
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  // ── Calendar navigation ──
+  const goToday = () => calendarRef.current?.getApi()?.today();
+  const goPrev = () => calendarRef.current?.getApi()?.prev();
+  const goNext = () => calendarRef.current?.getApi()?.next();
+  const changeView = (view) => {
+    calendarRef.current?.getApi()?.changeView(view);
+    setCurrentView(view);
+  };
+
+  // ── Build calendar events from working hours + exceptions ──
+  const calendarEvents = useMemo(() => {
+    const events = [];
+
+    // Generate working hours as background events for the next 8 weeks
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 7);
+    for (let w = 0; w < 8; w++) {
+      for (let d = 0; d < 7; d++) {
+        const date = new Date(startDate);
+        date.setDate(date.getDate() + w * 7 + d);
+        const dayOfWeek = date.getDay();
+        const dayConf = businessHours.find((h) => h.dayOfWeek === dayOfWeek);
+
+        if (dayConf?.isOpen && dayConf.openTime && dayConf.closeTime) {
+          const dateStr = date.toISOString().split('T')[0];
+          events.push({
+            id: `wh_${dateStr}`,
+            title: 'Working Hours',
+            start: `${dateStr}T${dayConf.openTime}:00`,
+            end: `${dateStr}T${dayConf.closeTime}:00`,
+            display: 'background',
+            backgroundColor: '#D4AF3720',
+            borderColor: 'transparent',
+          });
+        }
+      }
+    }
+
+    // Add exceptions as real events
+    exceptions.forEach((ex) => {
+      const color = EXCEPTION_COLORS[ex.type] || EXCEPTION_COLORS.other;
+      // Normalize time: DB may return HH:mm:ss or HH:mm
+      const normalizeTime = (t) => {
+        if (!t) return null;
+        const parts = t.split(':');
+        return parts.length >= 2 ? `${parts[0]}:${parts[1]}:00` : `${t}:00`;
+      };
+
+      if (ex.is_full_day) {
+        events.push({
+          id: ex.id,
+          title: ex.title,
+          start: ex.date,
+          allDay: true,
+          backgroundColor: color.bg,
+          borderColor: color.border,
+          extendedProps: { ...ex },
+        });
+      } else if (ex.start_time && ex.end_time) {
+        const startT = normalizeTime(ex.start_time);
+        const endT = normalizeTime(ex.end_time);
+        events.push({
+          id: ex.id,
+          title: ex.title,
+          start: `${ex.date}T${startT}`,
+          end: `${ex.date}T${endT}`,
+          backgroundColor: color.bg,
+          borderColor: color.border,
+          extendedProps: { ...ex },
+        });
+      }
+    });
+
+    return events;
+  }, [businessHours, exceptions]);
+
+  // ── Date click => open exception modal ──
+  const handleDateClick = useCallback((info) => {
+    setModalDefaultDate(info.dateStr);
+    setIsModalOpen(true);
+  }, []);
+
+  // ── Event click => show exception detail ──
+  const handleEventClick = useCallback((info) => {
+    const ex = info.event.extendedProps;
+    // Ignore background working-hour events
+    if (!ex || !ex.id) return;
+    setSelectedExc(ex);
+    setIsDetailOpen(true);
+  }, []);
+
+  // ── Delete from detail modal ──
+  const deleteFromDetail = async (id) => {
+    const res = await fetch(`/api/business/schedule?id=${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      setExceptions((prev) => prev.filter((e) => e.id !== id));
+    } else {
+      throw new Error('Failed to delete');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* ── Header ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Schedule</h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Manage your working hours, breaks, and closures
+          </p>
+        </div>
+        <button
+          onClick={() => {
+            setModalDefaultDate(null);
+            setIsModalOpen(true);
+          }}
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#364153] hover:bg-[#2a3444] text-white rounded-[5px] font-medium text-sm transition-colors shadow-sm"
+        >
+          <Plus className="w-4 h-4" />
+          Add Exception
+        </button>
+      </div>
+
+      {/* ── Tab Switcher ── */}
+      <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-[5px] w-fit">
+        <button
+          onClick={() => setActiveTab('hours')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-[5px] text-sm font-medium transition-all ${
+            activeTab === 'hours'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <Clock className="w-4 h-4" />
+          Working Hours
+        </button>
+        <button
+          onClick={() => setActiveTab('calendar')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-[5px] text-sm font-medium transition-all ${
+            activeTab === 'calendar'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <CalendarDays className="w-4 h-4" />
+          Calendar View
+        </button>
+      </div>
+
+      {/* ═══════════════════════════════════════════════════════════
+          TAB: Working Hours
+          ═══════════════════════════════════════════════════════════ */}
+      {activeTab === 'hours' && (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-6"
+        >
+          {/* Working Hours Card */}
+          <div className="bg-white rounded-[5px] border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-4 sm:px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+              <h2 className="text-base font-semibold text-gray-900">Weekly Working Hours</h2>
+              <button
+                onClick={saveHours}
+                disabled={!hasChanges || saving}
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-[5px] text-sm font-medium transition-all ${
+                  hasChanges
+                    ? 'bg-[#364153] hover:bg-[#2a3444] text-white shadow-sm'
+                    : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+
+            <div className="divide-y divide-gray-50">
+              {businessHours.map((day) => (
+                <div
+                  key={day.dayOfWeek}
+                  className={`flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 px-4 sm:px-6 py-4 transition-colors ${
+                    day.isOpen ? 'bg-white' : 'bg-gray-50/50'
+                  }`}
+                >
+                  {/* Day name + toggle */}
+                  <div className="flex items-center gap-3 sm:w-44">
+                    <div
+                      className={`relative w-10 h-5 rounded-full transition-colors cursor-pointer ${
+                        day.isOpen ? 'bg-amber-500' : 'bg-gray-300'
+                      }`}
+                      onClick={() => updateDay(day.dayOfWeek, 'isOpen', !day.isOpen)}
+                    >
+                      <div
+                        className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+                          day.isOpen ? 'translate-x-5' : 'translate-x-0.5'
+                        }`}
+                      />
+                    </div>
+                    <span className={`text-sm font-semibold ${day.isOpen ? 'text-gray-900' : 'text-gray-400'}`}>
+                      {DAY_NAMES[day.dayOfWeek]}
+                    </span>
+                  </div>
+
+                  {/* Time inputs or Closed label */}
+                  {day.isOpen ? (
+                    <div className="flex items-center gap-2 flex-1">
+                      <input
+                        type="time"
+                        value={day.openTime || '09:00'}
+                        onChange={(e) => updateDay(day.dayOfWeek, 'openTime', e.target.value)}
+                        className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-[5px] text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400 w-32"
+                      />
+                      <span className="text-gray-400 text-sm">to</span>
+                      <input
+                        type="time"
+                        value={day.closeTime || '19:00'}
+                        onChange={(e) => updateDay(day.dayOfWeek, 'closeTime', e.target.value)}
+                        className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-[5px] text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400 w-32"
+                      />
+                    </div>
+                  ) : (
+                    <span className="text-sm text-gray-400 italic">Closed</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Exceptions List */}
+          <div className="bg-white rounded-[5px] border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-4 sm:px-6 py-4 border-b border-gray-100">
+              <h2 className="text-base font-semibold text-gray-900">Schedule Exceptions</h2>
+              <p className="text-xs text-gray-400 mt-0.5">Breaks, closures, holidays, and other non-working times</p>
+            </div>
+
+            {exceptions.length === 0 ? (
+              <div className="px-4 sm:px-6 py-12 text-center">
+                <Coffee className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                <p className="text-sm text-gray-500">No exceptions added yet</p>
+                <p className="text-xs text-gray-400 mt-1">Add breaks, closures, or holidays to your schedule</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-50">
+                {exceptions.map((ex) => {
+                  const IconComp = EXCEPTION_ICONS[ex.type] || HelpCircle;
+                  const color = EXCEPTION_COLORS[ex.type] || EXCEPTION_COLORS.other;
+                  return (
+                    <div key={ex.id} className="flex items-center gap-3 px-4 sm:px-6 py-3 hover:bg-gray-50 transition-colors">
+                      <div
+                        className="flex items-center justify-center w-9 h-9 rounded-[5px] flex-shrink-0"
+                        style={{ backgroundColor: color.bg + '20' }}
+                      >
+                        <IconComp className="w-4 h-4" style={{ color: color.bg }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">{ex.title}</p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(ex.date + 'T00:00:00').toLocaleDateString('en-US', {
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric',
+                          })}
+                          {ex.is_full_day
+                            ? ' — Full day'
+                            : ` — ${ex.start_time} to ${ex.end_time}`}
+                          {ex.recurring && (
+                            <span className="ml-1 text-amber-600">
+                              <RotateCw className="w-3 h-3 inline -mt-0.5 mr-0.5" />
+                              Weekly
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => deleteException(ex.id)}
+                        disabled={deletingId === ex.id}
+                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-[5px] transition-colors flex-shrink-0 disabled:opacity-50"
+                      >
+                        {deletingId === ex.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </motion.div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════
+          TAB: Calendar View
+          ═══════════════════════════════════════════════════════════ */}
+      {activeTab === 'calendar' && (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white rounded-[5px] border border-gray-100 shadow-sm overflow-hidden"
+        >
+          {/* Toolbar */}
+          <div className="px-4 sm:px-6 py-4 border-b border-gray-100">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+              {/* Navigation */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={goToday}
+                  className="px-3 py-1.5 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-[5px] transition-colors"
+                >
+                  Today
+                </button>
+                <button
+                  onClick={goPrev}
+                  className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-[5px] transition-colors"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={goNext}
+                  className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-[5px] transition-colors"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* View switcher */}
+              <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-[5px]">
+                {[
+                  { key: 'dayGridMonth', label: 'Month' },
+                  { key: 'timeGridWeek', label: 'Week' },
+                  { key: 'timeGridDay', label: 'Day' },
+                  { key: 'listMonth', label: 'List' },
+                ].map(({ key, label }) => (
+                  <button
+                    key={key}
+                    onClick={() => changeView(key)}
+                    className={`px-3 py-1.5 rounded-[5px] text-xs font-medium transition-all ${
+                      currentView === key
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Legend */}
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-sm bg-amber-200 border border-amber-300" />
+                  <span className="text-xs text-gray-500">Working</span>
+                </div>
+                {Object.entries(EXCEPTION_COLORS).slice(0, 4).map(([type, color]) => (
+                  <div key={type} className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: color.bg }} />
+                    <span className="text-xs text-gray-500 capitalize">{type.replace('_', ' ')}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Calendar */}
+          <div className="p-2 sm:p-4 fc-custom">
+            <FullCalendarWrapper
+              ref={calendarRef}
+              events={calendarEvents}
+              onDateClick={handleDateClick}
+              onEventClick={handleEventClick}
+            />
+          </div>
+        </motion.div>
+      )}
+
+      {/* ── Exception Modal ── */}
+      <AddExceptionModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSave={addException}
+        defaultDate={modalDefaultDate}
+      />
+
+      {/* ── Exception Detail Modal ── */}
+      <ExceptionDetailModal
+        isOpen={isDetailOpen}
+        onClose={() => {
+          setIsDetailOpen(false);
+          setSelectedExc(null);
+        }}
+        exception={selectedExc}
+        onDelete={deleteFromDetail}
+      />
+    </div>
+  );
+}

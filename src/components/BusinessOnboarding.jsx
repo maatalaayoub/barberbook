@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useUser, useAuth } from '@clerk/nextjs';
 import { 
   Store, 
@@ -19,9 +19,24 @@ import {
   GraduationCap,
   Check,
   ChevronRight,
+  ChevronDown,
   Brush,
-  Hand
+  Hand,
+  Building2,
+  Phone,
+  MapPinned
 } from 'lucide-react';
+import dynamic from 'next/dynamic';
+
+// Dynamically import LocationPicker to avoid SSR issues with Leaflet
+const LocationPicker = dynamic(() => import('./LocationPicker'), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[250px] bg-gray-100 rounded-[5px] flex items-center justify-center">
+      <p className="text-gray-400 text-sm">Loading map...</p>
+    </div>
+  ),
+});
 
 const DAYS_OF_WEEK = [
   { id: 0, name: 'Sunday' },
@@ -31,6 +46,26 @@ const DAYS_OF_WEEK = [
   { id: 4, name: 'Thursday' },
   { id: 5, name: 'Friday' },
   { id: 6, name: 'Saturday' },
+];
+
+const MOROCCO_CITIES = [
+  'Casablanca', 'Rabat', 'Fès', 'Marrakech', 'Tanger', 'Meknès', 'Agadir',
+  'Oujda', 'Kénitra', 'Tétouan', 'Salé', 'Temara', 'Safi', 'Mohammédia',
+  'Khouribga', 'El Jadida', 'Béni Mellal', 'Nador', 'Taza', 'Settat',
+  'Berrechid', 'Khémisset', 'Inezgane', 'Larache', 'Guelmim', 'Ksar El Kebir',
+  'Taourirt', 'Berkane', 'Sidi Kacem', 'Sidi Slimane', 'Errachidia',
+  'Guercif', 'Ouarzazate', 'Fquih Ben Salah', 'Tiznit', 'Tan-Tan',
+  'Sefrou', 'Ifrane', 'Azrou', 'Essaouira', 'Taroudant', 'Oulad Teima',
+  'Youssoufia', 'Midelt', 'Chefchaouen', 'Al Hoceïma', 'Ben Guerir',
+  'Asilah', 'Azemmour', 'Skhirat', 'Bir Jdid', 'Ouazzane',
+  'Tinghir', 'Zagora', 'Dakhla', 'Laâyoune', 'Boujdour', 'Smara',
+  'Es-Semara', 'Assa', 'Tata', 'Bouarfa', 'Fnideq', 'Martil',
+  'M\'diq', 'Imzouren', 'Driouch', 'Jerada', 'Ain Taoujdate',
+  'Moulay Idriss Zerhoun', 'Missour', 'Azilal', 'Demnate', 'Kasba Tadla',
+  'Souk El Arbaa', 'Mechra Bel Ksiri', 'Sidi Bennour', 'Ait Melloul',
+  'Biougra', 'Chichaoua', 'El Kelaa des Sraghna', 'Ben Slimane',
+  'Bouznika', 'Tifelt', 'Sidi Yahia El Gharb', 'Aïn Harrouda',
+  'Oued Zem', 'Bejaad'
 ];
 
 const BUSINESS_CATEGORIES = [
@@ -118,11 +153,46 @@ export default function BusinessOnboarding({ userName, onComplete }) {
   const [workLocation, setWorkLocation] = useState('');
   const [businessHours, setBusinessHours] = useState(DEFAULT_HOURS);
   const [editingDay, setEditingDay] = useState(null);
+  // Business details fields (salon_owner & mobile_service)
+  const [businessName, setBusinessName] = useState('');
+  const [businessCity, setBusinessCity] = useState('');
+  const [businessPhone, setBusinessPhone] = useState('');
+  const [businessAddress, setBusinessAddress] = useState('');
+  const [locationLat, setLocationLat] = useState(null);
+  const [locationLng, setLocationLng] = useState(null);
+  // City dropdown state
+  const [isCityOpen, setIsCityOpen] = useState(false);
+  const [citySearch, setCitySearch] = useState('');
+  const cityRef = useRef(null);
+  const citySearchRef = useRef(null);
   // Job seeker specific fields
   const [yearsOfExperience, setYearsOfExperience] = useState('');
   const [hasCertificate, setHasCertificate] = useState(null);
 
   const displayName = userName || user?.firstName || 'there';
+
+  // Close city dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (cityRef.current && !cityRef.current.contains(event.target)) {
+        setIsCityOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Focus search input when city dropdown opens
+  useEffect(() => {
+    if (isCityOpen && citySearchRef.current) {
+      setTimeout(() => citySearchRef.current?.focus(), 100);
+    }
+    if (!isCityOpen) setCitySearch('');
+  }, [isCityOpen]);
+
+  const filteredCities = MOROCCO_CITIES.filter(city =>
+    city.toLowerCase().includes(citySearch.toLowerCase())
+  );
   
   // Create user in database immediately when component mounts
   // With retry mechanism for cases where Clerk session isn't immediately available
@@ -199,20 +269,21 @@ export default function BusinessOnboarding({ userName, onComplete }) {
   // Determine total steps and step content based on business category
   const getTotalSteps = () => {
     if (businessCategory === 'job_seeker') return 4;
-    return 3; // salon_owner and mobile_service
+    return 4; // salon_owner and mobile_service now have 4 steps
   };
   const totalSteps = getTotalSteps();
 
   // Map logical steps to actual step content
-  // For salon_owner: 1=Category, 2=ProfessionalType (services), 3=BusinessHours
-  // For mobile_service: 1=Category, 2=ProfessionalType (services), 3=BusinessHours
+  // For salon_owner: 1=Category, 2=ProfessionalType, 3=BusinessDetails, 4=BusinessHours
+  // For mobile_service: 1=Category, 2=ProfessionalType, 3=BusinessDetails, 4=BusinessHours
   // For job_seeker: 1=Category, 2=ProfessionalType, 3=YearsOfExperience, 4=Certificate
   const getStepContent = () => {
     if (businessCategory === 'salon_owner' || businessCategory === 'mobile_service') {
       return {
         1: 'category',
         2: 'professional_type',
-        3: 'business_hours'
+        3: 'business_details',
+        4: 'business_hours'
       };
     }
     // job_seeker flow
@@ -232,6 +303,11 @@ export default function BusinessOnboarding({ userName, onComplete }) {
         return !!businessCategory;
       case 'professional_type':
         return !!professionalType;
+      case 'business_details':
+        if (businessCategory === 'mobile_service') {
+          return !!businessName.trim() && !!businessCity.trim() && !!businessPhone.trim();
+        }
+        return !!businessName.trim() && !!businessCity.trim() && !!businessPhone.trim() && !!businessAddress.trim();
       case 'years_of_experience':
         return !!yearsOfExperience;
       case 'certificate':
@@ -240,6 +316,27 @@ export default function BusinessOnboarding({ userName, onComplete }) {
         return businessHours.some(h => h.isOpen);
       default:
         return false;
+    }
+  };
+
+  const handleLocationSelect = async (lat, lng) => {
+    setLocationLat(lat);
+    setLocationLng(lng);
+
+    // Reverse geocode to fill address automatically
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`,
+        { headers: { 'Accept-Language': 'en' } }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        if (data.display_name) {
+          setBusinessAddress(data.display_name);
+        }
+      }
+    } catch (err) {
+      console.warn('[LocationPicker] Reverse geocode failed:', err);
     }
   };
 
@@ -308,9 +405,21 @@ export default function BusinessOnboarding({ userName, onComplete }) {
       if (businessCategory === 'salon_owner') {
         requestBody.workLocation = 'my_place';
         requestBody.businessHours = businessHours;
+        requestBody.businessName = businessName;
+        requestBody.city = businessCity;
+        requestBody.phone = businessPhone;
+        requestBody.address = businessAddress;
+        requestBody.latitude = locationLat;
+        requestBody.longitude = locationLng;
       } else if (businessCategory === 'mobile_service') {
         requestBody.workLocation = 'client_location';
         requestBody.businessHours = businessHours;
+        requestBody.businessName = businessName;
+        requestBody.city = businessCity;
+        requestBody.phone = businessPhone;
+        requestBody.address = businessAddress;
+        requestBody.latitude = locationLat;
+        requestBody.longitude = locationLng;
       } else if (businessCategory === 'job_seeker') {
         // Job seekers don't have work location or business hours
         requestBody.yearsOfExperience = yearsOfExperience;
@@ -517,6 +626,168 @@ export default function BusinessOnboarding({ userName, onComplete }) {
                   </button>
                 );
               })}
+            </div>
+
+            <div className="flex gap-3 mt-6 sm:mt-8">
+              <button
+                onClick={handleBack}
+                className="px-4 sm:px-6 py-3 sm:py-4 rounded-[5px] font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all text-sm sm:text-base"
+              >
+                Back
+              </button>
+              <button
+                onClick={handleNext}
+                disabled={!canContinue()}
+                className={`flex-1 py-3 sm:py-4 rounded-[5px] font-semibold text-white transition-all text-sm sm:text-base ${
+                  canContinue() 
+                    ? 'bg-amber-400 hover:bg-amber-500' 
+                    : 'bg-gray-300 cursor-not-allowed'
+                }`}
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step: Business Details (for salon_owner & mobile_service) */}
+        {currentStepContent === 'business_details' && (
+          <div className="bg-white rounded-[5px] shadow-2xl shadow-gray-200/50 p-6 sm:p-8 border border-gray-100">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 text-center mb-2">
+              Business Details
+            </h2>
+            <p className="text-gray-500 text-center mb-6 text-sm sm:text-base">
+              {businessCategory === 'salon_owner' 
+                ? 'Tell us about your salon' 
+                : 'Tell us about your mobile service'}
+            </p>
+
+            <div className="space-y-4" style={{ position: 'relative' }}>
+              {/* Business Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  <Building2 className="w-4 h-4 inline-block mr-1.5 -mt-0.5 text-gray-400" />
+                  Business Name
+                </label>
+                <input
+                  type="text"
+                  value={businessName}
+                  onChange={(e) => setBusinessName(e.target.value)}
+                  placeholder={businessCategory === 'salon_owner' ? 'e.g. Golden Scissors Salon' : 'e.g. Mobile Cuts by Ahmed'}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-[5px] focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent text-gray-900 bg-white text-sm placeholder:text-gray-400"
+                />
+              </div>
+
+              {/* City */}
+              <div ref={cityRef} className="relative" style={{ zIndex: isCityOpen ? 1000 : 'auto' }}>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  <MapPin className="w-4 h-4 inline-block mr-1.5 -mt-0.5 text-gray-400" />
+                  City
+                </label>
+                <div className="relative">
+                  <ChevronDown className={`absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none z-10 transition-transform ${isCityOpen ? 'rotate-180' : ''}`} />
+                  <button
+                    type="button"
+                    onClick={() => setIsCityOpen(!isCityOpen)}
+                    className="w-full flex items-center px-4 py-3 border border-gray-200 rounded-[5px] text-sm bg-white cursor-pointer focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent pr-10"
+                  >
+                    <span className={businessCity ? 'text-gray-900' : 'text-gray-400'}>
+                      {businessCity || 'Select a city'}
+                    </span>
+                  </button>
+                </div>
+
+                {isCityOpen && (
+                  <div className="absolute w-full mt-1 bg-white border border-gray-200 rounded-[5px] shadow-lg overflow-hidden" style={{ zIndex: 1000 }}>
+                    {/* Search */}
+                    <div className="p-2 border-b border-gray-100">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                          ref={citySearchRef}
+                          type="text"
+                          value={citySearch}
+                          onChange={(e) => setCitySearch(e.target.value)}
+                          placeholder="Search city..."
+                          className="w-full py-2 pl-9 pr-3 border border-gray-200 rounded-[5px] text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent placeholder:text-gray-400"
+                        />
+                      </div>
+                    </div>
+                    {/* City list */}
+                    <div className="max-h-48 overflow-y-auto">
+                      {filteredCities.length > 0 ? (
+                        filteredCities.map((city) => (
+                          <button
+                            key={city}
+                            type="button"
+                            onClick={() => {
+                              setBusinessCity(city);
+                              setIsCityOpen(false);
+                            }}
+                            className={`w-full flex items-center gap-2 px-4 py-2.5 text-sm transition-colors hover:bg-gray-50 text-left ${
+                              businessCity === city ? 'text-amber-500 bg-amber-50 font-medium' : 'text-gray-700'
+                            }`}
+                          >
+                            {businessCity === city && <Check className="h-4 w-4 text-amber-500 shrink-0" />}
+                            <span>{city}</span>
+                          </button>
+                        ))
+                      ) : (
+                        <div className="px-4 py-3 text-sm text-gray-400 text-center">No city found</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Phone Number */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  <Phone className="w-4 h-4 inline-block mr-1.5 -mt-0.5 text-gray-400" />
+                  Phone Number
+                </label>
+                <input
+                  type="tel"
+                  value={businessPhone}
+                  onChange={(e) => setBusinessPhone(e.target.value)}
+                  placeholder="e.g. +212 6XX XXX XXX"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-[5px] focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent text-gray-900 bg-white text-sm placeholder:text-gray-400"
+                />
+              </div>
+
+              {/* Address & Map (salon_owner only) */}
+              {businessCategory === 'salon_owner' && (
+                <>
+                  {/* Map for precise location */}
+                  <div style={{ position: 'relative', zIndex: 0 }}>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      <MapPinned className="w-4 h-4 inline-block mr-1.5 -mt-0.5 text-gray-400" />
+                      Salon Location
+                      <span className="text-gray-400 font-normal ml-1">(click on the map to set)</span>
+                    </label>
+                    <LocationPicker
+                      latitude={locationLat}
+                      longitude={locationLng}
+                      onLocationSelect={handleLocationSelect}
+                      className="h-[250px]"
+                    />
+                  </div>
+
+                  {/* Address (auto-filled from map) */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Address
+                    </label>
+                    <input
+                      type="text"
+                      value={businessAddress}
+                      readOnly
+                      placeholder="Click the map above to set the address"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-[5px] text-gray-900 bg-gray-50 text-sm placeholder:text-gray-400 cursor-default"
+                    />
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="flex gap-3 mt-6 sm:mt-8">

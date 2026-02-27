@@ -143,6 +143,8 @@ CREATE TABLE IF NOT EXISTS shop_salon_info (
   address TEXT,
   city TEXT,
   phone TEXT,
+  latitude DOUBLE PRECISION,
+  longitude DOUBLE PRECISION,
   work_location TEXT CHECK (work_location IN ('my_place', 'client_location', 'both')),
   business_hours JSONB DEFAULT '[]'::jsonb,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -177,6 +179,12 @@ CREATE TRIGGER update_shop_salon_info_updated_at
 CREATE TABLE IF NOT EXISTS mobile_service_info (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   business_info_id UUID REFERENCES business_info(id) ON DELETE CASCADE UNIQUE,
+  business_name TEXT,
+  address TEXT,
+  city TEXT,
+  phone TEXT,
+  latitude DOUBLE PRECISION,
+  longitude DOUBLE PRECISION,
   service_area TEXT,
   travel_radius_km INTEGER,
   work_location TEXT CHECK (work_location IN ('my_place', 'client_location', 'both')),
@@ -406,6 +414,8 @@ CREATE TABLE IF NOT EXISTS shop_salon_info (
   address TEXT,
   city TEXT,
   phone TEXT,
+  latitude DOUBLE PRECISION,
+  longitude DOUBLE PRECISION,
   work_location TEXT CHECK (work_location IN ('my_place', 'client_location', 'both')),
   business_hours JSONB DEFAULT '[]'::jsonb,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -441,6 +451,12 @@ CREATE TRIGGER update_shop_salon_info_updated_at
 CREATE TABLE IF NOT EXISTS mobile_service_info (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   business_info_id UUID REFERENCES business_info(id) ON DELETE CASCADE UNIQUE,
+  business_name TEXT,
+  address TEXT,
+  city TEXT,
+  phone TEXT,
+  latitude DOUBLE PRECISION,
+  longitude DOUBLE PRECISION,
   service_area TEXT,
   travel_radius_km INTEGER,
   work_location TEXT CHECK (work_location IN ('my_place', 'client_location', 'both')),
@@ -586,3 +602,56 @@ $$ LANGUAGE plpgsql;
 -- ============================================
 ALTER TABLE user_profile ADD COLUMN IF NOT EXISTS cover_image_url TEXT;
 ALTER TABLE user_profile ADD COLUMN IF NOT EXISTS cover_image_position INTEGER DEFAULT 50;
+
+-- Add latitude/longitude to shop_salon_info
+ALTER TABLE shop_salon_info ADD COLUMN IF NOT EXISTS latitude DOUBLE PRECISION;
+ALTER TABLE shop_salon_info ADD COLUMN IF NOT EXISTS longitude DOUBLE PRECISION;
+
+-- Add business details and coordinates to mobile_service_info
+ALTER TABLE mobile_service_info ADD COLUMN IF NOT EXISTS business_name TEXT;
+ALTER TABLE mobile_service_info ADD COLUMN IF NOT EXISTS address TEXT;
+ALTER TABLE mobile_service_info ADD COLUMN IF NOT EXISTS city TEXT;
+ALTER TABLE mobile_service_info ADD COLUMN IF NOT EXISTS phone TEXT;
+ALTER TABLE mobile_service_info ADD COLUMN IF NOT EXISTS latitude DOUBLE PRECISION;
+ALTER TABLE mobile_service_info ADD COLUMN IF NOT EXISTS longitude DOUBLE PRECISION;
+
+-- ============================================
+-- SCHEDULE EXCEPTIONS (breaks, closures, holidays, etc.)
+-- ============================================
+CREATE TABLE IF NOT EXISTS schedule_exceptions (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  business_info_id UUID REFERENCES business_info(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  type TEXT NOT NULL CHECK (type IN ('break', 'lunch_break', 'closure', 'holiday', 'vacation', 'other')),
+  date DATE NOT NULL,
+  start_time TIME,
+  end_time TIME,
+  is_full_day BOOLEAN DEFAULT false,
+  recurring BOOLEAN DEFAULT false,
+  recurring_day INTEGER CHECK (recurring_day >= 0 AND recurring_day <= 6),
+  notes TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_schedule_exceptions_business_info_id ON schedule_exceptions(business_info_id);
+CREATE INDEX IF NOT EXISTS idx_schedule_exceptions_date ON schedule_exceptions(date);
+
+ALTER TABLE schedule_exceptions ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Schedule exceptions viewable by owner" ON schedule_exceptions;
+CREATE POLICY "Schedule exceptions viewable by owner"
+  ON schedule_exceptions FOR ALL
+  USING (
+    business_info_id IN (
+      SELECT bi.id FROM business_info bi
+      JOIN users u ON u.id = bi.user_id
+      WHERE u.clerk_id = auth.uid()::text
+    )
+  );
+
+DROP TRIGGER IF EXISTS update_schedule_exceptions_updated_at ON schedule_exceptions;
+CREATE TRIGGER update_schedule_exceptions_updated_at
+  BEFORE UPDATE ON schedule_exceptions
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();

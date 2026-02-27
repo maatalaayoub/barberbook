@@ -63,11 +63,11 @@ export default function Footer() {
           {/* Logo */}
           <div className="flex items-center">
             <Image 
-              src="/images/logo-booq.png" 
-              alt="Booq" 
+              src="/images/white_logo.png" 
+              alt="Coiffy" 
               width={180} 
               height={45}
-              className="h-10 w-auto filter brightness-0 invert"
+              className="h-10 w-auto"
             />
           </div>
         </motion.div>
@@ -160,7 +160,7 @@ export default function Footer() {
         >
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <p className="text-sm text-gray-500">
-              © {new Date().getFullYear()} BarberBook. {t('allRightsReserved')}
+              © {new Date().getFullYear()} Coiffy. {t('allRightsReserved')}
             </p>
             
             <div className="flex items-center gap-6">

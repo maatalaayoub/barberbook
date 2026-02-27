@@ -119,7 +119,7 @@ const translations = {
     noWaiting: 'No waiting',
     premiumService: 'Premium service',
     rateReview: 'Rate & review',
-    howItWorksDesc: 'Simple, fast, and hassle-free. Your perfect appointment or turn at a barbershop or hair salon is just a few taps away.',
+    howItWorksDesc: 'Simple, fast, and easy. Your perfect appointment or visit to your barber or hairdresser is just a few clicks away.',
     
     // Barber Features Section
     barberFeaturesDesc: "Join thousands of successful barbers who've transformed their business with BarberBook's powerful tools.",
@@ -543,7 +543,7 @@ const translations = {
     noWaiting: 'Sans attente',
     premiumService: 'Service premium',
     rateReview: 'Noter & évaluer',
-    howItWorksDesc: 'Simple, rapide et sans tracas. Votre rendez-vous ou tour chez un barbier ou salon de coiffure est à quelques clics.',
+    howItWorksDesc: 'Simple, rapide et facile. Votre rendez-vous ou visite chez votre barbier ou coiffeur est à quelques clics.',
     
     // Barber Features Section
     barberFeaturesDesc: 'Rejoignez des milliers de barbiers qui ont transformé leur activité avec les outils puissants de BarberBook.',
@@ -963,7 +963,7 @@ const translations = {
     noWaiting: 'بدون انتظار',
     premiumService: 'خدمة متميزة',
     rateReview: 'قيّم وراجع',
-    howItWorksDesc: 'بسيط، سريع، وبدون متاعب. موعدك أو دورك في صالون الحلاقة أو صالون تصفيف الشعر على بعد نقرات قليلة.',
+    howItWorksDesc: 'بسيط، سريع، وسهل. موعدك أو زيارتك لحلاقك أو مصفف شعرك على بعد نقرات قليلة.',
     
     // Barber Features Section
     barberFeaturesDesc: 'انضم إلى آلاف الحلاقين الناجحين الذين حولوا أعمالهم مع أدوات باربر بوك القوية.',

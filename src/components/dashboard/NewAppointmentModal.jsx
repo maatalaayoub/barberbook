@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -12,6 +12,11 @@ import {
   MessageSquare,
   DollarSign,
   Plus,
+  ChevronDown,
+  Check,
+  Timer,
+  AlertCircle,
+  CheckCircle2,
 } from 'lucide-react';
 
 const SERVICES = [
@@ -69,9 +74,25 @@ export default function NewAppointmentModal({ isOpen, onClose, onSave, defaultDa
     endTime: '09:30',
     notes: '',
     price: '',
+    status: 'pending',
   });
 
   const [errors, setErrors] = useState({});
+  const [serviceDropdownOpen, setServiceDropdownOpen] = useState(false);
+  const serviceDropdownRef = useRef(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (serviceDropdownRef.current && !serviceDropdownRef.current.contains(e.target)) {
+        setServiceDropdownOpen(false);
+      }
+    }
+    if (serviceDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [serviceDropdownOpen]);
 
   // Reset form and populate date/time whenever the modal opens or defaultDate changes
   const defaultEndDateStr = defaultEndDate || '';
@@ -96,6 +117,7 @@ export default function NewAppointmentModal({ isOpen, onClose, onSave, defaultDa
         endTime,
         notes: '',
         price: '',
+        status: 'pending',
       });
       setErrors({});
     }
@@ -144,19 +166,25 @@ export default function NewAppointmentModal({ isOpen, onClose, onSave, defaultDa
       ? new Date(`${formData.date}T${formData.endTime}:00`)
       : new Date(start.getTime() + durationMinutes * 60000);
 
+    const statusColors = {
+      confirmed: { bg: '#D4AF37', border: '#B8960C' },
+      pending: { bg: '#F59E0B', border: '#D97706' },
+    };
+    const colors = statusColors[formData.status] || statusColors.pending;
+
     onSave({
       title: `${formData.service} — ${formData.client}`,
       start: start.toISOString(),
       end: end.toISOString(),
-      backgroundColor: '#D4AF37',
-      borderColor: '#B8960C',
+      backgroundColor: colors.bg,
+      borderColor: colors.border,
       extendedProps: {
         client: formData.client,
         phone: formData.phone,
         service: formData.service,
         notes: formData.notes,
         price: formData.price || (svc ? String(svc.price) : ''),
-        status: 'confirmed',
+        status: formData.status,
       },
     });
   };
@@ -239,32 +267,128 @@ export default function NewAppointmentModal({ isOpen, onClose, onSave, defaultDa
                 </label>
                 <input
                   type="tel"
+                  inputMode="numeric"
                   placeholder="e.g. +212 6XX XXX XXX"
                   value={formData.phone}
-                  onChange={(e) => handleChange('phone', e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/[^0-9+\s\-()]/g, '');
+                    handleChange('phone', val);
+                  }}
                   className={inputClass('phone')}
                 />
               </div>
 
               {/* Service */}
-              <div>
+              <div ref={serviceDropdownRef} className="relative">
                 <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-1.5">
                   <Scissors className="w-3.5 h-3.5 text-gray-400" />
                   Service <span className="text-red-400">*</span>
                 </label>
-                <select
-                  value={formData.service}
-                  onChange={(e) => handleChange('service', e.target.value)}
-                  className={inputClass('service')}
+                <button
+                  type="button"
+                  onClick={() => setServiceDropdownOpen((v) => !v)}
+                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-[5px] border text-sm transition-all text-left ${
+                    errors.service
+                      ? 'border-red-300 ring-2 ring-red-100'
+                      : serviceDropdownOpen
+                        ? 'border-amber-400 ring-2 ring-amber-100'
+                        : 'border-gray-200 hover:border-gray-300'
+                  } bg-white`}
                 >
-                  <option value="">Select a service</option>
-                  {SERVICES.map((s) => (
-                    <option key={s.name} value={s.name}>
-                      {s.name} — {s.duration}min — {s.price} MAD
-                    </option>
-                  ))}
-                </select>
+                  {formData.service ? (
+                    <span className="text-gray-900 font-medium">{formData.service}</span>
+                  ) : (
+                    <span className="text-gray-400">Select a service</span>
+                  )}
+                  <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${serviceDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                <AnimatePresence>
+                  {serviceDropdownOpen && (
+                    <motion.ul
+                      initial={{ opacity: 0, y: -6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute z-50 mt-1.5 w-full bg-white border border-gray-200 rounded-[5px] shadow-lg overflow-hidden max-h-60 overflow-y-auto"
+                    >
+                      {SERVICES.map((s) => {
+                        const isSelected = formData.service === s.name;
+                        return (
+                          <li
+                            key={s.name}
+                            onClick={() => {
+                              handleChange('service', s.name);
+                              setServiceDropdownOpen(false);
+                            }}
+                            className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors ${
+                              isSelected
+                                ? 'bg-amber-50'
+                                : 'hover:bg-gray-50'
+                            }`}
+                          >
+                            <div className={`flex items-center justify-center w-8 h-8 rounded-[5px] flex-shrink-0 ${
+                              isSelected ? 'bg-amber-100' : 'bg-gray-100'
+                            }`}>
+                              <Scissors className={`w-3.5 h-3.5 ${isSelected ? 'text-amber-600' : 'text-gray-400'}`} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-sm font-medium truncate ${isSelected ? 'text-amber-700' : 'text-gray-900'}`}>
+                                {s.name}
+                              </p>
+                              <div className="flex items-center gap-2 text-xs text-gray-400 mt-0.5">
+                                <span className="flex items-center gap-0.5">
+                                  <Timer className="w-3 h-3" />
+                                  {s.duration}min
+                                </span>
+                                <span>•</span>
+                                <span className="font-medium text-gray-500">{s.price} MAD</span>
+                              </div>
+                            </div>
+                            {isSelected && (
+                              <Check className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                            )}
+                          </li>
+                        );
+                      })}
+                    </motion.ul>
+                  )}
+                </AnimatePresence>
                 {errors.service && <p className="mt-1 text-xs text-red-500">{errors.service}</p>}
+              </div>
+
+              {/* Status */}
+              <div>
+                <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-1.5">
+                  <AlertCircle className="w-3.5 h-3.5 text-gray-400" />
+                  Status
+                </label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleChange('status', 'pending')}
+                    className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-[5px] border text-sm font-medium transition-all ${
+                      formData.status === 'pending'
+                        ? 'bg-orange-50 border-orange-300 text-orange-700 ring-2 ring-orange-100'
+                        : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'
+                    }`}
+                  >
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    Pending
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleChange('status', 'confirmed')}
+                    className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-[5px] border text-sm font-medium transition-all ${
+                      formData.status === 'confirmed'
+                        ? 'bg-amber-50 border-amber-300 text-amber-700 ring-2 ring-amber-100'
+                        : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'
+                    }`}
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    Confirmed
+                  </button>
+                </div>
               </div>
 
               {/* Date */}

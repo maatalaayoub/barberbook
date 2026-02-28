@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -12,15 +13,19 @@ import {
   CalendarDays,
   GripVertical,
   MessageSquare,
+  AlertTriangle,
 } from 'lucide-react';
 
 export default function AppointmentDetailModal({
   appointment,
   isOpen,
   onClose,
+  onConfirm,
   onComplete,
   onCancel,
 }) {
+  const [confirmAction, setConfirmAction] = useState(null);
+
   if (!appointment) return null;
 
   const statusColors = {
@@ -34,7 +39,7 @@ export default function AppointmentDetailModal({
 
   const formatTime = (dateStr) => {
     const d = new Date(dateStr);
-    return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
   };
 
   const formatDate = (dateStr) => {
@@ -72,7 +77,6 @@ export default function AppointmentDetailModal({
             {/* Header with colored accent */}
             <div
               className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4"
-              style={{ borderTop: `4px solid ${appointment.backgroundColor || '#D4AF37'}` }}
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">
@@ -188,12 +192,32 @@ export default function AppointmentDetailModal({
             {appointment.extendedProps?.status !== 'completed' &&
               appointment.extendedProps?.status !== 'cancelled' && (
                 <div className="px-4 sm:px-6 pb-4 sm:pb-6 flex flex-col sm:flex-row gap-2 sm:gap-3">
+                  {appointment.extendedProps?.status === 'pending' && onConfirm && (
+                    <button
+                      onClick={() => setConfirmAction({
+                        type: 'confirm',
+                        label: 'Confirm Appointment',
+                        message: `Are you sure you want to confirm the appointment for ${appointment.extendedProps?.client || 'this client'}?`,
+                        btnClass: 'bg-[#D4AF37] hover:bg-[#b8960c] text-white',
+                        icon: <CheckCircle2 className="w-5 h-5" />,
+                        action: () => { onConfirm(appointment.id); onClose(); },
+                      })}
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 sm:py-2.5 bg-[#D4AF37] hover:bg-[#b8960c] text-white rounded-[5px] font-medium text-sm transition-colors shadow-sm"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      Confirm
+                    </button>
+                  )}
                   {new Date(appointment.start) <= new Date() && (
                     <button
-                      onClick={() => {
-                        onComplete(appointment.id);
-                        onClose();
-                      }}
+                      onClick={() => setConfirmAction({
+                        type: 'complete',
+                        label: 'Mark as Complete',
+                        message: `Are you sure you want to mark this appointment as completed?`,
+                        btnClass: 'bg-emerald-500 hover:bg-emerald-600 text-white',
+                        icon: <CheckCircle2 className="w-5 h-5" />,
+                        action: () => { onComplete(appointment.id); onClose(); },
+                      })}
                       className="flex-1 flex items-center justify-center gap-2 px-4 py-3 sm:py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-[5px] font-medium text-sm transition-colors shadow-sm"
                     >
                       <CheckCircle2 className="w-4 h-4" />
@@ -201,10 +225,14 @@ export default function AppointmentDetailModal({
                     </button>
                   )}
                   <button
-                    onClick={() => {
-                      onCancel(appointment.id);
-                      onClose();
-                    }}
+                    onClick={() => setConfirmAction({
+                      type: 'cancel',
+                      label: 'Cancel Appointment',
+                      message: `Are you sure you want to cancel this appointment? This action cannot be undone.`,
+                      btnClass: 'bg-red-500 hover:bg-red-600 text-white',
+                      icon: <XCircle className="w-5 h-5" />,
+                      action: () => { onCancel(appointment.id); onClose(); },
+                    })}
                     className="flex-1 flex items-center justify-center gap-2 px-4 py-3 sm:py-2.5 bg-white border border-red-200 text-red-600 hover:bg-red-50 rounded-[5px] font-medium text-sm transition-colors"
                   >
                     <XCircle className="w-4 h-4" />
@@ -226,6 +254,58 @@ export default function AppointmentDetailModal({
               </div>
             )}
           </motion.div>
+
+          {/* ── Confirmation Dialog ── */}
+          <AnimatePresence>
+            {confirmAction && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 z-[10000] flex items-center justify-center p-4"
+                onClick={() => setConfirmAction(null)}
+              >
+                <div className="absolute inset-0 bg-black/30" />
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ type: 'spring', duration: 0.3 }}
+                  className="relative bg-white rounded-[5px] shadow-2xl w-full max-w-sm p-5 sm:p-6"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex flex-col items-center text-center">
+                    <div className={`flex items-center justify-center w-12 h-12 rounded-full mb-3 ${
+                      confirmAction.type === 'cancel' ? 'bg-red-100' : confirmAction.type === 'confirm' ? 'bg-amber-100' : 'bg-emerald-100'
+                    }`}>
+                      <AlertTriangle className={`w-6 h-6 ${
+                        confirmAction.type === 'cancel' ? 'text-red-500' : confirmAction.type === 'confirm' ? 'text-amber-500' : 'text-emerald-500'
+                      }`} />
+                    </div>
+                    <h3 className="text-base font-bold text-gray-900 mb-1">{confirmAction.label}</h3>
+                    <p className="text-sm text-gray-500 mb-5">{confirmAction.message}</p>
+                    <div className="flex gap-3 w-full">
+                      <button
+                        onClick={() => setConfirmAction(null)}
+                        className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-[5px] font-medium text-sm transition-colors"
+                      >
+                        Go Back
+                      </button>
+                      <button
+                        onClick={() => {
+                          confirmAction.action();
+                          setConfirmAction(null);
+                        }}
+                        className={`flex-1 px-4 py-2.5 rounded-[5px] font-medium text-sm transition-colors shadow-sm ${confirmAction.btnClass}`}
+                      >
+                        {confirmAction.label.split(' ').slice(0, 1)[0] === 'Mark' ? 'Complete' : confirmAction.label.split(' ')[0]}
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
       )}
     </AnimatePresence>

@@ -31,6 +31,21 @@ body {
   scroll-behavior: smooth;
 }
 
+/*
+ * On touch devices, prevent the browser from initiating a scroll
+ * gesture when the finger is on a calendar EVENT (drag / resize).
+ * Empty slots are left alone so normal page scrolling still works.
+ */
+@media (pointer: coarse) {
+  .fc-event,
+  .fc-event-main,
+  .fc-event-resizer {
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

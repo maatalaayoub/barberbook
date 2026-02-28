@@ -86,6 +86,12 @@ function FilterPill({ label, active, onClick, color }) {
   );
 }
 
+// ─── Overlap helper ─────────────────────────────────────────
+// Returns true when [startA, endA) overlaps [startB, endB)
+function timesOverlap(startA, endA, startB, endB) {
+  return startA < endB && endA > startB;
+}
+
 // ─── Main Component ─────────────────────────────────────────
 export default function AppointmentsPage() {
   const calendarRef = useRef(null);
@@ -99,6 +105,7 @@ export default function AppointmentsPage() {
   const [newDefaultEndDate, setNewDefaultEndDate] = useState(null);
   const [currentView, setCurrentView] = useState('timeGridWeek');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [visibleRange, setVisibleRange] = useState({ start: null, end: null });
   const [toast, setToast] = useState(null);
   const toastTimer = useRef(null);
 
@@ -107,6 +114,34 @@ export default function AppointmentsPage() {
     setToast({ message, type });
     toastTimer.current = setTimeout(() => setToast(null), 3500);
   }, []);
+
+  // ── Track visible date range ──
+  const handleDatesSet = useCallback((dateInfo) => {
+    setVisibleRange({ start: dateInfo.start, end: dateInfo.end });
+  }, []);
+
+  const visibleRangeLabel = useMemo(() => {
+    const { start, end } = visibleRange;
+    if (!start || !end) return '';
+    const fmt = (d, opts) => d.toLocaleDateString('en-US', opts);
+    // end from FC is exclusive, so subtract 1 day for display
+    const last = new Date(end);
+    last.setDate(last.getDate() - 1);
+    // If start and last are the same day (day view), show single date
+    if (start.toDateString() === last.toDateString()) {
+      return fmt(start, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+    }
+    // Same month & year
+    if (start.getMonth() === last.getMonth() && start.getFullYear() === last.getFullYear()) {
+      return `${fmt(start, { month: 'short', day: 'numeric' })} — ${fmt(last, { day: 'numeric' })}, ${start.getFullYear()}`;
+    }
+    // Same year, different months
+    if (start.getFullYear() === last.getFullYear()) {
+      return `${fmt(start, { month: 'short', day: 'numeric' })} — ${fmt(last, { month: 'short', day: 'numeric' })}, ${start.getFullYear()}`;
+    }
+    // Different years
+    return `${fmt(start, { month: 'short', day: 'numeric', year: 'numeric' })} — ${fmt(last, { month: 'short', day: 'numeric', year: 'numeric' })}`;
+  }, [visibleRange]);
 
   // ── Load appointments from database ──
   useEffect(() => {
@@ -174,7 +209,30 @@ export default function AppointmentsPage() {
     setIsDetailOpen(true);
   }, []);
 
-  // ── Date click / drag select => open new ──
+  // ── Single tap on empty slot => open new ──
+  const handleDateClick = useCallback((info) => {
+    const now = new Date();
+    const clickedDate = new Date(info.dateStr);
+
+    if (info.allDay) {
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      if (clickedDate < todayStart) {
+        showToast('Cannot create an appointment for a past date.');
+        return;
+      }
+    } else {
+      if (clickedDate < now) {
+        showToast('Cannot create an appointment for a past date or time.');
+        return;
+      }
+    }
+
+    setNewDefaultDate(info.dateStr);
+    setNewDefaultEndDate(null);
+    setIsNewOpen(true);
+  }, [showToast]);
+
+  // ── Drag select (long press on touch) => open new with range ──
   const handleSelect = useCallback((info) => {
     const now = new Date();
     const selectedStart = new Date(info.startStr);
@@ -208,6 +266,12 @@ export default function AppointmentsPage() {
 
   // ── Drag & drop => reschedule (persist to DB) ──
   const handleEventDrop = useCallback(async (info) => {
+    // Block dropping onto a past date/time
+    if (info.event.start < new Date()) {
+      showToast('Cannot move an appointment to a past date or time.');
+      info.revert();
+      return;
+    }
     const status = info.event.extendedProps?.status;
     if (status === 'confirmed') {
       showToast('Confirmed appointments cannot be moved.');
@@ -215,6 +279,19 @@ export default function AppointmentsPage() {
       return;
     }
     if (status === 'completed' || status === 'cancelled') {
+      info.revert();
+      return;
+    }
+    // Block overlapping with existing appointments
+    const dropStart = info.event.start;
+    const dropEnd = info.event.end || dropStart;
+    const hasOverlap = events.some((e) => {
+      if (e.id === info.event.id) return false;
+      if (e.extendedProps?.status === 'cancelled') return false;
+      return timesOverlap(dropStart, dropEnd, new Date(e.start), new Date(e.end));
+    });
+    if (hasOverlap) {
+      showToast('This time slot overlaps with an existing appointment.');
       info.revert();
       return;
     }
@@ -226,6 +303,9 @@ export default function AppointmentsPage() {
         e.id === info.event.id ? { ...e, start: newStart, end: newEnd } : e
       )
     );
+    // Navigate calendar to show the dropped date
+    const api = calendarRef.current?.getApi();
+    if (api) api.gotoDate(info.event.start);
     try {
       await fetch('/api/business/appointments', {
         method: 'PUT',
@@ -236,10 +316,16 @@ export default function AppointmentsPage() {
       console.error('[Appointments] Drop update failed:', err);
       info.revert();
     }
-  }, [showToast]);
+  }, [showToast, events]);
 
   // ── Resize (persist to DB) ──
   const handleEventResize = useCallback(async (info) => {
+    // Block resizing into a past date/time
+    if (info.event.start < new Date()) {
+      showToast('Cannot resize an appointment to a past date or time.');
+      info.revert();
+      return;
+    }
     const status = info.event.extendedProps?.status;
     if (status === 'confirmed') {
       showToast('Confirmed appointments cannot be resized.');
@@ -247,6 +333,19 @@ export default function AppointmentsPage() {
       return;
     }
     if (status === 'completed' || status === 'cancelled') {
+      info.revert();
+      return;
+    }
+    // Block overlapping with existing appointments
+    const resizeStart = info.event.start;
+    const resizeEnd = info.event.end || resizeStart;
+    const hasOverlap = events.some((e) => {
+      if (e.id === info.event.id) return false;
+      if (e.extendedProps?.status === 'cancelled') return false;
+      return timesOverlap(resizeStart, resizeEnd, new Date(e.start), new Date(e.end));
+    });
+    if (hasOverlap) {
+      showToast('This time slot overlaps with an existing appointment.');
       info.revert();
       return;
     }
@@ -267,13 +366,24 @@ export default function AppointmentsPage() {
       console.error('[Appointments] Resize update failed:', err);
       info.revert();
     }
-  }, [showToast]);
+  }, [showToast, events]);
 
   // ── Add new event (save to DB) ──
   const handleAddEvent = useCallback(async (eventData) => {
     // Safety check: prevent saving past appointments
     if (new Date(eventData.start) < new Date()) {
       showToast('Cannot create an appointment for a past date or time.');
+      return;
+    }
+    // Block overlapping with existing appointments
+    const newStart = new Date(eventData.start);
+    const newEnd = new Date(eventData.end);
+    const hasOverlap = events.some((e) => {
+      if (e.extendedProps?.status === 'cancelled') return false;
+      return timesOverlap(newStart, newEnd, new Date(e.start), new Date(e.end));
+    });
+    if (hasOverlap) {
+      showToast('This time slot overlaps with an existing appointment.');
       return;
     }
     setIsSaving(true);
@@ -333,6 +443,32 @@ export default function AppointmentsPage() {
       });
     } catch (err) {
       console.error('[Appointments] Complete update failed:', err);
+    }
+  }, []);
+
+  // ── Confirm (persist to DB) ──
+  const handleConfirmAppointment = useCallback(async (eventId) => {
+    setEvents((prev) =>
+      prev.map((e) =>
+        e.id === eventId
+          ? {
+              ...e,
+              backgroundColor: STATUS_COLORS.confirmed.bg,
+              borderColor: STATUS_COLORS.confirmed.border,
+              editable: false,
+              extendedProps: { ...e.extendedProps, status: 'confirmed' },
+            }
+          : e
+      )
+    );
+    try {
+      await fetch('/api/business/appointments', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: eventId, status: 'confirmed' }),
+      });
+    } catch (err) {
+      console.error('[Appointments] Confirm update failed:', err);
     }
   }, []);
 
@@ -429,6 +565,11 @@ export default function AppointmentsPage() {
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
+              {visibleRangeLabel && (
+                <span className="ml-1 text-sm font-semibold text-gray-700 whitespace-nowrap">
+                  {visibleRangeLabel}
+                </span>
+              )}
             </div>
 
             {/* View Switcher */}
@@ -474,9 +615,11 @@ export default function AppointmentsPage() {
               ref={calendarRef}
               events={filteredEvents}
               onEventClick={handleEventClick}
+              onDateClick={handleDateClick}
               onSelect={handleSelect}
               onEventDrop={handleEventDrop}
               onEventResize={handleEventResize}
+              onDatesSet={handleDatesSet}
             />
           )}
         </div>
@@ -487,6 +630,7 @@ export default function AppointmentsPage() {
         appointment={selectedEvent}
         isOpen={isDetailOpen}
         onClose={() => setIsDetailOpen(false)}
+        onConfirm={handleConfirmAppointment}
         onComplete={handleComplete}
         onCancel={handleCancelAppointment}
       />

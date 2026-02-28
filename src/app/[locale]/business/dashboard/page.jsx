@@ -174,12 +174,45 @@ export default function BusinessDashboard() {
   // Consolidated loading state - only show ONE loading screen
   if (!isLoaded || isSettingUp || isCheckingOnboarding || (searchParams.get('setup') && !setupComplete && !hasRole)) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-[#D4AF37] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-500">
-            {isSettingUp ? 'Setting up your account...' : 'Loading...'}
-          </p>
+      <div className="animate-pulse">
+        {/* Header skeleton */}
+        <div className="mb-6">
+          <div className="h-7 w-64 bg-gray-200 rounded mb-2" />
+          <div className="h-4 w-96 bg-gray-100 rounded" />
+        </div>
+
+        {/* Stats cards skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="bg-white rounded-[3px] p-6 border border-gray-200">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="h-3.5 w-28 bg-gray-200 rounded mb-3" />
+                  <div className="h-7 w-12 bg-gray-200 rounded" />
+                </div>
+                <div className="w-12 h-12 bg-gray-100 rounded-lg" />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Upcoming appointments skeleton */}
+        <div className="bg-white rounded-[3px] border border-gray-200">
+          <div className="p-6 border-b border-gray-200">
+            <div className="h-5 w-48 bg-gray-200 rounded" />
+          </div>
+          <div className="p-6 space-y-4">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-gray-100 rounded-full" />
+                <div className="flex-1">
+                  <div className="h-4 w-36 bg-gray-200 rounded mb-2" />
+                  <div className="h-3 w-24 bg-gray-100 rounded" />
+                </div>
+                <div className="h-4 w-16 bg-gray-100 rounded" />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );

@@ -75,8 +75,29 @@ export default function BusinessProfilePage() {
   // Show loading state
   if (!isLoaded) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#D4AF37] border-t-transparent"></div>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
+        {/* Actual nav */}
+        <ProfilePageNav
+          locale={locale}
+          onMenuClick={() => {}}
+          isRTL={isRTL}
+          t={t}
+        />
+        <div className="animate-pulse">
+          {/* Cover photo skeleton */}
+          <div className="h-48 sm:h-64 bg-gray-200" />
+          {/* Avatar + info skeleton */}
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 -mt-16 relative z-10">
+            <div className="flex flex-col sm:flex-row items-end gap-4">
+              <div className="w-24 h-24 sm:w-28 sm:h-28 shrink-0 rounded-full bg-gray-300 border-4 border-white mx-auto sm:mx-0" />
+              <div className="pb-2 flex-1 w-full sm:w-auto">
+                <div className="h-6 w-40 max-w-full bg-gray-200 rounded mb-2 mx-auto sm:mx-0" />
+                <div className="h-4 w-28 max-w-full bg-gray-100 rounded mx-auto sm:mx-0" />
+              </div>
+              <div className="h-9 w-28 max-w-full bg-gray-200 rounded-lg mx-auto sm:mx-0" />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

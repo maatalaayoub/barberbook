@@ -6,8 +6,9 @@ import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Scissors, Zap } from 'lucide-react';
+import { Scissors, Zap, CalendarCheck, BarChart3, Globe } from 'lucide-react';
 import { frFR, arSA } from '@clerk/localizations';
+import AuthPageNav from '@/components/AuthPageNav';
 import ClientOnly from '@/components/ClientOnly';
 
 const clerkLocalizations = {
@@ -50,87 +51,66 @@ export default function BusinessSignUpPage() {
   }
 
   return (
-    <div className={`min-h-screen flex flex-col lg:flex-row ${isRTL ? 'rtl' : 'ltr'}`}>
+    <div className={`min-h-screen flex flex-col bg-white ${isRTL ? 'rtl' : 'ltr'}`}>
+      <AuthPageNav locale={locale} isRTL={isRTL} t={t} />
+
+      <div className="flex-1 flex flex-col lg:flex-row">
       {/* Left Side - Features & Benefits */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
-        {/* Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900" />
-        
-        {/* Animated Pattern */}
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute inset-0" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cg fill-rule='evenodd'%3E%3Cg fill='%23D4AF37' fill-opacity='1'%3E%3Cpath opacity='.5' d='M96 95h4v1h-4v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9zm-1 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9z'/%3E%3Cpath d='M6 5V0H5v5H0v1h5v94h1V6h94V5H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-          }} />
-        </div>
-        
-        {/* Glow Effects */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
-        
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-slate-50 via-white to-slate-100">
+        {/* Decorative elements */}
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-amber-100/40 rounded-full blur-[120px]" />
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-emerald-100/30 rounded-full blur-[100px]" />
+        <div className="absolute inset-0 opacity-[0.03]" style={{
+          backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(0,0,0,0.15) 1px, transparent 0)',
+          backgroundSize: '32px 32px'
+        }} />
+
         {/* Content */}
-        <div className="relative z-10 flex flex-col justify-between p-12 xl:p-16 h-full w-full">
-          <div>
-            <Link href={`/${locale}`} className="inline-block">
-              <Image 
-                src="/images/logo-booq.png" 
-                alt="Booq" 
-                width={200} 
-                height={50}
-                className="h-12 w-auto filter brightness-0 invert"
-                priority
-              />
-            </Link>
-            
-            <div className="flex items-center gap-3 mt-4">
-              <span className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5">
-                <Scissors className="w-3.5 h-3.5" />
+        <div className="relative z-10 flex flex-col justify-center p-12 xl:p-16 h-full w-full">
+          {/* Badges */}
+          <div className="flex items-center gap-3 mb-8">
+            <div className="inline-flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-full px-4 py-1.5">
+              <Scissors className="w-3.5 h-3.5 text-amber-600" />
+              <span className="text-amber-700 text-xs font-semibold tracking-wide uppercase">
                 {t('auth.barber.professionalPortal') || 'Professional Portal'}
               </span>
-              <span className="bg-green-500/20 text-green-400 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5">
-                <Zap className="w-3.5 h-3.5" />
+            </div>
+            <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-full px-4 py-1.5">
+              <Zap className="w-3.5 h-3.5 text-emerald-600" />
+              <span className="text-emerald-700 text-xs font-semibold tracking-wide uppercase">
                 {t('auth.barber.freeTrial') || 'Free to Start'}
               </span>
             </div>
           </div>
-          
-          <div className="my-auto py-8">
-            <h1 className="text-4xl xl:text-5xl font-bold text-white mb-6 leading-tight">
-              {t('auth.barber.joinNetwork') || 'Grow your barbering business'}
-            </h1>
-            
-            <p className="text-gray-400 text-lg mb-10 max-w-md">
-              {t('auth.barber.signUpSubtitle') || 'Join 500+ professionals who trust BarberBook to manage and grow their business.'}
-            </p>
+
+          <h1 className="text-4xl xl:text-5xl font-bold text-slate-900 mb-4 leading-[1.15]">
+            {t('auth.barber.joinNetwork') || 'Grow your barbering business'}
+          </h1>
+
+          <p className="text-slate-500 text-lg max-w-md mb-10 leading-relaxed">
+            {t('auth.barber.signUpSubtitle') || 'Join 500+ professionals who trust BarberBook to manage and grow their business.'}
+          </p>
+
+          {/* Benefits list */}
+          <div className="space-y-4 max-w-md">
+            {[
+              { icon: CalendarCheck, text: t('auth.barber.benefitSchedule') || 'Smart scheduling that fills your calendar' },
+              { icon: BarChart3, text: t('auth.barber.benefitAnalytics') || 'Revenue analytics and business insights' },
+              { icon: Globe, text: t('auth.barber.benefitOnline') || 'Online presence that attracts new clients' },
+            ].map(({ icon: Icon, text }) => (
+              <div key={text} className="flex items-center gap-3">
+                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-amber-50 border border-amber-100 shrink-0">
+                  <Icon className="w-4 h-4 text-amber-600" />
+                </div>
+                <p className="text-slate-600 text-sm">{text}</p>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
       {/* Right Side - Sign Up Form */}
-      <div className="flex-1 flex flex-col min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
-        {/* Mobile Header */}
-        <div className="lg:hidden p-6 bg-gradient-to-r from-slate-900 to-slate-800">
-          <Link href={`/${locale}`} className="inline-flex items-center gap-3">
-            <Image 
-              src="/images/logo-booq.png" 
-              alt="Booq" 
-              width={150} 
-              height={40}
-              className="h-10 w-auto filter brightness-0 invert"
-              priority
-            />
-            <span className="bg-amber-500 text-white text-xs font-bold px-2 py-1 rounded flex items-center gap-1">
-              <Scissors className="w-3 h-3" />
-              PRO
-            </span>
-          </Link>
-          <h2 className="text-white text-xl font-bold mt-4">
-            {t('auth.barber.createAccount') || 'Create your professional account'}
-          </h2>
-          <p className="text-gray-400 text-sm mt-1">
-            {t('auth.barber.freeToStart') || 'Free to start • No credit card required'}
-          </p>
-        </div>
-        
+      <div className="flex-1 flex flex-col bg-white">
         {/* Form Container */}
         <div className="flex-1 flex items-center justify-center px-4 py-8 sm:px-6 lg:px-12">
           <div className="w-full max-w-md">
@@ -188,17 +168,9 @@ export default function BusinessSignUpPage() {
               </ClientOnly>
             </div>
 
-            {/* Back to Home */}
-            <div className="mt-6 text-center">
-              <Link
-                href={`/${locale}`}
-                className="text-slate-400 hover:text-slate-600 text-sm transition-colors inline-flex items-center gap-1"
-              >
-                ← {t('auth.backToHome') || 'Back to Home'}
-              </Link>
-            </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

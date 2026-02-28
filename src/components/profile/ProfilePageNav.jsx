@@ -1,6 +1,6 @@
 'use client';
 
-import { Menu, Home } from 'lucide-react';
+import { Menu, ArrowLeft, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -34,13 +34,12 @@ export default function ProfilePageNav({ locale, onMenuClick, isRTL, t }) {
             </Link>
           </div>
 
-          {/* Right - Home Link */}
+          {/* Right - Back to Home */}
           <Link
             href={`/${locale}`}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium text-white hover:bg-white/10 transition-colors ${isRTL ? 'flex-row-reverse' : ''}`}
+            className="flex items-center justify-center w-9 h-9 rounded-full text-white hover:bg-white/10 transition-colors"
           >
-            <Home className="w-4 h-4" />
-            <span>{t('home') || 'Home'}</span>
+            {isRTL ? <ArrowLeft className="w-5 h-5" /> : <ArrowRight className="w-5 h-5" />}
           </Link>
         </nav>
       </div>

@@ -22,7 +22,26 @@ import NewAppointmentModal from '@/components/dashboard/NewAppointmentModal';
 // Dynamic import of the FullCalendar wrapper to avoid SSR issues
 const FullCalendarWrapper = dynamic(
   () => import('@/components/dashboard/FullCalendarWrapper'),
-  { ssr: false, loading: () => <div className="flex items-center justify-center h-96 text-gray-400">Loading calendar...</div> }
+  { ssr: false, loading: () => (
+    <div className="animate-pulse p-4 space-y-4">
+      {/* Calendar header skeleton */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="h-6 w-32 bg-gray-200 rounded" />
+        <div className="flex gap-2">
+          <div className="h-8 w-8 bg-gray-200 rounded" />
+          <div className="h-8 w-8 bg-gray-200 rounded" />
+        </div>
+      </div>
+      {/* Day headers */}
+      <div className="grid grid-cols-7 gap-2 mb-2">
+        {[...Array(7)].map((_, i) => <div key={i} className="h-4 bg-gray-100 rounded" />)}
+      </div>
+      {/* Calendar grid */}
+      <div className="grid grid-cols-7 gap-2">
+        {[...Array(35)].map((_, i) => <div key={i} className="h-20 bg-gray-50 rounded border border-gray-100" />)}
+      </div>
+    </div>
+  )}
 );
 
 // ─── Status colours (full calendar event colours) ───────────
@@ -530,10 +549,24 @@ export default function AppointmentsPage() {
 
       {/* ── Stats Row ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={CalendarCheck} label="Today" value={stats.today} color="bg-blue-500" />
-        <StatCard icon={CheckCircle2} label="Confirmed" value={stats.confirmed} color="bg-amber-500" />
-        <StatCard icon={AlertCircle} label="Pending" value={stats.pending} color="bg-orange-500" />
-        <StatCard icon={CheckCircle2} label="Completed" value={stats.completed} color="bg-emerald-500" />
+        {isLoading ? (
+          [...Array(4)].map((_, i) => (
+            <div key={i} className="flex items-center gap-3 p-4 bg-white rounded-[5px] border border-gray-200 animate-pulse">
+              <div className="w-10 h-10 rounded-[5px] bg-gray-200" />
+              <div>
+                <div className="h-6 w-8 bg-gray-200 rounded mb-1.5" />
+                <div className="h-3 w-16 bg-gray-100 rounded" />
+              </div>
+            </div>
+          ))
+        ) : (
+          <>
+            <StatCard icon={CalendarCheck} label="Today" value={stats.today} color="bg-blue-500" />
+            <StatCard icon={CheckCircle2} label="Confirmed" value={stats.confirmed} color="bg-amber-500" />
+            <StatCard icon={AlertCircle} label="Pending" value={stats.pending} color="bg-orange-500" />
+            <StatCard icon={CheckCircle2} label="Completed" value={stats.completed} color="bg-emerald-500" />
+          </>
+        )}
       </div>
 
       {/* ── Calendar Card ── */}
@@ -544,6 +577,25 @@ export default function AppointmentsPage() {
       >
         {/* Toolbar */}
         <div className="px-4 sm:px-6 py-4 border-b border-gray-100">
+          {isLoading ? (
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 animate-pulse">
+              {/* Navigation skeleton */}
+              <div className="flex items-center gap-2">
+                <div className="h-7 w-14 bg-gray-200 rounded-lg" />
+                <div className="h-7 w-7 bg-gray-100 rounded-lg" />
+                <div className="h-7 w-7 bg-gray-100 rounded-lg" />
+                <div className="h-4 w-40 bg-gray-200 rounded ml-1" />
+              </div>
+              {/* View switcher skeleton */}
+              <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-xl">
+                {[...Array(4)].map((_, i) => <div key={i} className="h-7 w-14 bg-gray-200 rounded-lg" />)}
+              </div>
+              {/* Filter skeleton */}
+              <div className="flex items-center gap-2">
+                {[...Array(5)].map((_, i) => <div key={i} className="h-7 w-20 bg-gray-200 rounded-full" />)}
+              </div>
+            </div>
+          ) : (
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             {/* Navigation */}
             <div className="flex items-center gap-2">
@@ -599,15 +651,28 @@ export default function AppointmentsPage() {
               <FilterPill label="Cancelled" active={statusFilter === 'cancelled'} onClick={() => setStatusFilter('cancelled')} color="bg-red-500" />
             </div>
           </div>
+          )}
         </div>
 
         {/* Calendar */}
         <div className="p-2 sm:p-4 fc-custom">
           {isLoading ? (
-            <div className="flex items-center justify-center h-96 text-gray-400">
-              <div className="text-center space-y-3">
-                <div className="w-8 h-8 border-2 border-gray-300 border-t-amber-500 rounded-full animate-spin mx-auto" />
-                <p className="text-sm">Loading appointments...</p>
+            <div className="animate-pulse p-4 space-y-4">
+              {/* Calendar header skeleton */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="h-6 w-32 bg-gray-200 rounded" />
+                <div className="flex gap-2">
+                  <div className="h-8 w-8 bg-gray-200 rounded" />
+                  <div className="h-8 w-8 bg-gray-200 rounded" />
+                </div>
+              </div>
+              {/* Day headers */}
+              <div className="grid grid-cols-7 gap-2 mb-2">
+                {[...Array(7)].map((_, i) => <div key={i} className="h-4 bg-gray-100 rounded" />)}
+              </div>
+              {/* Calendar grid */}
+              <div className="grid grid-cols-7 gap-2">
+                {[...Array(35)].map((_, i) => <div key={i} className="h-20 bg-gray-50 rounded border border-gray-100" />)}
               </div>
             </div>
           ) : (

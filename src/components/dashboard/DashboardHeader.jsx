@@ -37,7 +37,7 @@ export default function DashboardHeader() {
               href={`/${locale}`}
               className="flex items-center"
             >
-              <img src="/images/dark_logo.png" alt="Coiffly" className="h-8 sm:h-9 w-auto" />
+              <img src="/images/dark_logo.png" alt="Coiffly" width={140} height={42} className="h-10 w-auto" />
             </Link>
           </div>
 
@@ -57,22 +57,14 @@ export default function DashboardHeader() {
             {user && (
               <button
                 onClick={() => clerk.openUserProfile()}
-                className={`flex items-center gap-3 rounded-lg bg-gray-100 hover:bg-gray-200 px-3 py-2 transition-all cursor-pointer ${isRTL ? 'flex-row-reverse' : ''}`}
+                className="rounded-full transition-all cursor-pointer hover:ring-2 hover:ring-[#D4AF37]/30"
               >
-                <div className="w-8 h-8 rounded-full ring-2 ring-[#D4AF37]/50 overflow-hidden">
+                <div className="w-9 h-9 rounded-full ring-2 ring-[#D4AF37]/50 overflow-hidden">
                   <img 
                     src={user.imageUrl} 
                     alt={user.firstName || 'Profile'} 
                     className="w-full h-full object-cover"
                   />
-                </div>
-                <div className={`hidden sm:block ${isRTL ? 'text-right' : 'text-left'}`}>
-                  <p className="text-sm font-medium text-gray-900">
-                    {user.firstName} {user.lastName}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {t('dashboard.header.professional') || 'Professional'}
-                  </p>
                 </div>
               </button>
             )}

@@ -704,3 +704,39 @@ CREATE TRIGGER update_appointments_updated_at
   BEFORE UPDATE ON appointments
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================
+-- BUSINESS SERVICES & PRICES
+-- ============================================
+CREATE TABLE IF NOT EXISTS business_services (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  business_info_id UUID REFERENCES business_info(id) ON DELETE CASCADE NOT NULL,
+  name TEXT NOT NULL,
+  description TEXT,
+  duration_minutes INTEGER NOT NULL DEFAULT 30,
+  price NUMERIC(10,2) NOT NULL,
+  currency TEXT DEFAULT 'MAD',
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_business_services_business_info_id ON business_services(business_info_id);
+CREATE INDEX IF NOT EXISTS idx_business_services_is_active ON business_services(is_active);
+
+ALTER TABLE business_services ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Business services viewable by owner" ON business_services;
+CREATE POLICY "Business services viewable by owner"
+  ON business_services FOR ALL
+  USING (true)
+  WITH CHECK (true);
+
+DROP TRIGGER IF EXISTS update_business_services_updated_at ON business_services;
+CREATE TRIGGER update_business_services_updated_at
+  BEFORE UPDATE ON business_services
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+-- Migration: remove category column from business_services
+ALTER TABLE business_services DROP COLUMN IF EXISTS category;

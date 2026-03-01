@@ -17,18 +17,8 @@ import {
   Timer,
   AlertCircle,
   CheckCircle2,
+  Loader2,
 } from 'lucide-react';
-
-const SERVICES = [
-  { name: 'Haircut', duration: 30, price: 50 },
-  { name: 'Beard Trim', duration: 20, price: 30 },
-  { name: 'Haircut & Beard', duration: 45, price: 70 },
-  { name: 'Hair Coloring', duration: 60, price: 150 },
-  { name: 'Hair Treatment', duration: 40, price: 100 },
-  { name: 'Full Service', duration: 60, price: 120 },
-  { name: 'Kids Haircut', duration: 20, price: 35 },
-  { name: 'Shave', duration: 25, price: 40 },
-];
 
 function parseDateAndTime(dateStr) {
   if (!dateStr) {
@@ -81,6 +71,10 @@ export default function NewAppointmentModal({ isOpen, onClose, onSave, defaultDa
   const [serviceDropdownOpen, setServiceDropdownOpen] = useState(false);
   const serviceDropdownRef = useRef(null);
 
+  // Fetched services from API
+  const [services, setServices] = useState([]);
+  const [servicesLoading, setServicesLoading] = useState(false);
+
   // Close dropdown on outside click
   useEffect(() => {
     function handleClickOutside(e) {
@@ -93,6 +87,21 @@ export default function NewAppointmentModal({ isOpen, onClose, onSave, defaultDa
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [serviceDropdownOpen]);
+
+  // Fetch services when modal opens
+  useEffect(() => {
+    if (!isOpen) return;
+    setServicesLoading(true);
+    fetch('/api/business/services')
+      .then(async r => {
+        const ct = r.headers.get('content-type') || '';
+        if (!ct.includes('application/json')) return { services: [] };
+        return r.json();
+      })
+      .then(data => setServices((data.services || []).filter(s => s.is_active)))
+      .catch(() => setServices([]))
+      .finally(() => setServicesLoading(false));
+  }, [isOpen]);
 
   // Reset form and populate date/time whenever the modal opens or defaultDate changes
   const defaultEndDateStr = defaultEndDate || '';
@@ -128,16 +137,16 @@ export default function NewAppointmentModal({ isOpen, onClose, onSave, defaultDa
       const updated = { ...prev, [field]: value };
       // Auto-fill price and recalculate end time when service is selected
       if (field === 'service') {
-        const svc = SERVICES.find((s) => s.name === value);
+        const svc = services.find((s) => s.name === value);
         if (svc) {
           updated.price = String(svc.price);
-          updated.endTime = computeEndTime(prev.time, svc.duration);
+          updated.endTime = computeEndTime(prev.time, svc.duration_minutes);
         }
       }
       // Recalculate end time when start time changes
       if (field === 'time') {
-        const svc = SERVICES.find((s) => s.name === prev.service);
-        const duration = svc ? svc.duration : 30;
+        const svc = services.find((s) => s.name === prev.service);
+        const duration = svc ? svc.duration_minutes : 30;
         updated.endTime = computeEndTime(value, duration);
       }
       return updated;
@@ -158,8 +167,8 @@ export default function NewAppointmentModal({ isOpen, onClose, onSave, defaultDa
   const handleSubmit = () => {
     if (!validate()) return;
 
-    const svc = SERVICES.find((s) => s.name === formData.service);
-    const durationMinutes = svc ? svc.duration : 30;
+    const svc = services.find((s) => s.name === formData.service);
+    const durationMinutes = svc ? svc.duration_minutes : 30;
 
     const start = new Date(`${formData.date}T${formData.time}:00`);
     const end = formData.endTime
@@ -184,6 +193,7 @@ export default function NewAppointmentModal({ isOpen, onClose, onSave, defaultDa
         service: formData.service,
         notes: formData.notes,
         price: formData.price || (svc ? String(svc.price) : ''),
+        currency: svc ? (svc.currency || 'MAD') : 'MAD',
         status: formData.status,
       },
     });
@@ -312,45 +322,58 @@ export default function NewAppointmentModal({ isOpen, onClose, onSave, defaultDa
                       transition={{ duration: 0.15 }}
                       className="absolute z-50 mt-1.5 w-full bg-white border border-gray-200 rounded-[5px] shadow-lg overflow-hidden max-h-60 overflow-y-auto"
                     >
-                      {SERVICES.map((s) => {
-                        const isSelected = formData.service === s.name;
-                        return (
-                          <li
-                            key={s.name}
-                            onClick={() => {
-                              handleChange('service', s.name);
-                              setServiceDropdownOpen(false);
-                            }}
-                            className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors ${
-                              isSelected
-                                ? 'bg-amber-50'
-                                : 'hover:bg-gray-50'
-                            }`}
-                          >
-                            <div className={`flex items-center justify-center w-8 h-8 rounded-[5px] flex-shrink-0 ${
-                              isSelected ? 'bg-amber-100' : 'bg-gray-100'
-                            }`}>
-                              <Scissors className={`w-3.5 h-3.5 ${isSelected ? 'text-amber-600' : 'text-gray-400'}`} />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className={`text-sm font-medium truncate ${isSelected ? 'text-amber-700' : 'text-gray-900'}`}>
-                                {s.name}
-                              </p>
-                              <div className="flex items-center gap-2 text-xs text-gray-400 mt-0.5">
-                                <span className="flex items-center gap-0.5">
-                                  <Timer className="w-3 h-3" />
-                                  {s.duration}min
-                                </span>
-                                <span>•</span>
-                                <span className="font-medium text-gray-500">{s.price} MAD</span>
+                      {servicesLoading ? (
+                        <li className="flex items-center justify-center gap-2 px-3 py-5 text-sm text-gray-400">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Loading services…
+                        </li>
+                      ) : services.length === 0 ? (
+                        <li className="flex flex-col items-center justify-center gap-1 px-3 py-5 text-center">
+                          <Scissors className="w-5 h-5 text-gray-300" />
+                          <p className="text-sm text-gray-400">No services found</p>
+                          <p className="text-xs text-gray-300">Add services in the Services &amp; Prices section</p>
+                        </li>
+                      ) : (
+                        services.map((s) => {
+                          const isSelected = formData.service === s.name;
+                          return (
+                            <li
+                              key={s.id}
+                              onClick={() => {
+                                handleChange('service', s.name);
+                                setServiceDropdownOpen(false);
+                              }}
+                              className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors ${
+                                isSelected ? 'bg-amber-50' : 'hover:bg-gray-50'
+                              }`}
+                            >
+                              <div className={`flex items-center justify-center w-8 h-8 rounded-[5px] flex-shrink-0 ${
+                                isSelected ? 'bg-amber-100' : 'bg-gray-100'
+                              }`}>
+                                <Scissors className={`w-3.5 h-3.5 ${isSelected ? 'text-amber-600' : 'text-gray-400'}`} />
                               </div>
-                            </div>
-                            {isSelected && (
-                              <Check className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                            )}
-                          </li>
-                        );
-                      })}
+                              <div className="flex-1 min-w-0">
+                                <p className={`text-sm font-medium truncate ${isSelected ? 'text-amber-700' : 'text-gray-900'}`}>
+                                  {s.name}
+                                </p>
+                                <div className="flex items-center gap-2 text-xs text-gray-400 mt-0.5">
+                                  <span className="flex items-center gap-0.5">
+                                    <Timer className="w-3 h-3" />
+                                    {s.duration_minutes}min
+                                  </span>
+                                  <span>•</span>
+                                  <span className="font-medium text-gray-500">
+                                    {parseFloat(s.price).toFixed(2)} {s.currency || 'MAD'}
+                                  </span>
+                                </div>
+                              </div>
+                              {isSelected && (
+                                <Check className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                              )}
+                            </li>
+                          );
+                        })
+                      )}
                     </motion.ul>
                   )}
                 </AnimatePresence>

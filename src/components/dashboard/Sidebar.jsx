@@ -9,7 +9,7 @@ import {
   Calendar,
   Clock,
   Users,
-  Scissors,
+  Tag,
   DollarSign,
   BarChart3,
   Settings,
@@ -58,7 +58,7 @@ export default function Sidebar() {
       href: `/${locale}/business/dashboard/clients` 
     },
     { 
-      icon: Scissors, 
+      icon: Tag, 
       label: t('dashboard.sidebar.services') || 'Services et Prix', 
       href: `/${locale}/business/dashboard/services` 
     },

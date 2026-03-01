@@ -4,14 +4,18 @@ import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { useParams, useRouter } from 'next/navigation';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useRole } from '@/hooks/useRole';
 import { ProfileHeader, ProfileSidebar, EditProfileDialog, ProfilePageNav } from '@/components/profile';
 
 export default function UserProfilePage() {
   const params = useParams();
   const router = useRouter();
   const locale = params.locale || 'en';
-  const { user, isLoaded, isSignedIn } = useUser();
+  const { user, isLoaded: isUserLoaded, isSignedIn } = useUser();
+  const { isBarber, isLoaded: isRoleLoaded } = useRole();
   const { t, isRTL } = useLanguage();
+
+  const isLoaded = isUserLoaded && isRoleLoaded;
   
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
@@ -23,16 +27,20 @@ export default function UserProfilePage() {
     socialLinks: {}
   });
 
-  // Redirect if not signed in
+  // Redirect if not signed in, or redirect business users to their profile
   useEffect(() => {
-    if (isLoaded && !isSignedIn) {
-      router.push(`/${locale}/auth/user/sign-in`);
+    if (isLoaded) {
+      if (!isSignedIn) {
+        router.push(`/${locale}/auth/user/sign-in`);
+      } else if (isBarber) {
+        router.push(`/${locale}/business/profile`);
+      }
     }
-  }, [isLoaded, isSignedIn, router, locale]);
+  }, [isLoaded, isSignedIn, isBarber, router, locale]);
 
   // Fetch profile data (cover image, etc.)
   useEffect(() => {
-    if (!isLoaded || !isSignedIn) return;
+    if (!isLoaded || !isSignedIn || isBarber) return;
     fetch('/api/user-profile')
       .then(r => r.json())
       .then(data => {
@@ -44,7 +52,7 @@ export default function UserProfilePage() {
         }));
       })
       .catch(() => {});
-  }, [isLoaded, isSignedIn]);
+  }, [isLoaded, isSignedIn, isBarber]);
 
   // Refresh profile data after editing
   const refreshProfile = () => {
@@ -91,7 +99,7 @@ export default function UserProfilePage() {
     );
   }
 
-  if (!isSignedIn) {
+  if (!isSignedIn || isBarber) {
     return null;
   }
 

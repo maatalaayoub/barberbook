@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser, useClerk } from '@clerk/nextjs';
+import { useUser } from '@clerk/nextjs';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -9,7 +9,6 @@ import Link from 'next/link';
 
 export default function DashboardHeader() {
   const { user } = useUser();
-  const clerk = useClerk();
   const params = useParams();
   const locale = params.locale || 'en';
   const { t, isRTL } = useLanguage();
@@ -55,8 +54,8 @@ export default function DashboardHeader() {
 
             {/* User Profile Button */}
             {user && (
-              <button
-                onClick={() => clerk.openUserProfile()}
+              <Link
+                href={`/${locale}/business/profile`}
                 className="rounded-full transition-all cursor-pointer hover:ring-2 hover:ring-[#D4AF37]/30"
               >
                 <div className="w-9 h-9 rounded-full ring-2 ring-[#D4AF37]/50 overflow-hidden">
@@ -66,7 +65,7 @@ export default function DashboardHeader() {
                     className="w-full h-full object-cover"
                   />
                 </div>
-              </button>
+              </Link>
             )}
           </motion.div>
         </nav>

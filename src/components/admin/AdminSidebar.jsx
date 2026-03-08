@@ -40,15 +40,16 @@ export default function AdminSidebar() {
 
   const isExpanded = isHovered;
 
-  const SidebarContent = ({ forMobile = false }) => (
+  const SidebarContent = ({ forMobile = false, onClose }) => (
     <div className={`flex flex-col h-full overflow-hidden ${isRTL ? 'rtl' : 'ltr'}`}>
-      {/* Brand */}
-      <div className={`px-4 py-4 border-b border-gray-100 ${(!forMobile && !isExpanded) ? 'text-center' : ''}`}>
-        <span className={`font-bold text-sm text-[#364153] ${(!forMobile && !isExpanded) ? 'hidden' : ''}`}>
-          {t('admin.sidebar.title')}
-        </span>
-        <span className={`font-bold text-sm text-[#364153] ${(!forMobile && !isExpanded) ? '' : 'hidden'}`}>A</span>
-      </div>
+      {/* Close button (mobile only) */}
+      {forMobile && onClose && (
+        <div className={`px-4 py-4 border-b border-gray-100 flex items-center ${isRTL ? 'justify-start' : 'justify-end'}`}>
+          <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 rounded-lg transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+      )}
 
       <nav className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-4 space-y-1">
         {menuItems.map((item) => (
@@ -84,11 +85,8 @@ export default function AdminSidebar() {
       <aside className={`lg:hidden fixed inset-y-0 ${isRTL ? 'right-0' : 'left-0'} w-72 bg-white ${isRTL ? 'border-l' : 'border-r'} border-gray-200 z-50 transform transition-transform duration-300 ease-in-out shadow-xl ${
         mobileOpen ? 'translate-x-0' : isRTL ? 'translate-x-full' : '-translate-x-full'
       }`}>
-        <button onClick={() => setMobileOpen(false)} className={`absolute top-4 ${isRTL ? 'left-4' : 'right-4'} p-1 text-gray-400 hover:text-gray-600 z-50`}>
-          <X className="w-6 h-6" />
-        </button>
-        <div className="pt-12 h-full">
-          <SidebarContent forMobile={true} />
+        <div className="h-full">
+          <SidebarContent forMobile={true} onClose={() => setMobileOpen(false)} />
         </div>
       </aside>
 

@@ -3,13 +3,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Menu, X, ChevronDown, Home, GraduationCap, ShoppingBag, Briefcase, 
-  Settings, LogOut, Globe 
+  X, Home, Settings, LogOut, Info, Mail, Shield, LayoutDashboard, ChevronRight
 } from 'lucide-react';
 import ReactCountryFlag from 'react-country-flag';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useUser, SignOutButton } from '@clerk/nextjs';
-import { useParams } from 'next/navigation';
+import { useParams, usePathname } from 'next/navigation';
 import { useRole } from '@/hooks/useRole';
 import Link from 'next/link';
 
@@ -21,6 +20,7 @@ const languages = [
 
 export default function ProfileSidebar({ isOpen, onClose }) {
   const params = useParams();
+  const pathname = usePathname();
   const locale = params.locale || 'en';
   const { t, changeLanguage, isRTL } = useLanguage();
   const { user, isSignedIn, isLoaded: isClerkLoaded } = useUser();
@@ -32,6 +32,7 @@ export default function ProfileSidebar({ isOpen, onClose }) {
   );
 
   const isLoaded = isClerkLoaded && isRoleLoaded;
+  const isHomePage = pathname === `/${locale}` || pathname === `/${locale}/`;
 
   // Sync currentLang with locale
   useEffect(() => {
@@ -70,7 +71,7 @@ export default function ProfileSidebar({ isOpen, onClose }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40"
+            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[60]"
             onClick={onClose}
           />
 
@@ -81,165 +82,174 @@ export default function ProfileSidebar({ isOpen, onClose }) {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: isRTL ? '100%' : '-100%', opacity: 0 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className={`fixed top-0 ${isRTL ? 'right-0' : 'left-0'} h-screen w-[340px] max-w-[90vw] bg-white shadow-2xl z-50 flex flex-col`}
+            className={`fixed top-0 ${isRTL ? 'right-0' : 'left-0'} h-screen w-[320px] max-w-[85vw] bg-white shadow-2xl z-[60] flex flex-col`}
           >
-            {/* Header */}
-            <div className="flex items-center justify-between p-5 border-b border-gray-100 shrink-0">
-              <span className="text-gray-900 text-base font-semibold">Menu</span>
+            {/* Header with Close Button */}
+            <div className="flex items-center justify-end p-4 shrink-0">
               <button
                 onClick={onClose}
-                className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-100 text-gray-500 transition-all hover:bg-gray-200 hover:text-gray-700"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-500 transition-all hover:bg-gray-200 hover:text-gray-700"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
             {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto">
-              {/* Profile Card */}
+            <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] px-4">
+              {/* Profile Section */}
               {isLoaded && isSignedIn && user && (
-                <div className="p-5">
-                  <div className="rounded-xl bg-white border border-gray-200 overflow-hidden">
-                    {/* Profile Info - Clickable */}
+                <div className="mb-4">
+                  <div className="rounded-[5px] bg-white border border-gray-300 overflow-hidden">
+                    {/* Profile Link */}
                     <Link
                       href={isBarber ? `/${locale}/business/profile` : `/${locale}/profile`}
                       onClick={onClose}
-                      className="w-full flex items-center gap-4 p-4 cursor-pointer transition-all hover:bg-gray-50 group"
+                      className="block p-4 hover:bg-gray-50 transition-all group"
                     >
-                      <div className="w-12 h-12 rounded-full ring-2 ring-gray-300 ring-offset-2 ring-offset-white overflow-hidden shrink-0 shadow-md">
-                        <img 
-                          src={user?.imageUrl} 
-                          alt={user?.firstName || 'Profile'} 
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <div className={`flex-1 min-w-0 ${isRTL ? 'text-right' : 'text-left'}`}>
-                        <p className="text-sm font-semibold text-gray-900 truncate">
-                          {user?.firstName} {user?.lastName}
-                        </p>
-                        <p className="text-xs text-gray-500 truncate">
-                          {user?.emailAddresses?.[0]?.emailAddress}
-                        </p>
-                      </div>
-                      <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-gray-100 text-gray-500 group-hover:bg-[#D4AF37] group-hover:text-white transition-all shrink-0">
-                        <ChevronDown className={`h-3.5 w-3.5 ${isRTL ? 'rotate-90' : '-rotate-90'}`} />
+                      <div className="flex items-center gap-3">
+                        <div className="relative">
+                          <div className="h-12 w-12 rounded-full overflow-hidden border-2 border-gray-300">
+                            <img 
+                              src={user.imageUrl} 
+                              alt={user.firstName || 'Profile'} 
+                              className="h-full w-full object-cover"
+                            />
+                          </div>
+                          <div className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 bg-green-500 rounded-full border-2 border-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-gray-900 truncate text-sm">
+                            {user.firstName} {user.lastName}
+                          </p>
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-gray-600 transition-colors" />
                       </div>
                     </Link>
+                    
                     {/* Divider */}
-                    <div className="h-px bg-gray-200" />
+                    <div className="h-px bg-gray-200 mx-4" />
+                    
                     {/* Logout Button */}
                     <SignOutButton redirectUrl={`/${locale}`}>
-                      <button className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-600 transition-all hover:bg-red-50 hover:text-red-600 group">
-                        <LogOut className="h-4 w-4" />
-                        <span>{t('signOut') || 'Sign Out'}</span>
+                      <button className="w-full flex items-center gap-3 px-4 py-3 text-gray-600 hover:text-red-600 hover:bg-red-50/50 transition-all group">
+                        <LogOut className="h-4 w-4 text-gray-400 group-hover:text-red-500 transition-colors" />
+                        <span className="text-sm font-medium">{t('signOut') || 'Sign Out'}</span>
                       </button>
                     </SignOutButton>
                   </div>
                 </div>
               )}
 
-              {/* Services Section */}
-              <div className="px-5 pb-5">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">
-                  {t('services') || 'Services'}
-                </p>
-                <div className="grid grid-cols-2 gap-3">
+              {/* Home Button */}
+              <Link
+                href={`/${locale}`}
+                onClick={onClose}
+                className={`flex items-center gap-3 w-full px-4 py-4 rounded-2xl transition-all ${
+                  isHomePage 
+                    ? 'bg-[#244C70]/10 text-[#244C70]' 
+                    : 'text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <Home className="h-5 w-5" strokeWidth={2} />
+                <span className="font-semibold text-base">{t('home') || 'Home'}</span>
+              </Link>
+
+              {/* Divider */}
+              <div className="h-px bg-gray-200 my-4" />
+
+              {/* Quick Actions Section */}
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-2">
+                {t('quickActions') || 'Quick Actions'}
+              </p>
+
+              <div className="space-y-1">
+                {/* Dashboard - Only for business users */}
+                {isLoaded && isBarber && (
                   <Link
-                    href={`/${locale}/home-barber`}
-                    className="flex flex-col items-center gap-3 p-4 rounded-[7px] bg-white border-2 border-gray-100 text-gray-700 transition-all hover:border-[#D4AF37] group"
+                    href={`/${locale}/business/dashboard`}
                     onClick={onClose}
+                    className="flex items-center gap-3 w-full px-4 py-3.5 rounded-xl text-[#244C70] transition-all hover:bg-gray-50"
                   >
-                    <div className="flex items-center justify-center w-12 h-12 rounded-[7px] bg-gray-50 group-hover:bg-[#D4AF37]/10 transition-all">
-                      <Home className="h-6 w-6 text-gray-500 group-hover:text-[#D4AF37] transition-colors" strokeWidth={1.5} />
-                    </div>
-                    <span className="text-sm font-medium text-center text-gray-700 group-hover:text-gray-900">
-                      {t('homeBarber') || 'Mobile barber'}
-                    </span>
+                    <LayoutDashboard className="h-5 w-5 text-[#244C70]" strokeWidth={1.5} />
+                    <span className="font-medium text-base">{t('dashboard') || 'Dashboard'}</span>
+                    <span className="ml-auto px-2 py-0.5 text-xs font-semibold bg-[#244C70] text-white rounded-full">PRO</span>
                   </Link>
-                  <Link
-                    href={`/${locale}/training`}
-                    className="flex flex-col items-center gap-3 p-4 rounded-[7px] bg-white border-2 border-gray-100 text-gray-700 transition-all hover:border-[#D4AF37] group"
-                    onClick={onClose}
-                  >
-                    <div className="flex items-center justify-center w-12 h-12 rounded-[7px] bg-gray-50 group-hover:bg-[#D4AF37]/10 transition-all">
-                      <GraduationCap className="h-6 w-6 text-gray-500 group-hover:text-[#D4AF37] transition-colors" strokeWidth={1.5} />
-                    </div>
-                    <span className="text-sm font-medium text-center text-gray-700 group-hover:text-gray-900">
-                      {t('barberTraining') || 'Learn barbering'}
-                    </span>
-                  </Link>
-                  <Link
-                    href={`/${locale}/shop`}
-                    className="flex flex-col items-center gap-3 p-4 rounded-[7px] bg-white border-2 border-gray-100 text-gray-700 transition-all hover:border-[#D4AF37] group"
-                    onClick={onClose}
-                  >
-                    <div className="flex items-center justify-center w-12 h-12 rounded-[7px] bg-gray-50 group-hover:bg-[#D4AF37]/10 transition-all">
-                      <ShoppingBag className="h-6 w-6 text-gray-500 group-hover:text-[#D4AF37] transition-colors" strokeWidth={1.5} />
-                    </div>
-                    <span className="text-sm font-medium text-center text-gray-700 group-hover:text-gray-900">
-                      {t('shop') || 'Boutique'}
-                    </span>
-                  </Link>
-                  <Link
-                    href={`/${locale}/jobs`}
-                    className="flex flex-col items-center gap-3 p-4 rounded-[7px] bg-white border-2 border-gray-100 text-gray-700 transition-all hover:border-[#D4AF37] group"
-                    onClick={onClose}
-                  >
-                    <div className="flex items-center justify-center w-12 h-12 rounded-[7px] bg-gray-50 group-hover:bg-[#D4AF37]/10 transition-all">
-                      <Briefcase className="h-6 w-6 text-gray-500 group-hover:text-[#D4AF37] transition-colors" strokeWidth={1.5} />
-                    </div>
-                    <span className="text-sm font-medium text-center text-gray-700 group-hover:text-gray-900">
-                      {t('jobs') || 'Emplois'}
-                    </span>
-                  </Link>
-                </div>
+                )}
+
+                {/* Settings */}
+                <Link
+                  href={isBarber ? `/${locale}/business/dashboard/settings` : `/${locale}/settings`}
+                  onClick={onClose}
+                  className="flex items-center gap-3 w-full px-4 py-3.5 rounded-xl text-[#244C70] transition-all hover:bg-gray-50"
+                >
+                  <Settings className="h-5 w-5 text-[#244C70]" strokeWidth={1.5} />
+                  <span className="font-medium text-base">{t('settings') || 'Settings'}</span>
+                </Link>
+
+                {/* About */}
+                <Link
+                  href={`/${locale}/about`}
+                  onClick={onClose}
+                  className="flex items-center gap-3 w-full px-4 py-3.5 rounded-xl text-[#244C70] transition-all hover:bg-gray-50"
+                >
+                  <Info className="h-5 w-5 text-[#244C70]" strokeWidth={1.5} />
+                  <span className="font-medium text-base">{t('about') || 'About'}</span>
+                </Link>
+
+                {/* Contact */}
+                <Link
+                  href={`/${locale}/contact`}
+                  onClick={onClose}
+                  className="flex items-center gap-3 w-full px-4 py-3.5 rounded-xl text-[#244C70] transition-all hover:bg-gray-50"
+                >
+                  <Mail className="h-5 w-5 text-[#244C70]" strokeWidth={1.5} />
+                  <span className="font-medium text-base">{t('contact') || 'Contact'}</span>
+                </Link>
+
+                {/* Privacy Policy */}
+                <Link
+                  href={`/${locale}/privacy`}
+                  onClick={onClose}
+                  className="flex items-center gap-3 w-full px-4 py-3.5 rounded-xl text-[#244C70] transition-all hover:bg-gray-50"
+                >
+                  <Shield className="h-5 w-5 text-[#244C70]" strokeWidth={1.5} />
+                  <span className="font-medium text-base">{t('privacyPolicy') || 'Privacy Policy'}</span>
+                </Link>
               </div>
 
-              {/* Settings - Only for business users */}
-              {isLoaded && isBarber && (
-                <div className="px-5 pb-5">
-                  <Link
-                    href={`/${locale}/business/dashboard/settings`}
-                    className="flex items-center gap-3 w-full px-4 py-3 rounded-[7px] bg-gray-50 text-gray-700 transition-all hover:bg-gray-100 hover:text-gray-900 group"
-                    onClick={onClose}
-                  >
-                    <div className="flex items-center justify-center w-8 h-8 rounded-[5px] bg-gray-50 group-hover:bg-[#D4AF37]/10 transition-all">
-                      <Settings className="h-5 w-5 text-gray-500 group-hover:text-[#D4AF37] transition-colors" strokeWidth={1.5} />
-                    </div>
-                    <span className="font-medium text-sm">{t('settings') || 'Settings'}</span>
-                  </Link>
-                </div>
-              )}
+              {/* Divider */}
+              <div className="h-px bg-gray-200 my-4" />
 
               {/* Language Selector */}
-              <div className="px-5 py-4 border-t border-gray-100">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-                  {t('language') || 'Language'}
-                </p>
-                <div className="flex gap-2">
-                  {languages.map((lang) => (
-                    <button
-                      key={lang.code}
-                      onClick={() => {
-                        setCurrentLang(lang);
-                        changeLanguage(lang.code);
-                      }}
-                      className={`flex flex-1 items-center justify-center gap-2 rounded-[7px] py-2.5 text-sm font-medium border-2 transition-all ${
-                        currentLang.code === lang.code 
-                          ? 'bg-[#D4AF37] border-[#D4AF37] text-white' 
-                          : 'bg-white border-gray-100 text-gray-500 hover:border-gray-200 hover:text-gray-700'
-                      }`}
-                    >
-                      <ReactCountryFlag 
-                        countryCode={lang.countryCode} 
-                        svg 
-                        style={{ width: '1.2em', height: '1.2em' }}
-                      />
-                      <span>{lang.code.toUpperCase()}</span>
-                    </button>
-                  ))}
-                </div>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-2">
+                {t('language') || 'Language'}
+              </p>
+              <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-full mb-4">
+                {languages.map((lang) => (
+                  <button
+                    key={lang.code}
+                    onClick={() => {
+                      setCurrentLang(lang);
+                      changeLanguage(lang.code);
+                    }}
+                    className={`flex flex-1 items-center justify-center gap-1.5 rounded-full py-2.5 px-3 text-sm font-medium transition-all ${
+                      currentLang.code === lang.code 
+                        ? 'bg-white text-gray-900 shadow-sm' 
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    <ReactCountryFlag 
+                      countryCode={lang.countryCode} 
+                      svg 
+                      style={{ width: '1.1em', height: '1.1em' }}
+                    />
+                    <span>{lang.code.toUpperCase()}</span>
+                  </button>
+                ))}
               </div>
+
+              {/* Bottom padding for mobile navigation */}
+              <div className="h-24 shrink-0" />
             </div>
           </motion.div>
         </>

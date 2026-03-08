@@ -42,10 +42,13 @@ export default function VerificationPage() {
   const [businessStatus, setBusinessStatus] = useState('not_submitted');
   const [identityFile, setIdentityFile] = useState(null);
   const [businessFile, setBusinessFile] = useState(null);
-  const [uploadingIdentity, setUploadingIdentity] = useState(false);
-  const [uploadingBusiness, setUploadingBusiness] = useState(false);
+  const [identityDocUrl, setIdentityDocUrl] = useState(null);
+  const [businessDocUrl, setBusinessDocUrl] = useState(null);
+  const [identityRejectionReason, setIdentityRejectionReason] = useState(null);
+  const [businessRejectionReason, setBusinessRejectionReason] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
   const identityInputRef = useRef(null);
   const businessInputRef = useRef(null);
 
@@ -56,12 +59,14 @@ export default function VerificationPage() {
   const [hasProfileImage, setHasProfileImage] = useState(false);
   const [hasCoverImage, setHasCoverImage] = useState(false);
 
+  // Fetch existing verification status and prerequisites
   useEffect(() => {
-    async function fetchPrerequisites() {
+    async function fetchData() {
       try {
-        const [servicesRes, settingsRes] = await Promise.all([
+        const [servicesRes, settingsRes, verificationRes] = await Promise.all([
           fetch('/api/business/services').then(r => r.ok ? r.json() : {}),
           fetch('/api/business/public-page-settings').then(r => r.ok ? r.json() : {}),
+          fetch('/api/business/verification').then(r => r.ok ? r.json() : {}),
         ]);
 
         const services = servicesRes.services || [];
@@ -71,13 +76,22 @@ export default function VerificationPage() {
         setHasBusinessName(!!s.businessName?.trim());
         setHasProfileImage(!!s.avatarUrl);
         setHasCoverImage((s.coverGallery || []).length > 0);
+
+        // Set verification status
+        const v = verificationRes.verification || {};
+        setIdentityStatus(v.identity_status || 'not_submitted');
+        setBusinessStatus(v.business_status || 'not_submitted');
+        setIdentityDocUrl(v.identity_document_url || null);
+        setBusinessDocUrl(v.business_document_url || null);
+        setIdentityRejectionReason(v.identity_rejection_reason || null);
+        setBusinessRejectionReason(v.business_rejection_reason || null);
       } catch {
-        // leave defaults (all false)
+        // leave defaults
       } finally {
         setLoading(false);
       }
     }
-    fetchPrerequisites();
+    fetchData();
   }, []);
 
   const prerequisites = [
@@ -105,26 +119,71 @@ export default function VerificationPage() {
   };
 
   const handleSubmit = async () => {
-    if (!identityFile || !businessFile || !allPrerequisitesMet) return;
+    if (!allPrerequisitesMet) return;
+    
+    // Check if we have files to submit
+    const needsIdentityFile = identityStatus === 'not_submitted' || identityStatus === 'rejected';
+    const needsBusinessFile = businessStatus === 'not_submitted' || businessStatus === 'rejected';
+    
+    if ((needsIdentityFile && !identityFile) || (needsBusinessFile && !businessFile)) {
+      return;
+    }
+
     setSubmitting(true);
+    setSubmitError(null);
+    
     try {
-      // TODO: Upload files to server and create verification request
-      // await fetch('/api/business/verification', { method: 'POST', body: formData });
-      setIdentityStatus('pending');
-      setBusinessStatus('pending');
+      const formData = new FormData();
+      if (identityFile) {
+        formData.append('identityFile', identityFile);
+      }
+      if (businessFile) {
+        formData.append('businessFile', businessFile);
+      }
+
+      const res = await fetch('/api/business/verification', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setSubmitError(data.error || 'Failed to submit verification');
+        return;
+      }
+
+      // Update state with the response
+      const v = data.verification || {};
+      setIdentityStatus(v.identity_status || 'pending');
+      setBusinessStatus(v.business_status || 'pending');
+      setIdentityDocUrl(v.identity_document_url || null);
+      setBusinessDocUrl(v.business_document_url || null);
+      setIdentityRejectionReason(null);
+      setBusinessRejectionReason(null);
+      setIdentityFile(null);
+      setBusinessFile(null);
       setSubmitted(true);
+    } catch (err) {
+      console.error('[verification] Submit error:', err);
+      setSubmitError('An unexpected error occurred');
     } finally {
       setSubmitting(false);
     }
   };
 
   const bothVerified = identityStatus === 'verified' && businessStatus === 'verified';
-  const identityConf = STATUS_CONFIG[identityStatus];
-  const businessConf = STATUS_CONFIG[businessStatus];
+  const identityConf = STATUS_CONFIG[identityStatus] || STATUS_CONFIG.not_submitted;
+  const businessConf = STATUS_CONFIG[businessStatus] || STATUS_CONFIG.not_submitted;
 
   const canPickIdentity = allPrerequisitesMet && (identityStatus === 'not_submitted' || identityStatus === 'rejected');
   const canPickBusiness = allPrerequisitesMet && (businessStatus === 'not_submitted' || businessStatus === 'rejected');
-  const canSubmit = allPrerequisitesMet && !!identityFile && !!businessFile && (identityStatus === 'not_submitted' || identityStatus === 'rejected') && (businessStatus === 'not_submitted' || businessStatus === 'rejected');
+  
+  // Can submit if prerequisites met and we have necessary files for documents that need submission
+  const needsIdentityFile = identityStatus === 'not_submitted' || identityStatus === 'rejected';
+  const needsBusinessFile = businessStatus === 'not_submitted' || businessStatus === 'rejected';
+  const hasRequiredFiles = (!needsIdentityFile || identityFile) && (!needsBusinessFile || businessFile);
+  const canSubmit = allPrerequisitesMet && hasRequiredFiles && (needsIdentityFile || needsBusinessFile);
 
   return (
     <div>
@@ -251,7 +310,14 @@ export default function VerificationPage() {
             {canPickIdentity && (
               <div>
                 {identityStatus === 'rejected' && (
-                  <p className="text-xs text-red-500 mb-2">{t('dashboard.verification.rejectedHint')}</p>
+                  <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-[5px]">
+                    <p className="text-xs font-medium text-red-600 mb-1">{t('dashboard.verification.rejectedHint')}</p>
+                    {identityRejectionReason && (
+                      <p className="text-xs text-red-500">
+                        <span className="font-medium">{t('dashboard.verification.adminReason')}:</span> {identityRejectionReason}
+                      </p>
+                    )}
+                  </div>
                 )}
                 <button
                   type="button"
@@ -327,7 +393,14 @@ export default function VerificationPage() {
             {canPickBusiness && (
               <div>
                 {businessStatus === 'rejected' && (
-                  <p className="text-xs text-red-500 mb-2">{t('dashboard.verification.rejectedHint')}</p>
+                  <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-[5px]">
+                    <p className="text-xs font-medium text-red-600 mb-1">{t('dashboard.verification.rejectedHint')}</p>
+                    {businessRejectionReason && (
+                      <p className="text-xs text-red-500">
+                        <span className="font-medium">{t('dashboard.verification.adminReason')}:</span> {businessRejectionReason}
+                      </p>
+                    )}
+                  </div>
                 )}
                 <button
                   type="button"
@@ -384,11 +457,19 @@ export default function VerificationPage() {
             <p className="text-xs text-gray-400 mt-3">
               {!allPrerequisitesMet
                 ? t('verification.prereq.completeFirst')
-                : !identityFile || !businessFile
-                  ? t('dashboard.verification.selectBothFiles')
-                  : null
+                : (!needsIdentityFile && !needsBusinessFile)
+                  ? null
+                  : (needsIdentityFile && !identityFile) || (needsBusinessFile && !businessFile)
+                    ? t('dashboard.verification.selectRequiredFiles')
+                    : null
               }
             </p>
+          )}
+          {submitError && (
+            <div className="mt-3 flex items-center gap-2 text-xs text-red-500">
+              <XCircle className="w-4 h-4" />
+              <span>{submitError}</span>
+            </div>
           )}
         </div>
       )}

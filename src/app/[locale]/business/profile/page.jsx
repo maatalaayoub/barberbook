@@ -27,7 +27,7 @@ export default function BusinessProfilePage() {
     location: '',
     phone: '',
     email: '',
-    socialLinks: {}
+    socialLinks: {},
   });
 
   // Redirect if not signed in or not a business user
@@ -52,6 +52,7 @@ export default function BusinessProfilePage() {
           coverImage: data.coverImageUrl || null,
           coverPosition: data.coverImagePosition ?? 50,
           location: data.city || '',
+          businessName: data.businessName || '',
         }));
       })
       .catch(() => {});
@@ -67,10 +68,20 @@ export default function BusinessProfilePage() {
           coverImage: data.coverImageUrl || null,
           coverPosition: data.coverImagePosition ?? 50,
           location: data.city || '',
+          businessName: data.businessName || '',
         }));
       })
       .catch(() => {});
   };
+
+  // Listen for bottom navigation sidebar toggle
+  useEffect(() => {
+    const handleToggleSidebar = () => {
+      setIsSidebarOpen(prev => !prev);
+    };
+    window.addEventListener('toggle-home-sidebar', handleToggleSidebar);
+    return () => window.removeEventListener('toggle-home-sidebar', handleToggleSidebar);
+  }, []);
 
   // Show loading state
   if (!isLoaded) {
@@ -135,6 +146,7 @@ export default function BusinessProfilePage() {
         businessName={profileData.businessName}
         onEditProfile={handleEditProfile}
         onCoverChange={(url) => setProfileData(prev => ({ ...prev, coverImage: url }))}
+        onAvatarChange={() => refreshProfile()}
         coverPosition={profileData.coverPosition ?? 50}
         onCoverPositionChange={(pos) => setProfileData(prev => ({ ...prev, coverPosition: pos }))}
       />

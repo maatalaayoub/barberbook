@@ -2,12 +2,20 @@
 
 import { Suspense, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useParams } from 'next/navigation';
+import { useParams, usePathname } from 'next/navigation';
 import RoleSetupHandler from '@/components/RoleSetupHandler';
+import BottomNavigation from '@/components/BottomNavigation';
+
+// Pages where bottom navigation is hidden
+const excludedPaths = ['/admin', '/business/dashboard', '/auth'];
 
 export default function LocaleLayout({ children }) {
   const params = useParams();
+  const pathname = usePathname();
   const { changeLanguage, locale } = useLanguage();
+  
+  // Check if bottom nav is visible on current path
+  const showBottomNav = !excludedPaths.some(path => pathname?.includes(path));
   
   useEffect(() => {
     const urlLocale = params?.locale;
@@ -30,7 +38,10 @@ export default function LocaleLayout({ children }) {
       <Suspense fallback={null}>
         <RoleSetupHandler />
       </Suspense>
-      {children}
+      <div className={showBottomNav ? 'pb-16 md:pb-0' : ''}>
+        {children}
+      </div>
+      <BottomNavigation />
     </>
   );
 }

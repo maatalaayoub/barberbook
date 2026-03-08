@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Camera, MapPin, Link as LinkIcon, Instagram, Twitter, Facebook, Linkedin, Edit3, BadgeCheck, Settings, Loader2, Move, Trash2, ChevronDown } from 'lucide-react';
 import { useClerk } from '@clerk/nextjs';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useVerificationStatus } from '@/hooks/useVerificationStatus';
 
 export default function ProfileHeader({ 
   user, 
@@ -16,6 +17,7 @@ export default function ProfileHeader({
   bio = '',
   isBusinessProfile = false,
   businessName = '',
+  profileImageUrl = null,
   onEditProfile,
   onEditCover,
   onEditProfilePicture,
@@ -25,8 +27,10 @@ export default function ProfileHeader({
 }) {
   const { t, isRTL } = useLanguage();
   const { openUserProfile } = useClerk();
+  const { isVerified } = useVerificationStatus();
   const [isHoveringProfile, setIsHoveringProfile] = useState(false);
   const [localCoverImage, setLocalCoverImage] = useState(coverImage);
+  const [localProfileImage, setLocalProfileImage] = useState(profileImageUrl);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [coverPosition, setCoverPosition] = useState(coverPositionProp ?? 50);
@@ -43,6 +47,11 @@ export default function ProfileHeader({
   useEffect(() => {
     if (coverImage !== undefined) setLocalCoverImage(coverImage);
   }, [coverImage]);
+
+  // Sync profile image when prop changes
+  useEffect(() => {
+    if (profileImageUrl !== undefined) setLocalProfileImage(profileImageUrl);
+  }, [profileImageUrl]);
 
   // Sync position from prop
   useEffect(() => {
@@ -169,7 +178,11 @@ export default function ProfileHeader({
       const formData = new FormData();
       formData.append('file', file);
       formData.append('type', 'avatar');
-      await fetch('/api/upload-image', { method: 'POST', body: formData });
+      const res = await fetch('/api/upload-image', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (data.url) {
+        setLocalProfileImage(data.url);
+      }
       onAvatarChange?.();
     } catch (err) {
       console.error('Avatar upload failed', err);
@@ -186,7 +199,9 @@ export default function ProfileHeader({
     website: LinkIcon,
   };
 
-  const displayName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'User';
+  const displayName = isBusinessProfile && businessName 
+    ? businessName 
+    : (`${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'User');
 
   return (
     <div className="relative">
@@ -337,9 +352,9 @@ export default function ProfileHeader({
                 onMouseLeave={() => setIsHoveringProfile(false)}
               >
                 <div className="w-24 h-24 sm:w-32 sm:h-32 md:w-36 md:h-36 rounded-full border-4 border-white bg-gradient-to-br from-[#D4AF37] to-[#B8963A] shadow-lg overflow-hidden">
-                  {user?.imageUrl && user?.hasImage ? (
+                  {(localProfileImage || (user?.imageUrl && user?.hasImage)) ? (
                     <img 
-                      src={user.imageUrl} 
+                      src={localProfileImage || user.imageUrl} 
                       alt={displayName}
                       className="w-full h-full object-cover"
                     />
@@ -376,9 +391,9 @@ export default function ProfileHeader({
                 />
                 
                 {/* Verified Badge */}
-                {isBusinessProfile && (
+                {isBusinessProfile && isVerified && (
                   <div className={`absolute -bottom-0.5 ${isRTL ? '-left-0.5' : '-right-0.5'} bg-white rounded-full p-0.5`}>
-                    <BadgeCheck className="w-6 h-6 sm:w-7 sm:h-7 text-[#D4AF37] fill-[#D4AF37]/20" />
+                    <BadgeCheck className="w-6 h-6 sm:w-7 sm:h-7 text-blue-500" />
                   </div>
                 )}
               </motion.div>

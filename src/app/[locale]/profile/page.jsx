@@ -69,6 +69,15 @@ export default function UserProfilePage() {
       .catch(() => {});
   };
 
+  // Listen for bottom navigation sidebar toggle
+  useEffect(() => {
+    const handleToggleSidebar = () => {
+      setIsSidebarOpen(prev => !prev);
+    };
+    window.addEventListener('toggle-home-sidebar', handleToggleSidebar);
+    return () => window.removeEventListener('toggle-home-sidebar', handleToggleSidebar);
+  }, []);
+
   // Show loading state
   if (!isLoaded) {
     return (

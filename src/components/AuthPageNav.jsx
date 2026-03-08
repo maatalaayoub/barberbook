@@ -19,7 +19,7 @@ export default function AuthPageNav({ locale, isRTL, t }) {
               alt="Booq"
               width={140}
               height={42}
-              className="h-10 w-auto"
+              className="h-8 md:h-10 w-auto"
               priority
             />
           </Link>

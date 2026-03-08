@@ -1,17 +1,42 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Bell, Menu } from 'lucide-react';
+import { Bell, Menu, BadgeCheck } from 'lucide-react';
 import Link from 'next/link';
+import { useVerificationStatus } from '@/hooks/useVerificationStatus';
 
 export default function DashboardHeader() {
   const { user } = useUser();
   const params = useParams();
   const locale = params.locale || 'en';
   const { t, isRTL } = useLanguage();
+  const { isVerified } = useVerificationStatus();
+  const [avatarUrl, setAvatarUrl] = useState(null);
+
+  // Fetch profile avatar from user_profile
+  useEffect(() => {
+    async function fetchAvatar() {
+      try {
+        const res = await fetch('/api/user-profile');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.profileImageUrl) {
+            setAvatarUrl(data.profileImageUrl);
+          }
+        }
+      } catch (e) {
+        // Ignore
+      }
+    }
+    fetchAvatar();
+  }, []);
+
+  // Use business card avatar if available, otherwise fall back to Clerk
+  const profileImage = avatarUrl || user?.imageUrl;
 
   const handleOpenSidebar = () => {
     window.dispatchEvent(new CustomEvent('toggle-mobile-sidebar'));
@@ -36,7 +61,7 @@ export default function DashboardHeader() {
               href={`/${locale}`}
               className="flex items-center"
             >
-              <img src="/images/dark-logo.png" alt="Booq" width={140} height={42} className="h-10 w-auto" />
+              <img src="/images/dark-logo.png" alt="Booq" width={140} height={42} className="h-8 md:h-10 w-auto" />
             </Link>
           </div>
 
@@ -58,12 +83,19 @@ export default function DashboardHeader() {
                 href={`/${locale}/business/profile`}
                 className="rounded-full transition-all cursor-pointer hover:ring-2 hover:ring-[#D4AF37]/30"
               >
-                <div className="w-9 h-9 rounded-full ring-2 ring-[#D4AF37]/50 overflow-hidden">
-                  <img 
-                    src={user.imageUrl} 
-                    alt={user.firstName || 'Profile'} 
-                    className="w-full h-full object-cover"
-                  />
+                <div className="relative">
+                  <div className="w-9 h-9 rounded-full ring-2 ring-[#D4AF37]/50 overflow-hidden">
+                    <img 
+                      src={profileImage} 
+                      alt={user.firstName || 'Profile'} 
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  {isVerified && (
+                    <div className="absolute -bottom-0.5 -right-0.5 bg-blue-500 rounded-full p-0.5">
+                      <BadgeCheck className="w-3.5 h-3.5 text-white" />
+                    </div>
+                  )}
                 </div>
               </Link>
             )}

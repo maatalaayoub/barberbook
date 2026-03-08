@@ -3,7 +3,7 @@
 import { useUser } from '@clerk/nextjs';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useParams } from 'next/navigation';
-import { Menu, Shield } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import Link from 'next/link';
 
 export default function AdminHeader() {
@@ -24,9 +24,8 @@ export default function AdminHeader() {
             <button onClick={handleOpenSidebar} className="lg:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
               <Menu className="w-6 h-6" />
             </button>
-            <Link href={`/${locale}/admin`} className="flex items-center gap-2">
-              <Shield className="w-5 h-5 text-[#364153]" />
-              <span className="font-bold text-[#364153]">{t('admin.header.title')}</span>
+            <Link href={`/${locale}/admin`} className="flex items-center">
+              <img src="/images/dark-logo.png" alt="Booq" className="h-8 md:h-10 w-auto" />
             </Link>
           </div>
 

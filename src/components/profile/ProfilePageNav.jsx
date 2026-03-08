@@ -16,7 +16,7 @@ export default function ProfilePageNav({ locale, onMenuClick, isRTL, t }) {
           <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
             <button
               onClick={onMenuClick}
-              className="flex items-center justify-center h-9 w-9 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors"
+              className="hidden md:flex items-center justify-center h-9 w-9 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors"
               aria-label="Menu"
             >
               <Menu className="w-[18px] h-[18px]" />

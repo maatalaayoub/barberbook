@@ -442,6 +442,8 @@ const translations = {
     'dashboard.verification.submitForReview': 'Submit for Review',
     'dashboard.verification.submitting': 'Submitting...',
     'dashboard.verification.selectBothFiles': 'Please select both an identity document and a business document.',
+    'dashboard.verification.selectRequiredFiles': 'Please select the required document(s) to submit.',
+    'dashboard.verification.adminReason': 'Admin feedback',
     'dashboard.verification.submitSuccess': 'Your documents have been submitted successfully. We will review them shortly.',
 
     // Dashboard - Sidebar
@@ -860,6 +862,21 @@ const translations = {
     'admin.businessDetail.dateTime': 'Date & Time',
     'admin.businessDetail.price': 'Price',
     'admin.businessDetail.status': 'Status',
+
+    // Bottom Navigation
+    navHome: 'Home',
+    navFavorite: 'Favorite',
+    navBooking: 'Booking',
+    navCommunity: 'Community',
+    navProfile: 'Profile',
+    navMenu: 'Menu',
+
+    // Sidebar Menu
+    home: 'Home',
+    quickActions: 'Quick Actions',
+    about: 'About',
+    contact: 'Contact',
+    privacyPolicy: 'Privacy Policy',
   },
   
   fr: {
@@ -1300,6 +1317,8 @@ const translations = {
     'dashboard.verification.submitForReview': 'Soumettre pour vérification',
     'dashboard.verification.submitting': 'Envoi en cours...',
     'dashboard.verification.selectBothFiles': 'Veuillez sélectionner un document d\'identité et un document commercial.',
+    'dashboard.verification.selectRequiredFiles': 'Veuillez sélectionner le(s) document(s) requis à soumettre.',
+    'dashboard.verification.adminReason': 'Commentaire de l\'admin',
     'dashboard.verification.submitSuccess': 'Vos documents ont été soumis avec succès. Nous les examinerons sous peu.',
 
     // Dashboard - Sidebar
@@ -1722,6 +1741,21 @@ const translations = {
     'admin.businessDetail.dateTime': 'Date & Heure',
     'admin.businessDetail.price': 'Prix',
     'admin.businessDetail.status': 'Statut',
+
+    // Bottom Navigation
+    navHome: 'Accueil',
+    navFavorite: 'Favoris',
+    navBooking: 'Réservation',
+    navCommunity: 'Communauté',
+    navProfile: 'Profil',
+    navMenu: 'Menu',
+
+    // Sidebar Menu
+    home: 'Accueil',
+    quickActions: 'Actions rapides',
+    about: 'À propos',
+    contact: 'Contact',
+    privacyPolicy: 'Politique de confidentialité',
   },
   
   ar: {
@@ -2162,6 +2196,8 @@ const translations = {
     'dashboard.verification.submitForReview': 'إرسال للمراجعة',
     'dashboard.verification.submitting': 'جاري الإرسال...',
     'dashboard.verification.selectBothFiles': 'يرجى اختيار وثيقة هوية ووثيقة تجارية.',
+    'dashboard.verification.selectRequiredFiles': 'يرجى تحديد المستند(ات) المطلوبة للإرسال.',
+    'dashboard.verification.adminReason': 'ملاحظات المسؤول',
     'dashboard.verification.submitSuccess': 'تم إرسال وثائقك بنجاح. سنراجعها قريبًا.',
 
     // Dashboard - Sidebar
@@ -2582,6 +2618,21 @@ const translations = {
     'admin.businessDetail.dateTime': 'التاريخ والوقت',
     'admin.businessDetail.price': 'السعر',
     'admin.businessDetail.status': 'الحالة',
+
+    // Bottom Navigation
+    navHome: 'الرئيسية',
+    navFavorite: 'المفضلة',
+    navBooking: 'الحجوزات',
+    navCommunity: 'المجتمع',
+    navProfile: 'الملف الشخصي',
+    navMenu: 'القائمة',
+
+    // Sidebar Menu
+    home: 'الرئيسية',
+    quickActions: 'إجراءات سريعة',
+    about: 'حول',
+    contact: 'اتصل بنا',
+    privacyPolicy: 'سياسة الخصوصية',
   }
 };
 

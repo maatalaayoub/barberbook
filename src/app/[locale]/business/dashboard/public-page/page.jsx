@@ -30,6 +30,7 @@ import {
   X,
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useBusinessCategory } from '@/contexts/BusinessCategoryContext';
 
 // ─── SECTION TOGGLE ROW ──────────────────────────────────────
 function SectionToggle({ icon: Icon, label, description, value, onChange, accent = 'blue' }) {
@@ -225,6 +226,7 @@ export default function PublicPageManager() {
   const params = useParams();
   const locale = params.locale || 'en';
   const { t, isRTL } = useLanguage();
+  const { businessCategory } = useBusinessCategory();
 
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [businessData, setBusinessData] = useState(null);

@@ -7,7 +7,7 @@ import {
   X,
   Clock,
   User,
-  Scissors,
+  Sparkles,
   Phone,
   CalendarDays,
   MessageSquare,
@@ -19,6 +19,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Loader2,
+  MapPin,
 } from 'lucide-react';
 
 function parseDateAndTime(dateStr) {
@@ -55,11 +56,12 @@ function computeEndTime(startTime, durationMinutes) {
   return `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
 }
 
-export default function NewAppointmentModal({ isOpen, onClose, onSave, defaultDate, defaultEndDate, isSaving }) {
+export default function NewAppointmentModal({ isOpen, onClose, onSave, defaultDate, defaultEndDate, isSaving, businessCategory }) {
   const { t } = useLanguage();
   const [formData, setFormData] = useState({
     client: '',
     phone: '',
+    clientAddress: '',
     service: '',
     date: new Date().toISOString().split('T')[0],
     time: '09:00',
@@ -122,6 +124,7 @@ export default function NewAppointmentModal({ isOpen, onClose, onSave, defaultDa
       setFormData({
         client: '',
         phone: '',
+        clientAddress: '',
         service: '',
         date,
         time,
@@ -162,6 +165,7 @@ export default function NewAppointmentModal({ isOpen, onClose, onSave, defaultDa
     if (!formData.service) newErrors.service = t('newAppointment.serviceRequired');
     if (!formData.date) newErrors.date = t('newAppointment.dateRequired');
     if (!formData.time) newErrors.time = t('newAppointment.timeRequired');
+    if (businessCategory === 'mobile_service' && !formData.clientAddress.trim()) newErrors.clientAddress = t('newAppointment.clientAddressRequired');
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -192,6 +196,7 @@ export default function NewAppointmentModal({ isOpen, onClose, onSave, defaultDa
       extendedProps: {
         client: formData.client,
         phone: formData.phone,
+        clientAddress: formData.clientAddress,
         service: formData.service,
         notes: formData.notes,
         price: formData.price || (svc ? String(svc.price) : ''),
@@ -290,10 +295,28 @@ export default function NewAppointmentModal({ isOpen, onClose, onSave, defaultDa
                 />
               </div>
 
+              {/* Client Address (mobile service only) */}
+              {businessCategory === 'mobile_service' && (
+                <div>
+                  <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-gray-400" />
+                    {t('newAppointment.clientAddress')} <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder={t('newAppointment.clientAddressPlaceholder')}
+                    value={formData.clientAddress}
+                    onChange={(e) => handleChange('clientAddress', e.target.value)}
+                    className={inputClass('clientAddress')}
+                  />
+                  {errors.clientAddress && <p className="mt-1 text-xs text-red-500">{errors.clientAddress}</p>}
+                </div>
+              )}
+
               {/* Service */}
               <div ref={serviceDropdownRef} className="relative">
                 <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-1.5">
-                  <Scissors className="w-3.5 h-3.5 text-gray-400" />
+                  <Sparkles className="w-3.5 h-3.5 text-gray-400" />
                   {t('newAppointment.service')} <span className="text-red-400">*</span>
                 </label>
                 <button
@@ -331,7 +354,7 @@ export default function NewAppointmentModal({ isOpen, onClose, onSave, defaultDa
                         </li>
                       ) : services.length === 0 ? (
                         <li className="flex flex-col items-center justify-center gap-1 px-3 py-5 text-center">
-                          <Scissors className="w-5 h-5 text-gray-300" />
+                          <Sparkles className="w-5 h-5 text-gray-300" />
                           <p className="text-sm text-gray-400">{t('newAppointment.noServices')}</p>
                           <p className="text-xs text-gray-300">{t('newAppointment.noServicesHint')}</p>
                         </li>
@@ -352,7 +375,7 @@ export default function NewAppointmentModal({ isOpen, onClose, onSave, defaultDa
                               <div className={`flex items-center justify-center w-8 h-8 rounded-[5px] flex-shrink-0 ${
                                 isSelected ? 'bg-amber-100' : 'bg-gray-100'
                               }`}>
-                                <Scissors className={`w-3.5 h-3.5 ${isSelected ? 'text-amber-600' : 'text-gray-400'}`} />
+                                <Sparkles className={`w-3.5 h-3.5 ${isSelected ? 'text-amber-600' : 'text-gray-400'}`} />
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className={`text-sm font-medium truncate ${isSelected ? 'text-amber-700' : 'text-gray-900'}`}>

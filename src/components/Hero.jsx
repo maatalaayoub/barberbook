@@ -250,7 +250,7 @@ export default function Hero() {
                 // Signed out state - show login/signup buttons
                 <div className="flex items-center gap-1 rounded-full bg-[#1E293B]/50 border border-[#364153]/50 p-1 backdrop-blur-md">
                   <a 
-                    href={`/${locale}/auth/business/sign-in`}
+                    href={`/${locale}/auth/business/sign-up`}
                     className="flex items-center rounded-full px-4 py-2 text-[13px] font-medium text-[#D4AF37] transition-all duration-200 hover:bg-[#D4AF37]/10 active:scale-[0.97]"
                   >
                     {t('barberSpace')}
@@ -662,7 +662,7 @@ export default function Hero() {
 
                       {/* Barber Space Button */}
                       <a 
-                        href={`/${locale}/auth/business/sign-in`}
+                        href={`/${locale}/auth/business/sign-up`}
                         className="flex items-center justify-center w-full rounded-full bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] px-4 py-3 text-sm font-semibold text-[#0F172A] transition-all hover:brightness-110"
                       >
                         {t('barberSpace')}

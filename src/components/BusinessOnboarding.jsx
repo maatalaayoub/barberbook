@@ -740,14 +740,14 @@ export default function BusinessOnboarding({ userName, onComplete }) {
                 />
               </div>
 
-              {/* Address & Map (salon_owner only) */}
-              {businessCategory === 'salon_owner' && (
+              {/* Address & Map (salon_owner and mobile_service) */}
+              {(businessCategory === 'salon_owner' || businessCategory === 'mobile_service') && (
                 <>
                   {/* Map for precise location */}
                   <div style={{ position: 'relative', zIndex: 0 }}>
                     <label className="block text-sm font-medium text-gray-700 mb-1.5">
                       <MapPinned className="w-4 h-4 inline-block mr-1.5 -mt-0.5 text-gray-400" />
-                      Salon Location
+                      {businessCategory === 'mobile_service' ? 'Base Location' : 'Salon Location'}
                       <span className="text-gray-400 font-normal ml-1">(click on the map to set)</span>
                     </label>
                     <LocationPicker
@@ -767,7 +767,7 @@ export default function BusinessOnboarding({ userName, onComplete }) {
                       type="text"
                       value={businessAddress}
                       onChange={(e) => setBusinessAddress(e.target.value)}
-                      placeholder="Enter your salon address"
+                      placeholder={businessCategory === 'mobile_service' ? 'Enter your base address' : 'Enter your salon address'}
                       className="w-full px-4 py-3 border border-gray-200 rounded-[5px] text-gray-900 bg-white text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/30 focus:border-[#D4AF37]"
                     />
                   </div>

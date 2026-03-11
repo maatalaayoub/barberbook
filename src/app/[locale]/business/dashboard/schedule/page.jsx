@@ -24,6 +24,7 @@ import {
 import AddExceptionModal from '@/components/dashboard/AddExceptionModal';
 import ExceptionDetailModal from '@/components/dashboard/ExceptionDetailModal';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useBusinessCategory } from '@/contexts/BusinessCategoryContext';
 
 // Dynamic import FullCalendar wrapper
 const FullCalendarWrapper = dynamic(
@@ -82,6 +83,7 @@ const DEFAULT_HOURS = DAY_NAMES.map((_, i) => ({
 // ─── Main Component ─────────────────────────────────────────
 export default function SchedulePage() {
   const { t, isRTL } = useLanguage();
+  const { businessCategory } = useBusinessCategory();
   const calendarRef = useRef(null);
   const [businessHours, setBusinessHours] = useState(DEFAULT_HOURS);
   const [exceptions, setExceptions] = useState([]);

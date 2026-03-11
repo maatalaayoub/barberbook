@@ -8,8 +8,6 @@ import {
   MapPin,
   Phone,
   Briefcase,
-  Clock,
-  Car,
   Save,
   Loader2,
   CheckCircle,
@@ -29,11 +27,17 @@ const LocationPicker = dynamic(() => import('@/components/LocationPicker'), {
   ),
 });
 
-// ─── WORK LOCATION OPTIONS ─────────────────────────────────────────
-const WORK_LOCATIONS = ['my_place', 'client_location', 'both'];
-
 // ─── PROFESSIONAL TYPES ─────────────────────────────────────────
 const PROFESSIONAL_TYPES = ['barber', 'hairdresser', 'makeup', 'nails', 'massage'];
+
+// ─── MOROCCAN CITIES ─────────────────────────────────────────
+const MOROCCAN_CITIES = [
+  '', 'Casablanca', 'Rabat', 'Marrakech', 'Fès', 'Tanger', 'Agadir', 'Meknès',
+  'Oujda', 'Kénitra', 'Tétouan', 'Salé', 'Temara', 'Safi', 'Mohammedia',
+  'El Jadida', 'Béni Mellal', 'Nador', 'Taza', 'Settat', 'Berrechid',
+  'Khémisset', 'Inezgane', 'Khouribga', 'Larache', 'Guelmim', 'Berkane',
+  'Taourirt', 'Errachidia', 'Sidi Kacem', 'Sidi Slimane',
+];
 
 // ─── SKELETON ────────────────────────────────────────────────
 function DetailsSkeleton() {
@@ -206,14 +210,14 @@ export default function BusinessDetailsPage() {
     }
   };
 
-  const workLocationOptions = WORK_LOCATIONS.map((loc) => ({
-    value: loc,
-    label: t(`businessDetails.workLocation.${loc}`) || loc.replace(/_/g, ' '),
-  }));
-
   const professionalTypeOptions = PROFESSIONAL_TYPES.map((type) => ({
     value: type,
     label: t(`businessDetails.professionalType.${type}`) || type.charAt(0).toUpperCase() + type.slice(1),
+  }));
+
+  const cityOptions = MOROCCAN_CITIES.map((c) => ({
+    value: c,
+    label: c || (t('businessDetails.selectCity') || 'Select a city'),
   }));
 
   if (!isLoaded || loading) {
@@ -223,8 +227,6 @@ export default function BusinessDetailsPage() {
       </div>
     );
   }
-
-  const isMobileService = businessCategory === 'mobile_service';
 
   return (
     <div className={`p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto ${isRTL ? 'rtl' : 'ltr'}`}>
@@ -282,61 +284,12 @@ export default function BusinessDetailsPage() {
                 placeholder={t('businessDetails.phonePlaceholder') || '+212 6XX-XXXXXX'}
                 type="tel"
               />
-            </div>
-          </SectionCard>
-
-          <SectionCard 
-            title={t('businessDetails.workSettings') || 'Work Settings'} 
-            icon={Clock}
-            iconColor="text-amber-600"
-            iconBg="bg-amber-50"
-          >
-            <div className="space-y-4">
               <FormSelect
-                label={t('businessDetails.workLocationLabel') || 'Work Location'}
-                icon={MapPin}
-                value={form.workLocation}
-                onChange={(v) => set('workLocation', v)}
-                options={workLocationOptions}
-              />
-              {isMobileService && (
-                <>
-                  <FormInput
-                    label={t('businessDetails.serviceArea') || 'Service Area'}
-                    icon={Car}
-                    value={form.serviceArea}
-                    onChange={(v) => set('serviceArea', v)}
-                    placeholder={t('businessDetails.serviceAreaPlaceholder') || 'e.g. Casablanca & surroundings'}
-                  />
-                  <FormInput
-                    label={t('businessDetails.travelRadius') || 'Travel Radius (km)'}
-                    icon={Car}
-                    value={form.travelRadiusKm}
-                    onChange={(v) => set('travelRadiusKm', v)}
-                    placeholder={t('businessDetails.travelRadiusPlaceholder') || 'e.g. 20'}
-                    type="number"
-                  />
-                </>
-              )}
-            </div>
-          </SectionCard>
-        </div>
-
-        {/* Right Column */}
-        <div className="space-y-6">
-          <SectionCard 
-            title={t('businessDetails.contactLocation') || 'Location Details'} 
-            icon={MapPin}
-            iconColor="text-rose-600"
-            iconBg="bg-rose-50"
-          >
-            <div className="space-y-4">
-              <FormInput
                 label={t('businessDetails.city') || 'City'}
                 icon={MapPin}
                 value={form.city}
                 onChange={(v) => set('city', v)}
-                placeholder={t('businessDetails.cityPlaceholder') || 'e.g. Casablanca'}
+                options={cityOptions}
               />
               <FormInput
                 label={t('businessDetails.address') || 'Address'}
@@ -348,6 +301,10 @@ export default function BusinessDetailsPage() {
             </div>
           </SectionCard>
 
+        </div>
+
+        {/* Right Column */}
+        <div className="space-y-6">
           <SectionCard 
             title={t('businessDetails.mapLocation') || 'Pin Your Location'} 
             icon={Map}

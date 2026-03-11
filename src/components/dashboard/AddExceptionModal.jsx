@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useBusinessCategory } from '@/contexts/BusinessCategoryContext';
 import {
   X,
   Plus,
@@ -19,23 +20,30 @@ import {
 } from 'lucide-react';
 
 const EXCEPTION_TYPES = [
-  { value: 'break', labelKey: 'addException.break', icon: Coffee, color: 'bg-blue-500' },
-  { value: 'lunch_break', labelKey: 'addException.lunchBreak', icon: Utensils, color: 'bg-orange-500' },
-  { value: 'closure', labelKey: 'addException.closure', icon: XCircle, color: 'bg-red-500' },
-  { value: 'holiday', labelKey: 'addException.holiday', icon: Palmtree, color: 'bg-emerald-500' },
-  { value: 'vacation', labelKey: 'addException.vacation', icon: Plane, color: 'bg-purple-500' },
-  { value: 'other', labelKey: 'addException.other', icon: HelpCircle, color: 'bg-gray-500' },
+  { value: 'break', labelKey: 'exception.break', icon: Coffee, color: 'bg-blue-500' },
+  { value: 'lunch_break', labelKey: 'exception.lunchBreak', icon: Utensils, color: 'bg-orange-500' },
+  { value: 'closure', labelKey: 'exception.closure', icon: XCircle, color: 'bg-red-500' },
+  { value: 'holiday', labelKey: 'exception.holiday', icon: Palmtree, color: 'bg-emerald-500' },
+  { value: 'vacation', labelKey: 'exception.vacation', icon: Plane, color: 'bg-purple-500' },
+  { value: 'other', labelKey: 'exception.other', icon: HelpCircle, color: 'bg-gray-500' },
 ];
 
 const DAY_KEYS = ['days.sunday', 'days.monday', 'days.tuesday', 'days.wednesday', 'days.thursday', 'days.friday', 'days.saturday'];
 
 export default function AddExceptionModal({ isOpen, onClose, onSave, defaultDate }) {
   const { t } = useLanguage();
+  const { businessCategory } = useBusinessCategory();
   const today = new Date().toISOString().split('T')[0];
 
+  const filteredExceptionTypes = businessCategory === 'mobile_service'
+    ? EXCEPTION_TYPES.filter(type => !['break', 'lunch_break', 'closure'].includes(type.value))
+    : EXCEPTION_TYPES;
+
+  const defaultType = filteredExceptionTypes[0];
+
   const [formData, setFormData] = useState({
-    title: t('addException.break'),
-    type: 'break',
+    title: t(defaultType.labelKey),
+    type: defaultType.value,
     date: defaultDate || today,
     endDate: '',
     startTime: '',
@@ -69,8 +77,8 @@ export default function AddExceptionModal({ isOpen, onClose, onSave, defaultDate
       const updated = { ...prev, [field]: value };
       // Auto-set title based on type
       if (field === 'type') {
-        const typeObj = EXCEPTION_TYPES.find((tp) => tp.value === value);
-        if (!prev.title || EXCEPTION_TYPES.some((tp) => prev.title === t(tp.labelKey))) {
+        const typeObj = filteredExceptionTypes.find((tp) => tp.value === value);
+        if (!prev.title || filteredExceptionTypes.some((tp) => prev.title === t(tp.labelKey))) {
           updated.title = typeObj ? t(typeObj.labelKey) : '';
         }
       }
@@ -157,8 +165,8 @@ export default function AddExceptionModal({ isOpen, onClose, onSave, defaultDate
       });
       // Reset
       setFormData({
-        title: t('addException.break'),
-        type: 'break',
+        title: t(defaultType.labelKey),
+        type: defaultType.value,
         date: new Date().toISOString().split('T')[0],
         endDate: '',
         startTime: '',
@@ -233,7 +241,7 @@ export default function AddExceptionModal({ isOpen, onClose, onSave, defaultDate
               <div>
                 <label className="text-sm font-medium text-gray-700 mb-2 block">{t('addException.type')}</label>
                 <div className="grid grid-cols-3 gap-2">
-                  {EXCEPTION_TYPES.map((tp) => (
+                  {filteredExceptionTypes.map((tp) => (
                     <button
                       key={tp.value}
                       type="button"

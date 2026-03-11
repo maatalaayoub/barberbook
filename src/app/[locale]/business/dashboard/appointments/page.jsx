@@ -19,6 +19,7 @@ import {
 import AppointmentDetailModal from '@/components/dashboard/AppointmentDetailModal';
 import NewAppointmentModal from '@/components/dashboard/NewAppointmentModal';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useBusinessCategory } from '@/contexts/BusinessCategoryContext';
 
 // Dynamic import of the FullCalendar wrapper to avoid SSR issues
 const FullCalendarWrapper = dynamic(
@@ -67,6 +68,7 @@ function toCalendarEvent(apt) {
     extendedProps: {
       client: apt.client_name,
       phone: apt.client_phone || '',
+      clientAddress: apt.client_address || '',
       service: apt.service,
       price: apt.price != null ? String(apt.price) : '',
       status: apt.status,
@@ -115,6 +117,7 @@ function timesOverlap(startA, endA, startB, endB) {
 // ─── Main Component ─────────────────────────────────────────
 export default function AppointmentsPage() {
   const { t, isRTL } = useLanguage();
+  const { businessCategory } = useBusinessCategory();
   const calendarRef = useRef(null);
   const [events, setEvents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -415,6 +418,7 @@ export default function AppointmentsPage() {
         body: JSON.stringify({
           client_name: eventData.extendedProps.client,
           client_phone: eventData.extendedProps.phone,
+          client_address: eventData.extendedProps.clientAddress,
           service: eventData.extendedProps.service,
           price: eventData.extendedProps.price,
           start_time: eventData.start,
@@ -709,6 +713,7 @@ export default function AppointmentsPage() {
         defaultDate={newDefaultDate}
         defaultEndDate={newDefaultEndDate}
         isSaving={isSaving}
+        businessCategory={businessCategory}
       />
 
       {/* ── Toast Notification ── */}

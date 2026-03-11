@@ -15,6 +15,7 @@ import {
   GripVertical,
   MessageSquare,
   AlertTriangle,
+  MapPin,
 } from 'lucide-react';
 
 export default function AppointmentDetailModal({
@@ -159,6 +160,21 @@ export default function AppointmentDetailModal({
                     <p className="text-xs text-gray-400 uppercase tracking-wide">{t('appointmentDetail.phone')}</p>
                     <p className="text-sm font-semibold text-gray-900">
                       {appointment.extendedProps.phone}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Client Address */}
+              {appointment.extendedProps?.clientAddress && (
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-[5px]">
+                  <div className="flex items-center justify-center w-10 h-10 bg-white rounded-[5px] shadow-sm">
+                    <MapPin className="w-5 h-5 text-rose-500" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400 uppercase tracking-wide">{t('appointmentDetail.clientAddress')}</p>
+                    <p className="text-sm font-semibold text-gray-900">
+                      {appointment.extendedProps.clientAddress}
                     </p>
                   </div>
                 </div>

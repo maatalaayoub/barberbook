@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useBusinessCategory } from '@/contexts/BusinessCategoryContext';
 import {
   ShieldCheck,
   ShieldAlert,
@@ -24,6 +25,8 @@ import {
   ChevronRight,
   Send,
   X,
+  GraduationCap,
+  Navigation,
 } from 'lucide-react';
 
 const STATUS_CONFIG = {
@@ -35,6 +38,7 @@ const STATUS_CONFIG = {
 
 export default function VerificationPage() {
   const { t } = useLanguage();
+  const { businessCategory } = useBusinessCategory();
   const params = useParams();
   const locale = params.locale || 'en';
 
@@ -58,15 +62,17 @@ export default function VerificationPage() {
   const [hasBusinessName, setHasBusinessName] = useState(false);
   const [hasProfileImage, setHasProfileImage] = useState(false);
   const [hasCoverImage, setHasCoverImage] = useState(false);
+  const [hasServiceArea, setHasServiceArea] = useState(false);
 
   // Fetch existing verification status and prerequisites
   useEffect(() => {
     async function fetchData() {
       try {
-        const [servicesRes, settingsRes, verificationRes] = await Promise.all([
+        const [servicesRes, settingsRes, verificationRes, serviceAreaRes] = await Promise.all([
           fetch('/api/business/services').then(r => r.ok ? r.json() : {}),
           fetch('/api/business/public-page-settings').then(r => r.ok ? r.json() : {}),
           fetch('/api/business/verification').then(r => r.ok ? r.json() : {}),
+          fetch('/api/business/service-area').then(r => r.ok ? r.json() : null),
         ]);
 
         const services = servicesRes.services || [];
@@ -76,6 +82,11 @@ export default function VerificationPage() {
         setHasBusinessName(!!s.businessName?.trim());
         setHasProfileImage(!!s.avatarUrl);
         setHasCoverImage((s.coverGallery || []).length > 0);
+
+        // Check service area (mobile_service only)
+        if (serviceAreaRes) {
+          setHasServiceArea(!!(serviceAreaRes.baseLocation || serviceAreaRes.city) && serviceAreaRes.serviceRadius > 0);
+        }
 
         // Set verification status
         const v = verificationRes.verification || {};
@@ -99,6 +110,9 @@ export default function VerificationPage() {
     { key: 'businessName', met: hasBusinessName, icon: Globe, labelKey: 'verification.prereq.businessName', href: `/${locale}/business/dashboard/public-page` },
     { key: 'profileImage', met: hasProfileImage, icon: Image, labelKey: 'verification.prereq.profileImage', href: `/${locale}/business/dashboard/public-page` },
     { key: 'coverImage', met: hasCoverImage, icon: ImagePlus, labelKey: 'verification.prereq.coverImage', href: `/${locale}/business/dashboard/public-page` },
+    ...(businessCategory === 'mobile_service' ? [
+      { key: 'serviceArea', met: hasServiceArea, icon: Navigation, labelKey: 'verification.prereq.serviceArea', href: `/${locale}/business/dashboard/service-area` },
+    ] : []),
   ];
 
   const allPrerequisitesMet = prerequisites.every(p => p.met);
@@ -351,14 +365,19 @@ export default function VerificationPage() {
           </div>
         </div>
 
-        {/* ── Business Verification Card ── */}
+        {/* ── Business / Certificate Verification Card ── */}
         <div className={`bg-white rounded-[5px] border ${businessConf.border} overflow-hidden`}>
           <div className={`px-5 py-4 border-b ${businessConf.border} flex items-center justify-between`}>
             <div className="flex items-center gap-3">
               <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${businessConf.bg}`}>
-                <Building2 className={`w-5 h-5 ${businessConf.color}`} />
+                {businessCategory === 'mobile_service'
+                  ? <GraduationCap className={`w-5 h-5 ${businessConf.color}`} />
+                  : <Building2 className={`w-5 h-5 ${businessConf.color}`} />
+                }
               </div>
-              <h2 className="text-sm font-semibold text-gray-900">{t('dashboard.verification.business')}</h2>
+              <h2 className="text-sm font-semibold text-gray-900">
+                {t(businessCategory === 'mobile_service' ? 'dashboard.verification.certificate' : 'dashboard.verification.business')}
+              </h2>
             </div>
             <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ${businessConf.bg} ${businessConf.color}`}>
               {(() => { const Icon = businessConf.icon; return <Icon className="w-3.5 h-3.5" />; })()}
@@ -367,15 +386,25 @@ export default function VerificationPage() {
           </div>
 
           <div className="p-5 space-y-4">
-            <p className="text-sm text-gray-500">{t('dashboard.verification.businessDesc')}</p>
+            <p className="text-sm text-gray-500">
+              {t(businessCategory === 'mobile_service' ? 'dashboard.verification.certificateDesc' : 'dashboard.verification.businessDesc')}
+            </p>
 
             <div className="space-y-2">
               <p className="text-xs font-medium text-gray-700">{t('dashboard.verification.acceptedDocs')}</p>
-              <ul className="text-xs text-gray-400 space-y-1.5">
-                <li className="flex items-center gap-2"><FileText className="w-3.5 h-3.5 text-gray-300" />{t('dashboard.verification.businessLicense')}</li>
-                <li className="flex items-center gap-2"><FileText className="w-3.5 h-3.5 text-gray-300" />{t('dashboard.verification.registrationCert')}</li>
-                <li className="flex items-center gap-2"><FileText className="w-3.5 h-3.5 text-gray-300" />{t('dashboard.verification.taxDocument')}</li>
-              </ul>
+              {businessCategory === 'mobile_service' ? (
+                <ul className="text-xs text-gray-400 space-y-1.5">
+                  <li className="flex items-center gap-2"><FileText className="w-3.5 h-3.5 text-gray-300" />{t('dashboard.verification.professionalCert')}</li>
+                  <li className="flex items-center gap-2"><FileText className="w-3.5 h-3.5 text-gray-300" />{t('dashboard.verification.professionalDiploma')}</li>
+                  <li className="flex items-center gap-2"><FileText className="w-3.5 h-3.5 text-gray-300" />{t('dashboard.verification.trainingCert')}</li>
+                </ul>
+              ) : (
+                <ul className="text-xs text-gray-400 space-y-1.5">
+                  <li className="flex items-center gap-2"><FileText className="w-3.5 h-3.5 text-gray-300" />{t('dashboard.verification.businessLicense')}</li>
+                  <li className="flex items-center gap-2"><FileText className="w-3.5 h-3.5 text-gray-300" />{t('dashboard.verification.registrationCert')}</li>
+                  <li className="flex items-center gap-2"><FileText className="w-3.5 h-3.5 text-gray-300" />{t('dashboard.verification.taxDocument')}</li>
+                </ul>
+              )}
             </div>
 
             {businessFile && (
@@ -428,7 +457,7 @@ export default function VerificationPage() {
             {businessStatus === 'verified' && (
               <div className="flex items-center gap-2 text-sm text-green-600">
                 <CheckCircle2 className="w-4 h-4" />
-                <span>{t('dashboard.verification.businessVerified')}</span>
+                <span>{t(businessCategory === 'mobile_service' ? 'dashboard.verification.certificateVerified' : 'dashboard.verification.businessVerified')}</span>
               </div>
             )}
           </div>

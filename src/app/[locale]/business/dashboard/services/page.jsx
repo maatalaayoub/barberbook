@@ -18,6 +18,7 @@ import {
   Search,
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useBusinessCategory } from '@/contexts/BusinessCategoryContext';
 
 // ─── CURRENCY OPTIONS ────────────────────────────────────────
 const CURRENCIES = ['MAD', 'EUR', 'USD', 'GBP', 'SAR', 'AED'];
@@ -418,6 +419,7 @@ async function safeJson(res) {
 
 export default function ServicesPage() {
   const { t, isRTL } = useLanguage();
+  const { businessCategory } = useBusinessCategory();
   const [services, setServices] = useState([]);
   const [specialty, setSpecialty] = useState(null);
   const [loading, setLoading] = useState(true);

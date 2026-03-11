@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import {
   ShieldCheck, Loader2, CheckCircle2, XCircle, Clock,
-  FileText, User, Eye, X, Search, RefreshCw, Info, MapPin, Phone, Mail, Building2, Briefcase,
+  FileText, User, Eye, X, Search, RefreshCw, Info, MapPin, Phone, Mail, Building2, Briefcase, GraduationCap,
 } from 'lucide-react';
 
 const STATUS_BADGE = {
@@ -256,12 +256,17 @@ export default function AdminVerificationsPage() {
                   {renderDocActions(v, 'identity')}
                 </div>
 
-                {/* Business */}
+                {/* Business / Certificate */}
                 <div className="p-5">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-gray-400" />
-                      <span className="text-sm font-medium text-gray-700">{t('admin.verifications.businessDoc')}</span>
+                      {v.business_info?.business_category === 'mobile_service'
+                        ? <GraduationCap className="w-4 h-4 text-gray-400" />
+                        : <FileText className="w-4 h-4 text-gray-400" />
+                      }
+                      <span className="text-sm font-medium text-gray-700">
+                        {t(v.business_info?.business_category === 'mobile_service' ? 'admin.verifications.certificateDoc' : 'admin.verifications.businessDoc')}
+                      </span>
                     </div>
                     {renderStatusBadge(v.business_status)}
                   </div>
@@ -480,7 +485,9 @@ export default function AdminVerificationsPage() {
                       {renderStatusBadge(viewUserDetails.identity_status)}
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500 mb-1">{t('admin.verifications.businessDoc') || 'Business Document'}</p>
+                      <p className="text-xs text-gray-500 mb-1">
+                        {t(viewUserDetails.business_info?.business_category === 'mobile_service' ? 'admin.verifications.certificateDoc' : 'admin.verifications.businessDoc')}
+                      </p>
                       {renderStatusBadge(viewUserDetails.business_status)}
                     </div>
                   </div>

@@ -1,0 +1,47 @@
+'use client';
+
+import { createContext, useContext, useState, useEffect } from 'react';
+import { useUser } from '@clerk/nextjs';
+
+const BusinessCategoryContext = createContext({
+  businessCategory: null,
+  isLoading: true,
+});
+
+export function BusinessCategoryProvider({ children }) {
+  const { user, isLoaded } = useUser();
+  const [businessCategory, setBusinessCategory] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchCategory() {
+      try {
+        const res = await fetch('/api/business/onboarding');
+        if (res.ok) {
+          const data = await res.json();
+          setBusinessCategory(data.businessCategory || null);
+        }
+      } catch (err) {
+        console.error('Error fetching business category:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    if (isLoaded && user) {
+      fetchCategory();
+    } else if (isLoaded && !user) {
+      setIsLoading(false);
+    }
+  }, [isLoaded, user]);
+
+  return (
+    <BusinessCategoryContext.Provider value={{ businessCategory, isLoading }}>
+      {children}
+    </BusinessCategoryContext.Provider>
+  );
+}
+
+export function useBusinessCategory() {
+  return useContext(BusinessCategoryContext);
+}

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useParams } from 'next/navigation';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useBusinessCategory } from '@/contexts/BusinessCategoryContext';
 import {
   LayoutDashboard,
   Calendar,
@@ -22,10 +23,12 @@ import {
   Globe,
   ShieldCheck,
   Building2,
+  Navigation,
 } from 'lucide-react';
 
 export default function Sidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { businessCategory } = useBusinessCategory();
 
   // Listen for toggle event from header
   useEffect(() => {
@@ -39,58 +42,78 @@ export default function Sidebar() {
   const locale = params.locale || 'en';
   const { t, isRTL } = useLanguage();
 
-  const menuItems = [
+  const allMenuItems = [
     { 
       icon: LayoutDashboard, 
       label: t('dashboard.sidebar.overview') || 'Overview', 
-      href: `/${locale}/business/dashboard` 
+      href: `/${locale}/business/dashboard`,
+      categories: ['salon_owner', 'mobile_service', 'job_seeker'],
     },
     { 
       icon: Calendar, 
-      label: t('dashboard.sidebar.appointments') || 'Appointments', 
-      href: `/${locale}/business/dashboard/appointments` 
+      label: t('dashboard.sidebar.appointments') || 'Bookings', 
+      href: `/${locale}/business/dashboard/appointments`,
+      categories: ['salon_owner', 'mobile_service'],
     },
     { 
       icon: Clock, 
       label: t('dashboard.sidebar.schedule') || 'Schedule', 
-      href: `/${locale}/business/dashboard/schedule` 
+      href: `/${locale}/business/dashboard/schedule`,
+      categories: ['salon_owner', 'mobile_service'],
     },
     { 
       icon: Users, 
       label: t('dashboard.sidebar.clients') || 'Clients', 
-      href: `/${locale}/business/dashboard/clients` 
+      href: `/${locale}/business/dashboard/clients`,
+      categories: ['salon_owner', 'mobile_service'],
     },
     { 
       icon: Tag, 
       label: t('dashboard.sidebar.services') || 'Services & Prices', 
-      href: `/${locale}/business/dashboard/services` 
+      href: `/${locale}/business/dashboard/services`,
+      categories: ['salon_owner', 'mobile_service'],
     },
     { 
       icon: Building2, 
       label: t('dashboard.sidebar.businessDetails') || 'Business Details', 
-      href: `/${locale}/business/dashboard/business-details` 
+      href: `/${locale}/business/dashboard/business-details`,
+      categories: ['salon_owner', 'mobile_service', 'job_seeker'],
     },
     { 
       icon: Globe, 
       label: t('dashboard.sidebar.publicPage') || 'Business Card', 
-      href: `/${locale}/business/dashboard/public-page` 
+      href: `/${locale}/business/dashboard/public-page`,
+      categories: ['salon_owner', 'mobile_service'],
     },
     { 
       icon: DollarSign, 
       label: t('dashboard.sidebar.earnings') || 'Earnings', 
-      href: `/${locale}/business/dashboard/earnings` 
+      href: `/${locale}/business/dashboard/earnings`,
+      categories: ['salon_owner', 'mobile_service'],
     },
     { 
       icon: BarChart3, 
       label: t('dashboard.sidebar.analytics') || 'Analytics', 
-      href: `/${locale}/business/dashboard/analytics` 
+      href: `/${locale}/business/dashboard/analytics`,
+      categories: ['salon_owner', 'mobile_service'],
     },
     { 
       icon: ShieldCheck, 
       label: t('dashboard.sidebar.verification') || 'Verification', 
-      href: `/${locale}/business/dashboard/verification` 
+      href: `/${locale}/business/dashboard/verification`,
+      categories: ['salon_owner', 'mobile_service'],
+    },
+    {
+      icon: Navigation,
+      label: t('dashboard.sidebar.serviceArea') || 'Service Area',
+      href: `/${locale}/business/dashboard/service-area`,
+      categories: ['mobile_service'],
     },
   ];
+
+  const menuItems = allMenuItems.filter(
+    (item) => !businessCategory || item.categories.includes(businessCategory)
+  );
 
   const bottomItems = [
     { 

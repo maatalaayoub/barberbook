@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useRole } from '@/hooks/useRole';
 import { DashboardHeader, Sidebar } from '@/components/dashboard';
+import { BusinessCategoryProvider } from '@/contexts/BusinessCategoryContext';
 
 // Read cached onboarding status synchronously to avoid flicker (user-specific)
 function getCachedOnboardingStatus(userId) {
@@ -112,12 +113,13 @@ export default function DashboardLayout({ children }) {
           setOnboardingCompleted(data.onboardingCompleted);
           setCachedOnboardingStatus(userId, data.onboardingCompleted);
         } else {
-          // If API fails, default to showing the full layout
-          setOnboardingCompleted(true);
+          // API failed (new user without business record yet) - hide sidebar/header
+          setOnboardingCompleted(false);
         }
       } catch (error) {
         console.error('Error checking onboarding:', error);
-        setOnboardingCompleted(true);
+        // Default to hiding sidebar/header for safety
+        setOnboardingCompleted(false);
       }
     }
 
@@ -163,14 +165,16 @@ export default function DashboardLayout({ children }) {
   }
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 overflow-x-hidden ${isRTL ? 'rtl' : 'ltr'}`}>
-      <Sidebar />
-      <div className={`flex flex-col min-h-screen overflow-x-hidden ${isRTL ? 'lg:mr-16' : 'lg:ml-16'}`}>
-        <DashboardHeader />
-        <main className="flex-1 p-6">
-          {children}
-        </main>
+    <BusinessCategoryProvider>
+      <div className={`min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 overflow-x-hidden ${isRTL ? 'rtl' : 'ltr'}`}>
+        <Sidebar />
+        <div className={`flex flex-col min-h-screen overflow-x-hidden ${isRTL ? 'lg:mr-16' : 'lg:ml-16'}`}>
+          <DashboardHeader />
+          <main className="flex-1 p-6">
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </BusinessCategoryProvider>
   );
 }

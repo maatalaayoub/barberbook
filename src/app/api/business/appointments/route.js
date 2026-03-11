@@ -90,7 +90,7 @@ export async function POST(request) {
     }
 
     const body = await request.json();
-    const { client_name, client_phone, service, price, start_time, end_time, status, notes } = body;
+    const { client_name, client_phone, client_address, service, price, start_time, end_time, status, notes } = body;
 
     if (!client_name || !service || !start_time || !end_time) {
       return NextResponse.json({ error: 'Missing required fields: client_name, service, start_time, end_time' }, { status: 400 });
@@ -102,6 +102,7 @@ export async function POST(request) {
         business_info_id: businessInfoId,
         client_name,
         client_phone: client_phone || null,
+        client_address: client_address || null,
         service,
         price: price ? parseFloat(price) : null,
         start_time,

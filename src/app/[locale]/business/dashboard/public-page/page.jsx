@@ -28,6 +28,9 @@ import {
   Plus,
   Briefcase,
   X,
+  Phone,
+  MessageCircle,
+  AlertTriangle,
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useBusinessCategory } from '@/contexts/BusinessCategoryContext';
@@ -181,13 +184,47 @@ function PreviewCard({ settings, user, businessData }) {
           </div>
         )}
 
-        {/* Booking button - always visible */}
-        <button
-          className="w-full py-2 text-xs font-semibold text-white rounded-[5px] transition-opacity hover:opacity-90"
-          style={{ backgroundColor: accent.bg }}
-        >
-          {t('businessCard.bookNow')}
-        </button>
+        {/* Booking button */}
+        {settings.showBookingButton !== false && (
+          <button
+            className={`w-full py-2 text-xs font-semibold text-white rounded-[5px] transition-opacity hover:opacity-90 ${(settings.showCallButton || settings.showMessageButton) ? 'mb-2' : ''}`}
+            style={{ backgroundColor: accent.bg }}
+          >
+            {t('businessCard.bookNow')}
+          </button>
+        )}
+
+        {/* Contact buttons */}
+        {(settings.showCallButton || settings.showMessageButton) && (
+          <div className="flex gap-1.5">
+            {settings.showCallButton && (
+              <button
+                className={`flex items-center justify-center gap-1 flex-1 py-1.5 text-xs font-medium rounded-[5px] transition-colors ${
+                  settings.showBookingButton === false
+                    ? 'text-white hover:opacity-90'
+                    : 'text-gray-600 bg-gray-50 border border-gray-200 hover:bg-gray-100'
+                }`}
+                style={settings.showBookingButton === false ? { backgroundColor: accent.bg } : undefined}
+              >
+                <Phone className="w-3 h-3" />
+                {t('businessCard.call')}
+              </button>
+            )}
+            {settings.showMessageButton && (
+              <button
+                className={`flex items-center justify-center gap-1 flex-1 py-1.5 text-xs font-medium rounded-[5px] transition-colors ${
+                  settings.showBookingButton === false
+                    ? 'text-white hover:opacity-90'
+                    : 'text-gray-600 bg-gray-50 border border-gray-200 hover:bg-gray-100'
+                }`}
+                style={settings.showBookingButton === false ? { backgroundColor: accent.bg } : undefined}
+              >
+                <MessageCircle className="w-3 h-3" />
+                {t('businessCard.message')}
+              </button>
+            )}
+          </div>
+        )}
 
       </div>
     </div>
@@ -215,6 +252,9 @@ const DEFAULT_SETTINGS = {
   showLocation:      true,
   showRating:        true,
   showResponseTime:  true,
+  showBookingButton: true,
+  showCallButton:    true,
+  showMessageButton: true,
   accentColor:       'slate',
   coverGallery:      [],
   avatarUrl:         null,
@@ -279,7 +319,9 @@ export default function PublicPageManager() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ settings }),
       });
-      const data = await res.json();
+      const text = await res.text();
+      let data;
+      try { data = JSON.parse(text); } catch { throw new Error('Server returned an invalid response'); }
       if (!res.ok || data.error) {
         throw new Error(data.error || 'Failed to save');
       }
@@ -435,6 +477,65 @@ export default function PublicPageManager() {
                 <p className="text-xs text-gray-400 mt-1">{settings.businessName.length}/60</p>
               </div>
 
+            </div>
+          </div>
+
+          {/* Contact & Booking */}
+          <div className="bg-white border border-gray-200 rounded-[5px] overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
+              <Phone className="w-4 h-4 text-gray-500" />
+              <h2 className="text-sm font-semibold text-gray-700">{t('businessCard.contactBookingSection')}</h2>
+            </div>
+            <div className="p-4 space-y-2">
+              <SectionToggle
+                icon={CalendarCheck}
+                label={t('businessCard.bookingButton')}
+                description={t('businessCard.bookingButtonDesc')}
+                value={settings.showBookingButton !== false}
+                onChange={v => {
+                  if (!v) {
+                    // Disabling booking → auto-enable both call & message
+                    setSettings(s => ({ ...s, showBookingButton: false, showCallButton: true, showMessageButton: true }));
+                    setSaved(false);
+                  } else {
+                    set('showBookingButton', true);
+                  }
+                }}
+                accent="blue"
+              />
+
+              {/* Warning when booking is disabled */}
+              {settings.showBookingButton === false && (
+                <div className="flex items-start gap-2.5 p-3 bg-amber-50 border border-amber-200 rounded-[5px]">
+                  <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-700 leading-relaxed">{t('businessCard.bookingDisabledWarning')}</p>
+                </div>
+              )}
+
+              <SectionToggle
+                icon={Phone}
+                label={t('businessCard.callButton')}
+                description={t('businessCard.callButtonDesc')}
+                value={settings.showCallButton}
+                onChange={v => {
+                  // If booking is disabled, prevent disabling both call & message
+                  if (!v && settings.showBookingButton === false && !settings.showMessageButton) return;
+                  set('showCallButton', v);
+                }}
+                accent="green"
+              />
+              <SectionToggle
+                icon={MessageCircle}
+                label={t('businessCard.messageButton')}
+                description={t('businessCard.messageButtonDesc')}
+                value={settings.showMessageButton}
+                onChange={v => {
+                  // If booking is disabled, prevent disabling both call & message
+                  if (!v && settings.showBookingButton === false && !settings.showCallButton) return;
+                  set('showMessageButton', v);
+                }}
+                accent="purple"
+              />
             </div>
           </div>
 

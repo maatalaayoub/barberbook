@@ -68,6 +68,10 @@ export async function GET(request) {
         showServices: settings.showServices !== false,
         showPrices: settings.showPrices !== false,
         showCoverPhoto: settings.showCoverPhoto !== false,
+        showCallButton: settings.showCallButton || false,
+        showMessageButton: settings.showMessageButton || false,
+        showBookingButton: settings.showBookingButton !== false,
+        phone: details?.phone || null,
         totalServices: services.length,
         services: services.slice(0, 3).map(s => ({
           name: s.name,

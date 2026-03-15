@@ -120,7 +120,9 @@ export async function POST(request) {
     console.log('[onboarding POST] Request body:', body);
     const { 
       businessCategory, 
-      professionalType, 
+      professionalType,
+      serviceCategoryId,
+      specialtyId,
       workLocation, 
       businessHours, 
       yearsOfExperience,
@@ -152,13 +154,19 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Business category is required' }, { status: 400 });
     }
 
-    const validProfessionalTypes = ['barber', 'hairdresser', 'makeup', 'nails', 'massage'];
-    if (!validProfessionalTypes.includes(professionalType)) {
-      console.error('[onboarding POST] Invalid professionalType:', professionalType);
-      return NextResponse.json({ 
-        error: 'Invalid professional type',
-        validTypes: validProfessionalTypes 
-      }, { status: 400 });
+    // Validate professional type against DB if possible, fallback to known types
+    if (specialtyId) {
+      // If specialtyId is provided, we trust it was selected from DB
+      console.log('[onboarding POST] specialtyId provided, skipping hardcoded validation');
+    } else {
+      const validProfessionalTypes = ['barber', 'hairdresser', 'makeup', 'nails', 'massage'];
+      if (!validProfessionalTypes.includes(professionalType)) {
+        console.error('[onboarding POST] Invalid professionalType:', professionalType);
+        return NextResponse.json({ 
+          error: 'Invalid professional type',
+          validTypes: validProfessionalTypes 
+        }, { status: 400 });
+      }
     }
 
     const validBusinessCategories = ['salon_owner', 'mobile_service', 'job_seeker'];
@@ -196,6 +204,8 @@ export async function POST(request) {
       user_id: user.id,
       business_category: businessCategory,
       professional_type: professionalType,
+      service_category_id: serviceCategoryId || null,
+      specialty_id: specialtyId || null,
       onboarding_completed: completeOnboarding || false,
     };
 

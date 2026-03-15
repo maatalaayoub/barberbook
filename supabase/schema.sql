@@ -98,6 +98,66 @@ CREATE TRIGGER update_user_profile_updated_at
   EXECUTE FUNCTION update_updated_at_column();
 
 -- ============================================
+-- SERVICE CATEGORIES & SPECIALTIES
+-- ============================================
+CREATE TABLE IF NOT EXISTS service_categories (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE,
+  slug TEXT NOT NULL UNIQUE,
+  description TEXT,
+  icon TEXT,
+  display_order INT DEFAULT 0,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS specialties (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  service_category_id UUID REFERENCES service_categories(id) ON DELETE CASCADE NOT NULL,
+  name TEXT NOT NULL,
+  slug TEXT NOT NULL UNIQUE,
+  description TEXT,
+  icon TEXT,
+  custom_icon TEXT,
+  display_order INT DEFAULT 0,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_specialties_category ON specialties(service_category_id);
+
+ALTER TABLE service_categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE specialties ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Service categories viewable by everyone" ON service_categories;
+CREATE POLICY "Service categories viewable by everyone"
+  ON service_categories FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Specialties viewable by everyone" ON specialties;
+CREATE POLICY "Specialties viewable by everyone"
+  ON specialties FOR SELECT USING (true);
+
+-- Seed initial service categories
+INSERT INTO service_categories (name, slug, description, icon, display_order) VALUES
+  ('Beauty & Personal Care', 'beauty_personal_care', 'Hair, makeup, nails, and personal grooming services', 'Sparkles', 1),
+  ('Health & Medical', 'health_medical', 'Health, wellness, and medical services', 'Heart', 2)
+ON CONFLICT (slug) DO NOTHING;
+
+-- Seed specialties for Beauty & Personal Care
+INSERT INTO specialties (service_category_id, name, slug, description, icon, custom_icon, display_order)
+SELECT sc.id, s.name, s.slug, s.description, s.icon, s.custom_icon, s.display_order
+FROM service_categories sc
+CROSS JOIN (VALUES
+  ('Barber', 'barber', 'Specializing in men''s haircuts, beard trims, and grooming.', NULL, '/images/icons-barber.png', 1),
+  ('Hairdresser', 'hairdresser', 'Expert in all types of hair styling and treatments.', NULL, '/images/icons-hairdresser.png', 2),
+  ('Makeup', 'makeup', 'Professional makeup artist for all occasions.', NULL, '/images/icon-makeup.png', 3),
+  ('Nails', 'nails', 'Manicure, pedicure, and nail art services.', NULL, '/images/icon-nails.png', 4),
+  ('Massage', 'massage', 'Relaxation and therapeutic massage treatments.', NULL, '/images/icon-massage.png', 5)
+) AS s(name, slug, description, icon, custom_icon, display_order)
+WHERE sc.slug = 'beauty_personal_care'
+ON CONFLICT (slug) DO NOTHING;
+
+-- ============================================
 -- BUSINESS INFO (onboarding data)
 -- ============================================
 CREATE TABLE IF NOT EXISTS business_info (
@@ -105,6 +165,8 @@ CREATE TABLE IF NOT EXISTS business_info (
   user_id UUID REFERENCES users(id) ON DELETE CASCADE UNIQUE,
   business_category TEXT NOT NULL CHECK (business_category IN ('salon_owner', 'mobile_service', 'job_seeker')),
   professional_type TEXT NOT NULL CHECK (professional_type IN ('barber', 'hairdresser', 'makeup', 'nails', 'massage')),
+  service_category_id UUID REFERENCES service_categories(id),
+  specialty_id UUID REFERENCES specialties(id),
   onboarding_completed BOOLEAN DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -112,6 +174,8 @@ CREATE TABLE IF NOT EXISTS business_info (
 
 CREATE INDEX IF NOT EXISTS idx_business_info_user_id ON business_info(user_id);
 CREATE INDEX IF NOT EXISTS idx_business_info_category ON business_info(business_category);
+CREATE INDEX IF NOT EXISTS idx_business_info_service_category ON business_info(service_category_id);
+CREATE INDEX IF NOT EXISTS idx_business_info_specialty ON business_info(specialty_id);
 
 ALTER TABLE business_info ENABLE ROW LEVEL SECURITY;
 
@@ -386,6 +450,8 @@ CREATE TABLE IF NOT EXISTS business_info (
   user_id UUID REFERENCES users(id) ON DELETE CASCADE UNIQUE,
   business_category TEXT NOT NULL CHECK (business_category IN ('salon_owner', 'mobile_service', 'job_seeker')),
   professional_type TEXT NOT NULL CHECK (professional_type IN ('barber', 'hairdresser', 'makeup', 'nails', 'massage')),
+  service_category_id UUID REFERENCES service_categories(id),
+  specialty_id UUID REFERENCES specialties(id),
   onboarding_completed BOOLEAN DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -393,6 +459,8 @@ CREATE TABLE IF NOT EXISTS business_info (
 
 CREATE INDEX IF NOT EXISTS idx_business_info_user_id ON business_info(user_id);
 CREATE INDEX IF NOT EXISTS idx_business_info_category ON business_info(business_category);
+CREATE INDEX IF NOT EXISTS idx_business_info_service_category ON business_info(service_category_id);
+CREATE INDEX IF NOT EXISTS idx_business_info_specialty ON business_info(specialty_id);
 
 ALTER TABLE business_info ENABLE ROW LEVEL SECURITY;
 
@@ -1005,3 +1073,76 @@ CREATE TRIGGER update_job_applications_updated_at
   BEFORE UPDATE ON job_applications
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================
+-- MIGRATION: Service Categories & Specialties
+-- ============================================
+-- Run this if updating an existing database that doesn't have these tables yet.
+
+-- 1. Create service_categories table
+CREATE TABLE IF NOT EXISTS service_categories (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE,
+  slug TEXT NOT NULL UNIQUE,
+  description TEXT,
+  icon TEXT,
+  display_order INT DEFAULT 0,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE service_categories ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Service categories viewable by everyone" ON service_categories;
+CREATE POLICY "Service categories viewable by everyone"
+  ON service_categories FOR SELECT USING (true);
+
+-- 2. Create specialties table
+CREATE TABLE IF NOT EXISTS specialties (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  service_category_id UUID REFERENCES service_categories(id) ON DELETE CASCADE NOT NULL,
+  name TEXT NOT NULL,
+  slug TEXT NOT NULL UNIQUE,
+  description TEXT,
+  icon TEXT,
+  custom_icon TEXT,
+  display_order INT DEFAULT 0,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_specialties_category ON specialties(service_category_id);
+
+ALTER TABLE specialties ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Specialties viewable by everyone" ON specialties;
+CREATE POLICY "Specialties viewable by everyone"
+  ON specialties FOR SELECT USING (true);
+
+-- 3. Add new columns to business_info
+ALTER TABLE business_info
+  ADD COLUMN IF NOT EXISTS service_category_id UUID REFERENCES service_categories(id),
+  ADD COLUMN IF NOT EXISTS specialty_id UUID REFERENCES specialties(id);
+
+CREATE INDEX IF NOT EXISTS idx_business_info_service_category ON business_info(service_category_id);
+CREATE INDEX IF NOT EXISTS idx_business_info_specialty ON business_info(specialty_id);
+
+-- 4. Seed service categories
+INSERT INTO service_categories (name, slug, description, icon, display_order) VALUES
+  ('Beauty & Personal Care', 'beauty_personal_care', 'Hair, makeup, nails, and personal grooming services', 'Sparkles', 1),
+  ('Health & Medical', 'health_medical', 'Health, wellness, and medical services', 'Heart', 2)
+ON CONFLICT (slug) DO NOTHING;
+
+-- 5. Seed specialties for Beauty & Personal Care
+INSERT INTO specialties (service_category_id, name, slug, description, icon, custom_icon, display_order)
+SELECT sc.id, s.name, s.slug, s.description, s.icon, s.custom_icon, s.display_order
+FROM service_categories sc
+CROSS JOIN (VALUES
+  ('Barber', 'barber', 'Specializing in men''s haircuts, beard trims, and grooming.', NULL, '/images/icons-barber.png', 1),
+  ('Hairdresser', 'hairdresser', 'Expert in all types of hair styling and treatments.', NULL, '/images/icons-hairdresser.png', 2),
+  ('Makeup', 'makeup', 'Professional makeup artist for all occasions.', NULL, '/images/icon-makeup.png', 3),
+  ('Nails', 'nails', 'Manicure, pedicure, and nail art services.', NULL, '/images/icon-nails.png', 4),
+  ('Massage', 'massage', 'Relaxation and therapeutic massage treatments.', NULL, '/images/icon-massage.png', 5)
+) AS s(name, slug, description, icon, custom_icon, display_order)
+WHERE sc.slug = 'beauty_personal_care'
+ON CONFLICT (slug) DO NOTHING;

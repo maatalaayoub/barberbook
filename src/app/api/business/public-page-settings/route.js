@@ -86,7 +86,7 @@ export async function POST(request) {
 
     const supabase = createServerSupabaseClient();
     const ctx = await getBusinessContext(supabase, userId);
-    if (!ctx) return NextResponse.json({ error: 'Business not found' }, { status: 404 });
+    if (!ctx) return NextResponse.json({ error: 'Business profile not found. Please complete onboarding first.' }, { status: 404 });
 
     const body = await request.json();
     const { settings } = body;
@@ -117,6 +117,6 @@ export async function POST(request) {
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('[card-settings POST]', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: err?.message || 'Failed to save settings' }, { status: 500 });
   }
 }

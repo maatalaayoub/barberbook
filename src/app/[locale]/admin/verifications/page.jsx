@@ -118,7 +118,7 @@ export default function AdminVerificationsPage() {
     if (status !== 'pending') return null;
 
     return (
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-2">
         {isProcessing ? (
           <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
         ) : (
@@ -126,25 +126,25 @@ export default function AdminVerificationsPage() {
             {docUrl && (
               <button
                 onClick={() => setViewDoc({ url: docUrl, title: `${field} - ${getName(v)}` })}
-                className="p-1.5 text-blue-500 hover:bg-blue-50 rounded transition-colors"
-                title={t('admin.verifications.view')}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-[5px] transition-colors"
               >
-                <Eye className="w-4 h-4" />
+                <Eye className="w-3.5 h-3.5" />
+                {t('admin.verifications.view')}
               </button>
             )}
             <button
               onClick={() => handleAction(v.id, field, 'approve')}
-              className="p-1.5 text-green-600 hover:bg-green-50 rounded transition-colors"
-              title={t('admin.verifications.approve')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-green-700 bg-green-50 hover:bg-green-100 rounded-[5px] transition-colors"
             >
-              <CheckCircle2 className="w-4 h-4" />
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              {t('admin.verifications.approve')}
             </button>
             <button
               onClick={() => setRejectModal({ verificationId: v.id, field })}
-              className="p-1.5 text-red-500 hover:bg-red-50 rounded transition-colors"
-              title={t('admin.verifications.reject')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-[5px] transition-colors"
             >
-              <XCircle className="w-4 h-4" />
+              <XCircle className="w-3.5 h-3.5" />
+              {t('admin.verifications.reject')}
             </button>
           </>
         )}
@@ -448,6 +448,29 @@ export default function AdminVerificationsPage() {
                               </p>
                             </div>
                           </div>
+                          {viewUserDetails.business_info?.service_categories && (
+                            <div className="grid grid-cols-2 gap-4 mt-3">
+                              <div>
+                                <p className="text-xs text-gray-500 mb-1">Service Category</p>
+                                <p className="text-sm font-medium text-gray-900">
+                                  {viewUserDetails.business_info.service_categories.name || '-'}
+                                </p>
+                              </div>
+                              {viewUserDetails.business_info?.specialties && (
+                                <div>
+                                  <p className="text-xs text-gray-500 mb-1">Specialty</p>
+                                  <div className="flex items-center gap-2">
+                                    {viewUserDetails.business_info.specialties.custom_icon && (
+                                      <img src={viewUserDetails.business_info.specialties.custom_icon} alt="" className="w-5 h-5" />
+                                    )}
+                                    <p className="text-sm font-medium text-gray-900">
+                                      {viewUserDetails.business_info.specialties.name || '-'}
+                                    </p>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                       {details.businessName ? (

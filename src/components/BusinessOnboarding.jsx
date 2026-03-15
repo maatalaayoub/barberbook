@@ -24,7 +24,9 @@ import {
   Hand,
   Building2,
   Phone,
-  MapPinned
+  MapPinned,
+  Heart,
+  Loader2,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
@@ -98,6 +100,13 @@ const BUSINESS_CATEGORIES = [
   },
 ];
 
+const SERVICE_CATEGORY_ICONS = {
+  Sparkles,
+  Heart,
+  Star,
+  Scissors,
+};
+
 const PROFESSIONAL_TYPES = [
   { id: 'barber', name: 'Barber', description: 'Specializing in men\'s haircuts, beard trims, and grooming.', icon: null, customIcon: '/images/icons-barber.png', color: 'text-slate-700', bg: 'bg-slate-100' },
   { id: 'hairdresser', name: 'Hairdresser', description: 'Expert in all types of hair styling and treatments.', icon: null, customIcon: '/images/icons-hairdresser.png', color: 'text-pink-600', bg: 'bg-pink-100' },
@@ -149,6 +158,11 @@ export default function BusinessOnboarding({ userName, onComplete }) {
   
   // Form data
   const [businessCategory, setBusinessCategory] = useState('');
+  const [serviceCategoryId, setServiceCategoryId] = useState('');
+  const [serviceCategories, setServiceCategories] = useState([]);
+  const [specialties, setSpecialties] = useState([]);
+  const [loadingCategories, setLoadingCategories] = useState(false);
+  const [loadingSpecialties, setLoadingSpecialties] = useState(false);
   const [professionalType, setProfessionalType] = useState('');
   const [workLocation, setWorkLocation] = useState('');
   const [businessHours, setBusinessHours] = useState(DEFAULT_HOURS);
@@ -189,6 +203,31 @@ export default function BusinessOnboarding({ userName, onComplete }) {
     }
     if (!isCityOpen) setCitySearch('');
   }, [isCityOpen]);
+
+  // Fetch service categories on mount
+  useEffect(() => {
+    setLoadingCategories(true);
+    fetch('/api/business/specialty')
+      .then(r => r.ok ? r.json() : { categories: [] })
+      .then(data => setServiceCategories(data.categories || []))
+      .catch(() => setServiceCategories([]))
+      .finally(() => setLoadingCategories(false));
+  }, []);
+
+  // Fetch specialties when service category changes
+  useEffect(() => {
+    if (!serviceCategoryId) {
+      setSpecialties([]);
+      return;
+    }
+    setLoadingSpecialties(true);
+    setProfessionalType(''); // Reset specialty when category changes
+    fetch(`/api/business/specialty?category_id=${serviceCategoryId}`)
+      .then(r => r.ok ? r.json() : { specialties: [] })
+      .then(data => setSpecialties(data.specialties || []))
+      .catch(() => setSpecialties([]))
+      .finally(() => setLoadingSpecialties(false));
+  }, [serviceCategoryId]);
 
   const filteredCities = MOROCCO_CITIES.filter(city =>
     city.toLowerCase().includes(citySearch.toLowerCase())
@@ -298,30 +337,32 @@ export default function BusinessOnboarding({ userName, onComplete }) {
   
   // Determine total steps and step content based on business category
   const getTotalSteps = () => {
-    if (businessCategory === 'job_seeker') return 4;
-    return 4; // salon_owner and mobile_service now have 4 steps
+    if (businessCategory === 'job_seeker') return 5;
+    return 5; // salon_owner and mobile_service now have 5 steps
   };
   const totalSteps = getTotalSteps();
 
   // Map logical steps to actual step content
-  // For salon_owner: 1=Category, 2=ProfessionalType, 3=BusinessDetails, 4=BusinessHours
-  // For mobile_service: 1=Category, 2=ProfessionalType, 3=BusinessDetails, 4=BusinessHours
-  // For job_seeker: 1=Category, 2=ProfessionalType, 3=YearsOfExperience, 4=Certificate
+  // For salon_owner: 1=Category, 2=ServiceCategory, 3=ProfessionalType, 4=BusinessDetails, 5=BusinessHours
+  // For mobile_service: 1=Category, 2=ServiceCategory, 3=ProfessionalType, 4=BusinessDetails, 5=BusinessHours
+  // For job_seeker: 1=Category, 2=ServiceCategory, 3=ProfessionalType, 4=YearsOfExperience, 5=Certificate
   const getStepContent = () => {
     if (businessCategory === 'salon_owner' || businessCategory === 'mobile_service') {
       return {
         1: 'category',
-        2: 'professional_type',
-        3: 'business_details',
-        4: 'business_hours'
+        2: 'service_category',
+        3: 'professional_type',
+        4: 'business_details',
+        5: 'business_hours'
       };
     }
     // job_seeker flow
     return {
       1: 'category',
-      2: 'professional_type',
-      3: 'years_of_experience',
-      4: 'certificate'
+      2: 'service_category',
+      3: 'professional_type',
+      4: 'years_of_experience',
+      5: 'certificate'
     };
   };
 
@@ -331,6 +372,8 @@ export default function BusinessOnboarding({ userName, onComplete }) {
     switch (currentStepContent) {
       case 'category':
         return !!businessCategory;
+      case 'service_category':
+        return !!serviceCategoryId;
       case 'professional_type':
         return !!professionalType;
       case 'business_details':
@@ -409,10 +452,16 @@ export default function BusinessOnboarding({ userName, onComplete }) {
       // Get token for auth
       const token = await getToken();
 
+      // Find the specialty ID from the specialties array
+      const selectedSpecialty = specialties.find(s => s.slug === professionalType);
+      const specialtyId = selectedSpecialty?.id || null;
+
       // Build request body based on business category
       const requestBody = {
         businessCategory,
         professionalType,
+        serviceCategoryId: serviceCategoryId || null,
+        specialtyId,
         completeOnboarding: true,
       };
 
@@ -594,6 +643,79 @@ export default function BusinessOnboarding({ userName, onComplete }) {
           </div>
         )}
 
+        {/* Step: Service Category */}
+        {currentStepContent === 'service_category' && (
+          <div className="bg-white rounded-[5px] shadow-2xl shadow-gray-200/50 p-8 border border-gray-100">
+            <h2 className="text-2xl font-bold text-gray-900 text-center mb-2">
+              Choose your service category
+            </h2>
+            <p className="text-gray-500 text-center mb-8">
+              Select the category that best fits your services
+            </p>
+
+            {loadingCategories ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 text-amber-400 animate-spin" />
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {serviceCategories.map((cat) => {
+                  const IconComponent = SERVICE_CATEGORY_ICONS[cat.icon] || Sparkles;
+                  const isSelected = serviceCategoryId === cat.id;
+                  return (
+                    <button
+                      key={cat.id}
+                      onClick={() => setServiceCategoryId(cat.id)}
+                      className={`group w-full flex items-center gap-4 p-5 rounded-[5px] border transition-all duration-300 text-left ${
+                        isSelected 
+                          ? 'border-amber-400 bg-white' 
+                          : 'border-gray-100 hover:border-gray-200 bg-white hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 bg-gray-100 group-hover:bg-gray-200 transition-all duration-300">
+                        <IconComponent className="w-7 h-7 text-gray-500 group-hover:text-gray-700" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className={`font-semibold text-lg transition-colors ${
+                          isSelected ? 'text-gray-900' : 'text-gray-700 group-hover:text-gray-900'
+                        }`}>{cat.name}</h3>
+                        <p className="text-sm text-gray-500 mt-0.5 line-clamp-2">{cat.description}</p>
+                      </div>
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
+                        isSelected 
+                          ? 'bg-amber-400' 
+                          : 'bg-gray-100 group-hover:bg-gray-200'
+                      }`}>
+                        {isSelected && <Check className="w-4 h-4 text-white" />}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            <div className="flex gap-3 mt-6 sm:mt-8">
+              <button
+                onClick={handleBack}
+                className="px-4 sm:px-6 py-3 sm:py-4 rounded-[5px] font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all text-sm sm:text-base"
+              >
+                Back
+              </button>
+              <button
+                onClick={handleNext}
+                disabled={!canContinue()}
+                className={`flex-1 py-3 sm:py-4 rounded-[5px] font-semibold text-white transition-all text-sm sm:text-base ${
+                  canContinue() 
+                    ? 'bg-amber-400 hover:bg-amber-500' 
+                    : 'bg-gray-300 cursor-not-allowed'
+                }`}
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Step: Professional Type */}
         {currentStepContent === 'professional_type' && (
           <div className="bg-white rounded-[5px] shadow-2xl shadow-gray-200/50 p-8 border border-gray-100">
@@ -605,42 +727,49 @@ export default function BusinessOnboarding({ userName, onComplete }) {
             </p>
 
             <div className="space-y-3">
-              {PROFESSIONAL_TYPES.map((type) => {
-                const IconComponent = type.icon;
-                const isSelected = professionalType === type.id;
-                return (
-                  <button
-                    key={type.id}
-                    onClick={() => setProfessionalType(type.id)}
-                    className={`group w-full flex items-center gap-4 p-4 rounded-[5px] border transition-all duration-300 text-left ${
-                      isSelected 
-                        ? 'border-amber-400 bg-white' 
-                        : 'border-gray-100 hover:border-gray-200 bg-white hover:bg-gray-50'
-                    }`}
-                  >
-                    <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 bg-gray-100 group-hover:bg-gray-200 transition-all">
-                      {type.customIcon ? (
-                        <img src={type.customIcon} alt={type.name} className="w-8 h-8" />
-                      ) : (
-                        <IconComponent className="w-6 h-6 text-gray-500 group-hover:text-gray-700" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className={`font-semibold transition-colors ${
-                        isSelected ? 'text-gray-900' : 'text-gray-700 group-hover:text-gray-900'
-                      }`}>{type.name}</h3>
-                      <p className="text-sm text-gray-500 mt-0.5 line-clamp-1">{type.description}</p>
-                    </div>
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
-                      isSelected 
-                        ? 'bg-amber-400' 
-                        : 'bg-gray-100 group-hover:bg-gray-200'
-                    }`}>
-                      {isSelected && <Check className="w-4 h-4 text-white" />}
-                    </div>
-                  </button>
-                );
-              })}
+              {loadingSpecialties ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-8 h-8 text-amber-400 animate-spin" />
+                </div>
+              ) : specialties.length > 0 ? (
+                specialties.map((type) => {
+                  const isSelected = professionalType === type.slug;
+                  return (
+                    <button
+                      key={type.id}
+                      onClick={() => setProfessionalType(type.slug)}
+                      className={`group w-full flex items-center gap-4 p-4 rounded-[5px] border transition-all duration-300 text-left ${
+                        isSelected 
+                          ? 'border-amber-400 bg-white' 
+                          : 'border-gray-100 hover:border-gray-200 bg-white hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 bg-gray-100 group-hover:bg-gray-200 transition-all">
+                        {type.custom_icon ? (
+                          <img src={type.custom_icon} alt={type.name} className="w-8 h-8" />
+                        ) : (
+                          <Scissors className="w-6 h-6 text-gray-500 group-hover:text-gray-700" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className={`font-semibold transition-colors ${
+                          isSelected ? 'text-gray-900' : 'text-gray-700 group-hover:text-gray-900'
+                        }`}>{type.name}</h3>
+                        <p className="text-sm text-gray-500 mt-0.5 line-clamp-1">{type.description}</p>
+                      </div>
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
+                        isSelected 
+                          ? 'bg-amber-400' 
+                          : 'bg-gray-100 group-hover:bg-gray-200'
+                      }`}>
+                        {isSelected && <Check className="w-4 h-4 text-white" />}
+                      </div>
+                    </button>
+                  );
+                })
+              ) : (
+                <p className="text-center text-gray-400 py-8">No specialties available for this category yet.</p>
+              )}
             </div>
 
             <div className="flex gap-3 mt-6 sm:mt-8">

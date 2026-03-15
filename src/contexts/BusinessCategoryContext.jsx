@@ -18,7 +18,8 @@ export function BusinessCategoryProvider({ children }) {
       try {
         const res = await fetch('/api/business/onboarding');
         if (res.ok) {
-          const data = await res.json();
+          const text = await res.text();
+          const data = text ? JSON.parse(text) : {};
           setBusinessCategory(data.businessCategory || null);
         }
       } catch (err) {

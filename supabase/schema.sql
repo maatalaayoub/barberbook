@@ -30,12 +30,10 @@ CREATE POLICY "Users can view own data"
   ON users FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Allow insert users" ON users;
-CREATE POLICY "Allow insert users"
-  ON users FOR INSERT WITH CHECK (true);
+-- No INSERT policy for anon: all writes go through service-role API routes
 
 DROP POLICY IF EXISTS "Allow update users" ON users;
-CREATE POLICY "Allow update users"
-  ON users FOR UPDATE USING (true) WITH CHECK (true);
+-- No UPDATE policy for anon: all writes go through service-role API routes
 
 -- Function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -84,12 +82,10 @@ CREATE POLICY "Users can view own profile"
   ON user_profile FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Allow insert user profile" ON user_profile;
-CREATE POLICY "Allow insert user profile"
-  ON user_profile FOR INSERT WITH CHECK (true);
+-- No INSERT policy for anon: all writes go through service-role API routes
 
 DROP POLICY IF EXISTS "Allow update user profile" ON user_profile;
-CREATE POLICY "Allow update user profile"
-  ON user_profile FOR UPDATE USING (true) WITH CHECK (true);
+-- No UPDATE policy for anon: all writes go through service-role API routes
 
 DROP TRIGGER IF EXISTS update_user_profile_updated_at ON user_profile;
 CREATE TRIGGER update_user_profile_updated_at
@@ -185,12 +181,10 @@ CREATE POLICY "Business info viewable by everyone"
   ON business_info FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Allow insert business info" ON business_info;
-CREATE POLICY "Allow insert business info"
-  ON business_info FOR INSERT WITH CHECK (true);
+-- No INSERT policy for anon: all writes go through service-role API routes
 
 DROP POLICY IF EXISTS "Allow update business info" ON business_info;
-CREATE POLICY "Allow update business info"
-  ON business_info FOR UPDATE USING (true) WITH CHECK (true);
+-- No UPDATE policy for anon: all writes go through service-role API routes
 
 DROP TRIGGER IF EXISTS update_business_info_updated_at ON business_info;
 CREATE TRIGGER update_business_info_updated_at
@@ -225,12 +219,10 @@ CREATE POLICY "Shop salon info viewable by everyone"
   ON shop_salon_info FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Allow insert shop salon info" ON shop_salon_info;
-CREATE POLICY "Allow insert shop salon info"
-  ON shop_salon_info FOR INSERT WITH CHECK (true);
+-- No INSERT policy for anon: all writes go through service-role API routes
 
 DROP POLICY IF EXISTS "Allow update shop salon info" ON shop_salon_info;
-CREATE POLICY "Allow update shop salon info"
-  ON shop_salon_info FOR UPDATE USING (true) WITH CHECK (true);
+-- No UPDATE policy for anon: all writes go through service-role API routes
 
 DROP TRIGGER IF EXISTS update_shop_salon_info_updated_at ON shop_salon_info;
 CREATE TRIGGER update_shop_salon_info_updated_at
@@ -269,12 +261,10 @@ CREATE POLICY "Mobile service info viewable by everyone"
   ON mobile_service_info FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Allow insert mobile service info" ON mobile_service_info;
-CREATE POLICY "Allow insert mobile service info"
-  ON mobile_service_info FOR INSERT WITH CHECK (true);
+-- No INSERT policy for anon: all writes go through service-role API routes
 
 DROP POLICY IF EXISTS "Allow update mobile service info" ON mobile_service_info;
-CREATE POLICY "Allow update mobile service info"
-  ON mobile_service_info FOR UPDATE USING (true) WITH CHECK (true);
+-- No UPDATE policy for anon: all writes go through service-role API routes
 
 DROP TRIGGER IF EXISTS update_mobile_service_info_updated_at ON mobile_service_info;
 CREATE TRIGGER update_mobile_service_info_updated_at
@@ -308,12 +298,10 @@ CREATE POLICY "Job seeker info viewable by everyone"
   ON job_seeker_info FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Allow insert job seeker info" ON job_seeker_info;
-CREATE POLICY "Allow insert job seeker info"
-  ON job_seeker_info FOR INSERT WITH CHECK (true);
+-- No INSERT policy for anon: all writes go through service-role API routes
 
 DROP POLICY IF EXISTS "Allow update job seeker info" ON job_seeker_info;
-CREATE POLICY "Allow update job seeker info"
-  ON job_seeker_info FOR UPDATE USING (true) WITH CHECK (true);
+-- No UPDATE policy for anon: all writes go through service-role API routes
 
 DROP TRIGGER IF EXISTS update_job_seeker_info_updated_at ON job_seeker_info;
 CREATE TRIGGER update_job_seeker_info_updated_at
@@ -430,12 +418,10 @@ CREATE POLICY "Users can view own profile"
   USING (true);
 
 DROP POLICY IF EXISTS "Allow insert user profile" ON user_profile;
-CREATE POLICY "Allow insert user profile"
-  ON user_profile FOR INSERT WITH CHECK (true);
+-- No INSERT policy for anon: all writes go through service-role API routes
 
 DROP POLICY IF EXISTS "Allow update user profile" ON user_profile;
-CREATE POLICY "Allow update user profile"
-  ON user_profile FOR UPDATE USING (true) WITH CHECK (true);
+-- No UPDATE policy for anon: all writes go through service-role API routes
 
 DROP TRIGGER IF EXISTS update_user_profile_updated_at ON user_profile;
 CREATE TRIGGER update_user_profile_updated_at
@@ -773,12 +759,8 @@ CREATE POLICY "Appointments viewable by owner"
     )
   );
 
--- Allow full access via service role (API routes use service role key)
+-- Service role key bypasses RLS entirely; no blanket policy needed
 DROP POLICY IF EXISTS "Allow all for service role" ON appointments;
-CREATE POLICY "Allow all for service role"
-  ON appointments FOR ALL
-  USING (true)
-  WITH CHECK (true);
 
 DROP TRIGGER IF EXISTS update_appointments_updated_at ON appointments;
 CREATE TRIGGER update_appointments_updated_at
@@ -808,10 +790,10 @@ CREATE INDEX IF NOT EXISTS idx_business_services_is_active ON business_services(
 ALTER TABLE business_services ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Business services viewable by owner" ON business_services;
-CREATE POLICY "Business services viewable by owner"
-  ON business_services FOR ALL
-  USING (true)
-  WITH CHECK (true);
+DROP POLICY IF EXISTS "Business services are publicly readable" ON business_services;
+CREATE POLICY "Business services are publicly readable"
+  ON business_services FOR SELECT
+  USING (true);
 
 DROP TRIGGER IF EXISTS update_business_services_updated_at ON business_services;
 CREATE TRIGGER update_business_services_updated_at
@@ -990,18 +972,11 @@ CREATE INDEX IF NOT EXISTS idx_vr_business_status ON verification_requests(busin
 
 ALTER TABLE verification_requests ENABLE ROW LEVEL SECURITY;
 
--- Service role bypasses RLS; owners can read their own row
-CREATE POLICY "Owner can view own verification"
-  ON verification_requests FOR SELECT
-  USING (true);
-
-CREATE POLICY "Allow insert verification"
-  ON verification_requests FOR INSERT
-  WITH CHECK (true);
-
-CREATE POLICY "Allow update verification"
-  ON verification_requests FOR UPDATE
-  USING (true) WITH CHECK (true);
+-- All verification access goes through service-role API routes only
+DROP POLICY IF EXISTS "Owner can view own verification" ON verification_requests;
+DROP POLICY IF EXISTS "Allow insert verification" ON verification_requests;
+DROP POLICY IF EXISTS "Allow update verification" ON verification_requests;
+-- No permissive policies: sensitive data protected at database level
 
 DROP TRIGGER IF EXISTS update_verification_requests_updated_at ON verification_requests;
 CREATE TRIGGER update_verification_requests_updated_at
@@ -1027,11 +1002,10 @@ CREATE INDEX IF NOT EXISTS idx_aal_action_type ON admin_actions_log(action_type)
 
 ALTER TABLE admin_actions_log ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Admin log read all"
-  ON admin_actions_log FOR SELECT USING (true);
-
-CREATE POLICY "Admin log insert"
-  ON admin_actions_log FOR INSERT WITH CHECK (true);
+-- All admin log access goes through service-role API routes only
+DROP POLICY IF EXISTS "Admin log read all" ON admin_actions_log;
+DROP POLICY IF EXISTS "Admin log insert" ON admin_actions_log;
+-- No permissive policies: audit trail protected at database level
 
 -- ============================================
 -- JOB APPLICATIONS (job seekers applying to businesses)
@@ -1054,21 +1028,12 @@ CREATE INDEX IF NOT EXISTS idx_job_applications_status ON job_applications(statu
 
 ALTER TABLE job_applications ENABLE ROW LEVEL SECURITY;
 
+-- All job application access goes through service-role API routes only
 DROP POLICY IF EXISTS "Job applications viewable by all" ON job_applications;
-CREATE POLICY "Job applications viewable by all"
-  ON job_applications FOR SELECT USING (true);
-
 DROP POLICY IF EXISTS "Job applications insert" ON job_applications;
-CREATE POLICY "Job applications insert"
-  ON job_applications FOR INSERT WITH CHECK (true);
-
 DROP POLICY IF EXISTS "Job applications update" ON job_applications;
-CREATE POLICY "Job applications update"
-  ON job_applications FOR UPDATE USING (true) WITH CHECK (true);
-
 DROP POLICY IF EXISTS "Job applications delete" ON job_applications;
-CREATE POLICY "Job applications delete"
-  ON job_applications FOR DELETE USING (true);
+-- No permissive policies: private data protected at database level
 
 DROP TRIGGER IF EXISTS update_job_applications_updated_at ON job_applications;
 CREATE TRIGGER update_job_applications_updated_at

@@ -34,6 +34,9 @@ export default function Hero() {
   const mobileMenuRef = useRef(null);
   const mobileMenuToggleRef = useRef(null);
   const desktopSideMenuRef = useRef(null);
+  const searchBarRef = useRef(null);
+  const stickyCityRef = useRef(null);
+  const [showStickyHeader, setShowStickyHeader] = useState(false);
   
   // Combined loaded state - both Clerk and role data must be loaded
   const isLoaded = isClerkLoaded && isRoleLoaded;
@@ -68,7 +71,9 @@ export default function Hero() {
   // Close city dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (cityRef.current && !cityRef.current.contains(event.target)) {
+      const isOutsideHeroCity = !cityRef.current || !cityRef.current.contains(event.target);
+      const isOutsideStickyCity = !stickyCityRef.current || !stickyCityRef.current.contains(event.target);
+      if (isOutsideHeroCity && isOutsideStickyCity) {
         setIsCityOpen(false);
       }
     };
@@ -109,8 +114,240 @@ export default function Hero() {
     return () => window.removeEventListener('toggle-home-sidebar', handleToggleSidebar);
   }, []);
 
+  // Show sticky search header when hero search bar scrolls out of view
+  useEffect(() => {
+    const el = searchBarRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowStickyHeader(!entry.isIntersecting),
+      { threshold: 0 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <section className="relative bg-[#0F172A]">
+      {/* Sticky Search Header */}
+      <AnimatePresence>
+        {showStickyHeader && (
+          <motion.div
+            initial={{ y: -80, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -80, opacity: 0 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+            className="fixed top-0 left-0 right-0 z-50 bg-[#0F172A]/95 backdrop-blur-md border-b border-[#364153]/30 shadow-lg"
+          >
+            <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-2.5 flex items-center gap-3" ref={stickyCityRef}>
+              {/* Left: Sidebar button + Logo (desktop) */}
+              <div className="hidden sm:flex items-center gap-3 shrink-0">
+                <button
+                  onClick={() => setIsDesktopSideMenuOpen(!isDesktopSideMenuOpen)}
+                  className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#1E293B]/50 border border-[#364153]/50 text-white transition-all hover:bg-[#364153]/50 active:scale-95"
+                  aria-label="Open menu"
+                >
+                  <Menu className="h-5 w-5" />
+                </button>
+                <Link href={`/${locale}`} className="shrink-0">
+                  <Image src="/images/white-logo.png" alt="Booq" width={100} height={30} className="h-7 w-auto" />
+                </Link>
+              </div>
+
+              {/* Center: Search pill (desktop) */}
+              <div className="hidden sm:flex flex-1 justify-center">
+                <div className="flex w-full max-w-xl items-center gap-2 rounded-[90px] bg-white p-1">
+                  <div className="flex flex-1 items-center gap-2 px-3 py-1.5">
+                    <Search className="h-4 w-4 text-gray-400 shrink-0" />
+                    <input
+                      type="text"
+                      placeholder={t('searchPlaceholder')}
+                      className="flex-1 bg-transparent text-[#364153] placeholder-gray-400 outline-none text-sm font-medium min-w-0"
+                    />
+                  </div>
+                  <div className="h-7 w-px bg-gray-200" />
+                  <div className="relative">
+                    <button
+                      onClick={() => setIsCityOpen(!isCityOpen)}
+                      className="flex h-9 items-center gap-1.5 rounded-full px-3 text-gray-500 transition-all hover:bg-gray-100"
+                    >
+                      <MapPin className="h-4 w-4 shrink-0" />
+                      <span className="text-sm font-medium text-[#364153] max-w-[80px] truncate">
+                        {selectedCity ? t(`city${selectedCity}`) : t('myLocation')}
+                      </span>
+                      <ChevronDown className={`h-3.5 w-3.5 text-gray-400 transition-transform ${isCityOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                  <AnimatePresence>
+                    {isCityOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute top-full right-0 mt-3 z-50 w-48 rounded-[5px] bg-white border border-gray-200 shadow-lg"
+                      >
+                        <div className="city-dropdown max-h-64 overflow-y-auto py-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                          <button
+                            onClick={() => {
+                              if (!navigator.geolocation) return;
+                              setIsLocating(true);
+                              navigator.geolocation.getCurrentPosition(
+                                async (pos) => {
+                                  try {
+                                    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json&accept-language=en`);
+                                    const data = await res.json();
+                                    const city = data.address?.city || data.address?.town || data.address?.village || '';
+                                    const match = ['Casablanca','Rabat','Marrakech','Fes','Tangier','Agadir','Meknes','Oujda','Kenitra','Tetouan'].find(c => city.toLowerCase().includes(c.toLowerCase()));
+                                    if (match) setSelectedCity(match);
+                                  } catch {} finally { setIsLocating(false); setIsCityOpen(false); }
+                                },
+                                () => { setIsLocating(false); },
+                                { timeout: 8000 }
+                              );
+                            }}
+                            className="flex w-full items-center gap-2 px-4 py-2.5 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50 border-b border-gray-100"
+                          >
+                            <MapPin className={`h-4 w-4 ${isLocating ? 'animate-pulse' : ''}`} />
+                            {isLocating ? '...' : t('myLocation')}
+                          </button>
+                          {['Casablanca','Rabat','Marrakech','Fes','Tangier','Agadir','Meknes','Oujda','Kenitra','Tetouan'].map((city) => (
+                            <button
+                              key={city}
+                              onClick={() => { setSelectedCity(city); setIsCityOpen(false); }}
+                              className={`flex w-full items-center px-4 py-2.5 text-sm transition-colors hover:bg-gray-50 ${
+                                selectedCity === city ? 'text-[#364153] font-semibold bg-gray-50' : 'text-gray-600'
+                              }`}
+                            >
+                              {t(`city${city}`)}
+                            </button>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+                <button className="flex h-9 items-center gap-2 rounded-full bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] px-5 text-sm font-semibold text-[#364153] transition-all hover:brightness-110 shadow-sm shrink-0">
+                  <Search className="h-4 w-4" />
+                  <span>{t('search')}</span>
+                </button>
+                </div>
+              </div>
+
+              {/* Right: Profile icon (signed in) or Auth buttons (signed out) - desktop */}
+              <div className="hidden sm:flex items-center gap-2 shrink-0">
+                {isSignedIn ? (
+                  <button
+                    onClick={() => setIsDesktopSideMenuOpen(!isDesktopSideMenuOpen)}
+                    className="flex h-9 w-9 items-center justify-center rounded-full overflow-hidden border-2 border-[#364153]/50 transition-all hover:border-[#D4AF37] hover:scale-105"
+                  >
+                    {user?.imageUrl ? (
+                      <img src={user.imageUrl} alt={user.firstName || 'Profile'} className="h-full w-full object-cover" />
+                    ) : (
+                      <User className="h-5 w-5 text-white" />
+                    )}
+                  </button>
+                ) : (
+                  <>
+                    <Link
+                      href={`/${locale}/auth/user/sign-in`}
+                      className="rounded-full px-4 py-2 text-[13px] font-medium text-white/70 transition-all duration-200 hover:text-white hover:bg-[#364153]/40"
+                    >
+                      {t('login')}
+                    </Link>
+                    <Link
+                      href={`/${locale}/auth/user/sign-up`}
+                      className="rounded-full bg-white px-4 py-2 text-[13px] font-semibold text-[#364153] transition-all duration-200 hover:bg-gray-100"
+                    >
+                      {t('signUp')}
+                    </Link>
+                    <Link
+                      href={`/${locale}/auth/business/sign-up`}
+                      className="rounded-full bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] px-4 py-2 text-[13px] font-semibold text-[#364153] transition-all duration-200 hover:brightness-110"
+                    >
+                      {t('barberSpace')}
+                    </Link>
+                  </>
+                )}
+              </div>
+
+              {/* Mobile: compact single row */}
+              <div className="flex sm:hidden w-full items-center gap-2 relative">
+                <div className="flex flex-1 items-center rounded-full bg-white px-3 py-2.5 min-w-0 overflow-hidden">
+                  <Search className="h-4 w-4 text-gray-400 shrink-0" />
+                  <input
+                    type="text"
+                    placeholder={t('searchPlaceholder')}
+                    className="flex-1 bg-transparent text-[#364153] placeholder-gray-400 outline-none text-xs font-medium min-w-0 mx-1.5"
+                  />
+                  <div className="h-5 w-px bg-gray-200 shrink-0" />
+                  <button
+                    onClick={() => setIsCityOpen(!isCityOpen)}
+                    className="flex items-center gap-1 min-w-0 ml-1.5"
+                  >
+                    <MapPin className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                    <span className="text-[11px] font-medium text-[#364153] truncate">
+                      {selectedCity ? t(`city${selectedCity}`) : t('myLocation')}
+                    </span>
+                    <ChevronDown className="h-3 w-3 text-gray-400 shrink-0" />
+                  </button>
+                </div>
+                <button className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] shrink-0 shadow-sm">
+                  <Search className="h-4 w-4 text-[#364153]" />
+                </button>
+                {/* Mobile city dropdown */}
+                <AnimatePresence>
+                  {isCityOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute top-full left-0 right-0 mt-2 z-50 rounded-[5px] bg-white border border-gray-200 shadow-lg"
+                    >
+                      <div className="city-dropdown max-h-64 overflow-y-auto py-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                        <button
+                          onClick={() => {
+                            if (!navigator.geolocation) return;
+                            setIsLocating(true);
+                            navigator.geolocation.getCurrentPosition(
+                              async (pos) => {
+                                try {
+                                  const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json&accept-language=en`);
+                                  const data = await res.json();
+                                  const city = data.address?.city || data.address?.town || data.address?.village || '';
+                                  const match = ['Casablanca','Rabat','Marrakech','Fes','Tangier','Agadir','Meknes','Oujda','Kenitra','Tetouan'].find(c => city.toLowerCase().includes(c.toLowerCase()));
+                                  if (match) setSelectedCity(match);
+                                } catch {} finally { setIsLocating(false); setIsCityOpen(false); }
+                              },
+                              () => { setIsLocating(false); },
+                              { timeout: 8000 }
+                            );
+                          }}
+                          className="flex w-full items-center gap-2 px-4 py-2.5 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50 border-b border-gray-100"
+                        >
+                          <MapPin className={`h-4 w-4 ${isLocating ? 'animate-pulse' : ''}`} />
+                          {isLocating ? '...' : t('myLocation')}
+                        </button>
+                        {['Casablanca','Rabat','Marrakech','Fes','Tangier','Agadir','Meknes','Oujda','Kenitra','Tetouan'].map((city) => (
+                          <button
+                            key={city}
+                            onClick={() => { setSelectedCity(city); setIsCityOpen(false); }}
+                            className={`flex w-full items-center px-4 py-2.5 text-sm transition-colors hover:bg-gray-50 ${
+                              selectedCity === city ? 'text-[#364153] font-semibold bg-gray-50' : 'text-gray-600'
+                            }`}
+                          >
+                            {t(`city${city}`)}
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Background decorative elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 h-80 w-80 rounded-full bg-[#D4AF37]/10 blur-3xl" />
@@ -173,26 +410,17 @@ export default function Hero() {
           
           {/* Mobile Menu Button & Icons */}
           <div className="flex items-center gap-2 md:hidden">
-            {/* Show Dashboard button only for barbers */}
-            {isLoaded && isSignedIn && isBusiness && (
-              <a
-                href={dashboardUrl}
-                className="flex items-center gap-1.5 px-4 py-1.5 rounded-full border border-[#364153]/50 bg-[#1E293B]/50 text-white backdrop-blur-md transition-all hover:bg-[#364153]/50 hover:border-[#364153] hover:scale-105"
-                aria-label={t('dashboard') || 'Dashboard'}
+            {/* Profile link for signed-in users */}
+            {isLoaded && isSignedIn && user && (
+              <Link
+                href={isBusiness ? `/${locale}/business/profile` : `/${locale}/profile`}
+                className="relative flex items-center justify-center p-0.5 rounded-full border-2 border-white/20 transition-all hover:border-[#D4AF37]"
               >
-                <LayoutDashboard className="h-3.5 w-3.5" />
-                <span className="text-xs font-semibold">{t('dashboard') || 'Dashboard'}</span>
-              </a>
+                <div className="h-8 w-8 rounded-full overflow-hidden bg-gray-800">
+                  <img src={user.imageUrl} alt={user.firstName || 'Profile'} className="h-full w-full object-cover" />
+                </div>
+              </Link>
             )}
-            {/* Hamburger button - always visible on mobile */}
-            <button
-              ref={mobileMenuToggleRef}
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#1E293B]/50 border border-[#364153]/50 text-white transition-all hover:bg-[#364153]/50 active:scale-95 backdrop-blur-md"
-              aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
-            >
-              <Menu className="h-5 w-5" />
-            </button>
           </div>
           
           {/* Desktop Navigation */}
@@ -210,18 +438,6 @@ export default function Hero() {
               ) : isSignedIn ? (
                 // Signed in state
                 <>
-                  {/* Dashboard button - Show only for barbers */}
-                  {isBusiness && (
-                    <a 
-                      href={dashboardUrl}
-                      className="flex items-center gap-2 px-5 py-2 rounded-[90px] border border-[#364153]/50 bg-[#1E293B]/50 text-white backdrop-blur-md transition-all hover:bg-[#364153]/50 hover:border-[#364153] hover:scale-105"
-                      aria-label={t('dashboard') || 'Dashboard'}
-                    >
-                      <LayoutDashboard className="h-4 w-4" />
-                      <span className="text-sm font-semibold">{t('dashboard') || 'Dashboard'}</span>
-                    </a>
-                  )}
-
                   {/* Profile Button - Direct Link */}
                   <Link
                     href={isBusiness ? `/${locale}/business/profile` : `/${locale}/profile`}
@@ -726,11 +942,15 @@ export default function Hero() {
               <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-white sm:text-3xl md:text-4xl lg:text-5xl max-w-3xl">
                 {(() => {
                   const title = t('heroMainTitle');
+                  const isArabic = locale === 'ar';
                   const spaceIdx = title.indexOf(' ');
-                  if (spaceIdx === -1) return <span className="text-[#D4AF37]">{title}</span>;
+                  const firstWordStyle = isArabic
+                    ? { color: 'white' }
+                    : { WebkitTextStroke: '0.8px white', WebkitTextFillColor: 'transparent' };
+                  if (spaceIdx === -1) return <span style={firstWordStyle}>{title}</span>;
                   return (
                     <>
-                      <span className="text-[#D4AF37]">{title.slice(0, spaceIdx)}</span>
+                      <span style={firstWordStyle}>{title.slice(0, spaceIdx)}</span>
                       <span className="text-white">{title.slice(spaceIdx)}</span>
                     </>
                   );
@@ -739,7 +959,7 @@ export default function Hero() {
             </div>
 
             {/* Search Bar */}
-            <div className="mx-auto mb-10 max-w-2xl w-full" ref={cityRef}>
+            <div className="mx-auto mb-10 max-w-2xl w-full" ref={(el) => { cityRef.current = el; searchBarRef.current = el; }}>
               {/* Desktop: single row pill */}
               <div className="hidden sm:flex items-center gap-2 rounded-[90px] bg-white p-1.5">
                 <div className="flex flex-1 items-center gap-3 px-4 py-2.5">

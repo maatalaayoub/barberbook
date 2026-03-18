@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Map, MapPin, Menu, X, ChevronDown, Globe, User, LayoutDashboard, Settings, Scissors, Home, LogOut, Info, Mail, Shield, ChevronRight } from 'lucide-react';
+import { Search, Map, MapPin, Menu, X, ChevronDown, Globe, User, LayoutDashboard, Settings, Scissors, Home, LogOut, Info, Mail, Shield, ChevronRight, Heart, CalendarDays } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import ReactCountryFlag from 'react-country-flag';
@@ -140,7 +140,8 @@ export default function Hero() {
           >
             <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-2.5 flex items-center gap-3" ref={stickyCityRef}>
               {/* Left: Sidebar button + Logo (desktop) */}
-              <div className="hidden sm:flex items-center gap-3 shrink-0">
+              <div className="hidden sd:flex items-center gap-3 shrink-0">
+                {isSignedIn && (
                 <button
                   onClick={() => setIsDesktopSideMenuOpen(!isDesktopSideMenuOpen)}
                   className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#1E293B]/50 border border-[#364153]/50 text-white transition-all hover:bg-[#364153]/50 active:scale-95"
@@ -148,152 +149,38 @@ export default function Hero() {
                 >
                   <Menu className="h-5 w-5" />
                 </button>
+                )}
                 <Link href={`/${locale}`} className="shrink-0">
                   <Image src="/images/white-logo.png" alt="Booq" width={100} height={30} className="h-7 w-auto" />
                 </Link>
               </div>
 
-              {/* Center: Search pill (desktop) */}
-              <div className="hidden sm:flex flex-1 justify-center">
-                <div className="flex w-full max-w-xl items-center gap-2 rounded-[90px] bg-white p-1">
-                  <div className="flex flex-1 items-center gap-2 px-3 py-1.5">
-                    <Search className="h-4 w-4 text-gray-400 shrink-0" />
-                    <input
-                      type="text"
-                      placeholder={t('searchPlaceholder')}
-                      className="flex-1 bg-transparent text-[#364153] placeholder-gray-400 outline-none text-sm font-medium min-w-0"
-                    />
-                  </div>
-                  <div className="h-7 w-px bg-gray-200" />
-                  <div className="relative">
-                    <button
-                      onClick={() => setIsCityOpen(!isCityOpen)}
-                      className="flex h-9 items-center gap-1.5 rounded-full px-3 text-gray-500 transition-all hover:bg-gray-100"
-                    >
-                      <MapPin className="h-4 w-4 shrink-0" />
-                      <span className="text-sm font-medium text-[#364153] max-w-[80px] truncate">
-                        {selectedCity ? t(`city${selectedCity}`) : t('myLocation')}
-                      </span>
-                      <ChevronDown className={`h-3.5 w-3.5 text-gray-400 transition-transform ${isCityOpen ? 'rotate-180' : ''}`} />
-                    </button>
-                  <AnimatePresence>
-                    {isCityOpen && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -4 }}
-                        transition={{ duration: 0.15 }}
-                        className="absolute top-full right-0 mt-3 z-50 w-48 rounded-[5px] bg-white border border-gray-200 shadow-lg"
-                      >
-                        <div className="city-dropdown max-h-64 overflow-y-auto py-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                          <button
-                            onClick={() => {
-                              if (!navigator.geolocation) return;
-                              setIsLocating(true);
-                              navigator.geolocation.getCurrentPosition(
-                                async (pos) => {
-                                  try {
-                                    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json&accept-language=en`);
-                                    const data = await res.json();
-                                    const city = data.address?.city || data.address?.town || data.address?.village || '';
-                                    const match = ['Casablanca','Rabat','Marrakech','Fes','Tangier','Agadir','Meknes','Oujda','Kenitra','Tetouan'].find(c => city.toLowerCase().includes(c.toLowerCase()));
-                                    if (match) setSelectedCity(match);
-                                  } catch {} finally { setIsLocating(false); setIsCityOpen(false); }
-                                },
-                                () => { setIsLocating(false); },
-                                { timeout: 8000 }
-                              );
-                            }}
-                            className="flex w-full items-center gap-2 px-4 py-2.5 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50 border-b border-gray-100"
-                          >
-                            <MapPin className={`h-4 w-4 ${isLocating ? 'animate-pulse' : ''}`} />
-                            {isLocating ? '...' : t('myLocation')}
-                          </button>
-                          {['Casablanca','Rabat','Marrakech','Fes','Tangier','Agadir','Meknes','Oujda','Kenitra','Tetouan'].map((city) => (
-                            <button
-                              key={city}
-                              onClick={() => { setSelectedCity(city); setIsCityOpen(false); }}
-                              className={`flex w-full items-center px-4 py-2.5 text-sm transition-colors hover:bg-gray-50 ${
-                                selectedCity === city ? 'text-[#364153] font-semibold bg-gray-50' : 'text-gray-600'
-                              }`}
-                            >
-                              {t(`city${city}`)}
-                            </button>
-                          ))}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-                <button className="flex h-9 items-center gap-2 rounded-full bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] px-5 text-sm font-semibold text-[#364153] transition-all hover:brightness-110 shadow-sm shrink-0">
-                  <Search className="h-4 w-4" />
-                  <span>{t('search')}</span>
-                </button>
-                </div>
-              </div>
-
-              {/* Right: Profile icon (signed in) or Auth buttons (signed out) - desktop */}
-              <div className="hidden sm:flex items-center gap-2 shrink-0">
-                {isSignedIn ? (
-                  <button
-                    onClick={() => setIsDesktopSideMenuOpen(!isDesktopSideMenuOpen)}
-                    className="flex h-9 w-9 items-center justify-center rounded-full overflow-hidden border-2 border-[#364153]/50 transition-all hover:border-[#D4AF37] hover:scale-105"
-                  >
-                    {user?.imageUrl ? (
-                      <img src={user.imageUrl} alt={user.firstName || 'Profile'} className="h-full w-full object-cover" />
-                    ) : (
-                      <User className="h-5 w-5 text-white" />
-                    )}
-                  </button>
-                ) : (
-                  <>
-                    <Link
-                      href={`/${locale}/auth/user/sign-in`}
-                      className="rounded-full px-4 py-2 text-[13px] font-medium text-white/70 transition-all duration-200 hover:text-white hover:bg-[#364153]/40"
-                    >
-                      {t('login')}
-                    </Link>
-                    <Link
-                      href={`/${locale}/auth/user/sign-up`}
-                      className="rounded-full bg-white px-4 py-2 text-[13px] font-semibold text-[#364153] transition-all duration-200 hover:bg-gray-100"
-                    >
-                      {t('signUp')}
-                    </Link>
-                    <Link
-                      href={`/${locale}/auth/business/sign-up`}
-                      className="rounded-full bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] px-4 py-2 text-[13px] font-semibold text-[#364153] transition-all duration-200 hover:brightness-110"
-                    >
-                      {t('barberSpace')}
-                    </Link>
-                  </>
-                )}
-              </div>
-
-              {/* Mobile: compact single row */}
-              <div className="flex sm:hidden w-full items-center gap-2 relative">
-                <div className="flex flex-1 items-center rounded-full bg-white px-3 py-2.5 min-w-0 overflow-hidden">
+              {/* Center: Search bar (all devices) */}
+              <div className="flex flex-1 sd:justify-center">
+                <div className="flex flex-1 sd:flex-initial sd:w-full sd:max-w-xl items-center gap-2 relative">
+                <div className="flex flex-1 items-center rounded-[10px] bg-white px-3 py-2.5 min-w-0 overflow-hidden">
                   <Search className="h-4 w-4 text-gray-400 shrink-0" />
                   <input
                     type="text"
                     placeholder={t('searchPlaceholder')}
-                    className="flex-1 bg-transparent text-[#364153] placeholder-gray-400 outline-none text-xs font-medium min-w-0 mx-1.5"
+                    className="flex-1 bg-transparent text-[#364153] placeholder-gray-400 outline-none text-xs font-medium min-w-[100px] mx-1.5"
                   />
                   <div className="h-5 w-px bg-gray-200 shrink-0" />
                   <button
                     onClick={() => setIsCityOpen(!isCityOpen)}
-                    className="flex items-center gap-1 min-w-0 ml-1.5"
+                    className="flex items-center gap-1 shrink-0 ml-1.5"
                   >
                     <MapPin className="h-3.5 w-3.5 text-gray-400 shrink-0" />
-                    <span className="text-[11px] font-medium text-[#364153] truncate">
+                    <span className="text-[11px] font-medium text-[#364153] truncate max-w-[70px] sd:max-w-none">
                       {selectedCity ? t(`city${selectedCity}`) : t('myLocation')}
                     </span>
                     <ChevronDown className="h-3 w-3 text-gray-400 shrink-0" />
                   </button>
                 </div>
-                <button className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] shrink-0 shadow-sm">
+                <button className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] shrink-0 shadow-sm">
                   <Search className="h-4 w-4 text-[#364153]" />
                 </button>
-                {/* Mobile city dropdown */}
+                {/* City dropdown */}
                 <AnimatePresence>
                   {isCityOpen && (
                     <motion.div
@@ -342,7 +229,40 @@ export default function Hero() {
                     </motion.div>
                   )}
                 </AnimatePresence>
+                </div>
               </div>
+
+              {/* Right: Profile icon (signed in) or Auth buttons (signed out) - desktop */}
+              <div className="hidden sd:flex items-center justify-end shrink-0">
+                {isSignedIn ? (
+                  <button
+                    onClick={() => setIsDesktopSideMenuOpen(!isDesktopSideMenuOpen)}
+                    className="flex h-9 w-9 items-center justify-center rounded-full overflow-hidden border-2 border-[#364153]/50 transition-all hover:border-[#D4AF37] hover:scale-105"
+                  >
+                    {user?.imageUrl ? (
+                      <img src={user.imageUrl} alt={user.firstName || 'Profile'} className="h-full w-full object-cover" />
+                    ) : (
+                      <User className="h-5 w-5 text-white" />
+                    )}
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-1 rounded-full bg-[#1E293B]/50 border border-[#364153]/50 p-1 backdrop-blur-md whitespace-nowrap">
+                    <Link
+                      href={`/${locale}/auth/user/sign-in`}
+                      className="rounded-full px-4 py-2 text-[13px] font-medium text-white/60 transition-all duration-200 hover:text-white hover:bg-[#364153]/40"
+                    >
+                      {t('login')}
+                    </Link>
+                    <Link
+                      href={`/${locale}/auth/user/sign-up`}
+                      className="rounded-full bg-white px-4 py-2 text-[13px] font-semibold text-[#364153] transition-all duration-200 hover:bg-gray-100"
+                    >
+                      {t('signUp')}
+                    </Link>
+                  </div>
+                )}
+              </div>
+
             </div>
           </motion.div>
         )}
@@ -392,7 +312,7 @@ export default function Hero() {
             {isLoaded && isSignedIn && locale !== 'ar' && (
               <button
                 onClick={() => setIsDesktopSideMenuOpen(!isDesktopSideMenuOpen)}
-                className="hidden md:flex h-10 w-10 items-center justify-center rounded-[10px] bg-[#1E293B]/50 border border-[#364153]/50 text-gray-300 transition-all hover:bg-[#364153]/50 hover:text-white backdrop-blur-md"
+                className="hidden sd:flex h-10 w-10 items-center justify-center rounded-[10px] bg-[#1E293B]/50 border border-[#364153]/50 text-gray-300 transition-all hover:bg-[#364153]/50 hover:text-white backdrop-blur-md"
                 aria-label={t('menu') || 'Menu'}
               >
                 <Menu className="h-5 w-5" />
@@ -403,13 +323,13 @@ export default function Hero() {
               alt="Booq" 
               width={200} 
               height={50}
-              className="h-8 md:h-11 w-auto"
+              className="h-8 sd:h-11 w-auto"
               priority
             />
           </motion.div>
           
           {/* Mobile Menu Button & Icons */}
-          <div className="flex items-center gap-2 md:hidden">
+          <div className="flex items-center gap-2 sd:hidden">
             {/* Profile link for signed-in users */}
             {isLoaded && isSignedIn && user && (
               <Link
@@ -428,7 +348,7 @@ export default function Hero() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
-            className="hidden items-center md:flex"
+            className="hidden items-center sd:flex"
           >
             {/* Auth Buttons Group */}
             <div className="flex items-center gap-2 mr-3">
@@ -455,7 +375,7 @@ export default function Hero() {
                   {locale === 'ar' && (
                     <button
                       onClick={() => setIsDesktopSideMenuOpen(!isDesktopSideMenuOpen)}
-                        className="hidden md:flex h-10 w-10 items-center justify-center rounded-[10px] bg-[#1E293B]/50 border border-[#364153]/50 text-gray-300 transition-all hover:bg-[#364153]/50 hover:text-white backdrop-blur-md"
+                        className="hidden sd:flex h-10 w-10 items-center justify-center rounded-[10px] bg-[#1E293B]/50 border border-[#364153]/50 text-gray-300 transition-all hover:bg-[#364153]/50 hover:text-white backdrop-blur-md"
                       aria-label={t('menu') || 'Menu'}
                     >
                       <Menu className="h-5 w-5" />
@@ -553,7 +473,7 @@ export default function Hero() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[60] hidden md:block"
+                className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[60] hidden sd:block"
                 onClick={() => setIsDesktopSideMenuOpen(false)}
               />
               {/* Side Panel - Clean Professional Design */}
@@ -563,7 +483,7 @@ export default function Hero() {
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: locale === 'ar' ? '100%' : '-100%', opacity: 0 }}
                 transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                className={`fixed top-0 ${locale === 'ar' ? 'right-0' : 'left-0'} h-screen w-[320px] bg-white shadow-2xl z-[60] hidden md:flex flex-col`}
+                className={`fixed top-0 ${locale === 'ar' ? 'right-0' : 'left-0'} h-screen w-[320px] bg-white shadow-2xl z-[60] hidden sd:flex flex-col`}
               >
                 {/* Header with Close Button */}
                 <div className="flex items-center justify-end p-4 shrink-0">
@@ -662,6 +582,26 @@ export default function Hero() {
                       <Settings className="h-5 w-5 text-[#244C70]" strokeWidth={1.5} />
                       <span className="font-medium text-base">{t('settings') || 'Settings'}</span>
                     </a>
+
+                    {/* My Booking */}
+                    <a
+                      href={`/${locale}/my-bookings`}
+                      onClick={() => setIsDesktopSideMenuOpen(false)}
+                      className="flex items-center gap-3 w-full px-4 py-3.5 rounded-xl text-[#244C70] transition-all hover:bg-gray-50"
+                    >
+                      <CalendarDays className="h-5 w-5 text-[#244C70]" strokeWidth={1.5} />
+                      <span className="font-medium text-base">{t('myBooking') || 'My Booking'}</span>
+                    </a>
+
+                    {/* Favorites */}
+                    <a
+                      href={`/${locale}/favorites`}
+                      onClick={() => setIsDesktopSideMenuOpen(false)}
+                      className="flex items-center gap-3 w-full px-4 py-3.5 rounded-xl text-[#244C70] transition-all hover:bg-gray-50"
+                    >
+                      <Heart className="h-5 w-5 text-[#244C70]" strokeWidth={1.5} />
+                      <span className="font-medium text-base">{t('favorites') || 'Favorites'}</span>
+                    </a>
                   </div>
 
                   {/* Divider */}
@@ -708,7 +648,7 @@ export default function Hero() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[60] md:hidden"
+                className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[60] sd:hidden"
                 onClick={() => setIsMobileMenuOpen(false)}
               />
               {/* Side Panel */}
@@ -718,7 +658,7 @@ export default function Hero() {
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: locale === 'ar' ? '100%' : '-100%', opacity: 0 }}
                 transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                className={`fixed top-0 ${locale === 'ar' ? 'right-0' : 'left-0'} h-screen w-full bg-white shadow-2xl z-[60] md:hidden flex flex-col`}
+                className={`fixed top-0 ${locale === 'ar' ? 'right-0' : 'left-0'} h-screen w-full bg-white shadow-2xl z-[60] sd:hidden flex flex-col`}
                 dir={locale === 'ar' ? 'rtl' : 'ltr'}
               >
                 {/* Header with Close Button */}
@@ -817,6 +757,16 @@ export default function Hero() {
                     >
                       <Settings className="h-5 w-5 text-[#244C70]" strokeWidth={1.5} />
                       <span className="font-medium text-base">{t('settings') || 'Settings'}</span>
+                    </a>
+
+                    {/* My Booking */}
+                    <a
+                      href={`/${locale}/my-bookings`}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="flex items-center gap-3 w-full px-4 py-3.5 rounded-xl text-[#244C70] transition-all hover:bg-gray-50"
+                    >
+                      <CalendarDays className="h-5 w-5 text-[#244C70]" strokeWidth={1.5} />
+                      <span className="font-medium text-base">{t('myBooking') || 'My Booking'}</span>
                     </a>
 
                     {/* About */}
@@ -961,7 +911,7 @@ export default function Hero() {
             {/* Search Bar */}
             <div className="mx-auto mb-10 max-w-2xl w-full" ref={(el) => { cityRef.current = el; searchBarRef.current = el; }}>
               {/* Desktop: single row pill */}
-              <div className="hidden sm:flex items-center gap-2 rounded-[90px] bg-white p-1.5">
+              <div className="hidden sd:flex items-center gap-2 rounded-[10px] bg-white p-1.5">
                 <div className="flex flex-1 items-center gap-3 px-4 py-2.5">
                   <Search className="h-5 w-5 text-gray-400 shrink-0" />
                   <input 
@@ -1035,7 +985,7 @@ export default function Hero() {
                   </AnimatePresence>
                 </div>
                 <button 
-                  className="flex h-10 items-center gap-2 rounded-full bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] px-6 text-sm font-semibold text-[#364153] transition-all hover:brightness-110 shadow-sm shrink-0"
+                  className="flex h-10 items-center gap-2 rounded-[10px] bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] px-6 text-sm font-semibold text-[#364153] transition-all hover:brightness-110 shadow-sm shrink-0"
                 >
                   <Search className="h-4 w-4" />
                   <span>{t('search')}</span>
@@ -1043,9 +993,9 @@ export default function Hero() {
               </div>
 
               {/* Mobile: stacked layout */}
-              <div className="flex sm:hidden flex-col gap-2.5 px-2">
+              <div className="flex sd:hidden flex-col gap-2.5 px-2">
                 {/* Search input */}
-                <div className="flex items-center gap-3 rounded-xl bg-white px-4 py-3">
+                <div className="flex items-center gap-3 rounded-[10px] bg-white px-4 py-3">
                   <Search className="h-5 w-5 text-gray-400 shrink-0" />
                   <input 
                     type="text" 
@@ -1057,7 +1007,7 @@ export default function Hero() {
                 <div className="relative">
                   <button 
                     onClick={() => setIsCityOpen(!isCityOpen)}
-                    className="flex w-full items-center gap-3 rounded-xl bg-white px-4 py-3 transition-all hover:bg-gray-50"
+                    className="flex w-full items-center gap-3 rounded-[10px] bg-white px-4 py-3 transition-all hover:bg-gray-50"
                   >
                     <MapPin className="h-5 w-5 text-gray-400 shrink-0" />
                     <span className="flex-1 text-start text-sm font-medium text-[#364153]">
@@ -1117,7 +1067,7 @@ export default function Hero() {
                 </div>
                 {/* Search button */}
                 <button 
-                  className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] px-6 py-3 text-sm font-semibold text-[#364153] transition-all hover:brightness-110 shadow-sm"
+                  className="flex items-center justify-center gap-2 rounded-[10px] bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] px-6 py-3 text-sm font-semibold text-[#364153] transition-all hover:brightness-110 shadow-sm"
                 >
                   <Search className="h-4 w-4" />
                   {t('search')}

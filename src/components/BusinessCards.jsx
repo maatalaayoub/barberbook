@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useUser } from '@clerk/nextjs';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { MapPin, Star, Clock, Briefcase, ChevronLeft, ChevronRight, Scissors, Sparkles, Hand, Palette, Phone, MessageCircle, Navigation } from 'lucide-react';
 import Link from 'next/link';
@@ -329,17 +328,11 @@ const CATEGORY_ORDER = ['barber', 'hairdresser', 'makeup', 'nails', 'massage'];
 
 // ─── MAIN COMPONENT ──────────────────────────────────────────
 export default function BusinessCards() {
-  const { isSignedIn, isLoaded } = useUser();
   const { t, locale } = useLanguage();
   const [businesses, setBusinesses] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isLoaded || !isSignedIn) {
-      setLoading(false);
-      return;
-    }
-
     const fetchBusinesses = async () => {
       try {
         const res = await fetch('/api/businesses');
@@ -354,10 +347,7 @@ export default function BusinessCards() {
     };
 
     fetchBusinesses();
-  }, [isLoaded, isSignedIn]);
-
-  // Don't render anything for non-logged-in users
-  if (!isLoaded || !isSignedIn) return null;
+  }, []);
 
   const hasBusinesses = Object.values(businesses).some(arr => arr && arr.length > 0);
 

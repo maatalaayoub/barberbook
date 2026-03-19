@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 
 /**
@@ -61,7 +62,9 @@ export async function GET(request) {
     }
 
     // Get the day of week for the requested date (0 = Sunday)
-    const dayOfWeek = requestedDate.getDay();
+    // Parse from dateStr directly to avoid timezone issues
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const dayOfWeek = new Date(year, month - 1, day).getDay();
 
     // Check if business is open this day
     const daySchedule = businessHours.find(h => h.dayOfWeek === dayOfWeek);
@@ -130,8 +133,8 @@ export async function GET(request) {
 
     const allBlocked = [...blockedRanges, ...appointmentRanges];
 
-    // Generate 30-min interval slots between open and close
-    const SLOT_INTERVAL = 30; // generate a slot every 30 minutes
+    // Generate 15-min interval slots between open and close
+    const SLOT_INTERVAL = 15; // generate a slot every 15 minutes
     const slots = [];
     const [openH, openM] = openTime.split(':').map(Number);
     const [closeH, closeM] = closeTime.split(':').map(Number);
@@ -162,12 +165,41 @@ export async function GET(request) {
       });
     }
 
+    // Check if the user is authenticated and fetch their existing bookings
+    let userBookings = [];
+    try {
+      const { userId: clerkId } = await auth();
+      if (clerkId) {
+        const { data: myBookings } = await supabase
+          .from('appointments')
+          .select('start_time, end_time, status')
+          .eq('clerk_id', clerkId)
+          .eq('business_info_id', businessId)
+          .in('status', ['pending', 'confirmed'])
+          .gte('start_time', dayStart)
+          .lte('start_time', dayEnd);
+
+        userBookings = (myBookings || []).map(apt => {
+          const s = new Date(apt.start_time);
+          const e = new Date(apt.end_time);
+          return {
+            start: `${String(s.getHours()).padStart(2, '0')}:${String(s.getMinutes()).padStart(2, '0')}`,
+            end: `${String(e.getHours()).padStart(2, '0')}:${String(e.getMinutes()).padStart(2, '0')}`,
+            status: apt.status,
+          };
+        });
+      }
+    } catch (_) {
+      // Auth not available — public access, skip user bookings
+    }
+
     return NextResponse.json({ 
       slots, 
       closed: false, 
       openTime, 
       closeTime,
       date: dateStr,
+      userBookings,
     });
   } catch (err) {
     console.error('[available-slots GET]', err);

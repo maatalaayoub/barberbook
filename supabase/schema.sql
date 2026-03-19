@@ -729,6 +729,7 @@ CREATE TRIGGER update_schedule_exceptions_updated_at
 CREATE TABLE IF NOT EXISTS appointments (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   business_info_id UUID REFERENCES business_info(id) ON DELETE CASCADE NOT NULL,
+  clerk_id TEXT,
   client_name TEXT NOT NULL,
   client_phone TEXT,
   client_address TEXT,
@@ -745,6 +746,7 @@ CREATE TABLE IF NOT EXISTS appointments (
 CREATE INDEX IF NOT EXISTS idx_appointments_business_info_id ON appointments(business_info_id);
 CREATE INDEX IF NOT EXISTS idx_appointments_start_time ON appointments(start_time);
 CREATE INDEX IF NOT EXISTS idx_appointments_status ON appointments(status);
+CREATE INDEX IF NOT EXISTS idx_appointments_clerk_id ON appointments(clerk_id);
 
 ALTER TABLE appointments ENABLE ROW LEVEL SECURITY;
 

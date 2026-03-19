@@ -175,6 +175,24 @@ export async function POST(request) {
       return NextResponse.json({ error: 'This time slot is no longer available. Please choose another time.' }, { status: 409 });
     }
 
+    // Check if this user already has a pending or confirmed booking that overlaps
+    const { data: userConflicts } = await supabase
+      .from('appointments')
+      .select('id, status, start_time')
+      .eq('clerk_id', clerkId)
+      .eq('business_info_id', businessId)
+      .in('status', ['pending', 'confirmed'])
+      .lt('start_time', endISO)
+      .gt('end_time', startISO);
+
+    if (userConflicts && userConflicts.length > 0) {
+      const existingStatus = userConflicts[0].status;
+      const existingTime = new Date(userConflicts[0].start_time).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hour12: false });
+      return NextResponse.json({
+        error: `You already have a ${existingStatus} booking at ${existingTime}. You cannot book the same time slot twice.`,
+      }, { status: 409 });
+    }
+
     // Get the booking user's info
     const { data: bookingUser } = await supabase
       .from('users')
@@ -187,6 +205,7 @@ export async function POST(request) {
       .from('appointments')
       .insert({
         business_info_id: businessId,
+        clerk_id: clerkId,
         client_name: sanitizeText(clientName),
         client_phone: clientPhone ? sanitizePhone(clientPhone) : null,
         service: combinedName,

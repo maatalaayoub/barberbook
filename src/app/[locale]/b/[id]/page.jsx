@@ -41,14 +41,19 @@ const ACCENT_COLORS = {
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-function formatDate(date) { return date.toISOString().split('T')[0]; }
+function formatDate(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
 function addDays(date, n) { const d = new Date(date); d.setDate(d.getDate() + n); return d; }
 function isSameDay(a, b) { return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate(); }
 
 /* ================================================================
-   HERO GALLERY  — full-width, tall, with gradient overlay & dots
+   HERO GALLERY  — compact with integrated profile
    ================================================================ */
-function HeroGallery({ gallery, accent, showCover }) {
+function HeroGallery({ gallery, accent, showCover, businessName, businessType, avatarUrl }) {
   const [idx, setIdx] = useState(0);
   const touchRef = useRef(null);
 
@@ -68,22 +73,46 @@ function HeroGallery({ gallery, accent, showCover }) {
 
   if (!showCover || gallery.length === 0) {
     return (
-      <div className="h-56 sd:h-72 w-full relative" style={{ background: `linear-gradient(135deg, ${accent.bg}22 0%, ${accent.bg}66 100%)` }}>
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+      <div className="h-48 sd:h-56 w-full relative" style={{ background: `linear-gradient(135deg, ${accent.bg} 0%, ${accent.bg}cc 50%, ${accent.bg}88 100%)` }}>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_40%,rgba(255,255,255,0.1)_0%,transparent_60%)]" />
+        {/* Business name overlay */}
+        <div className="absolute bottom-0 left-0 right-0 p-5 sd:p-8 z-10">
+          <div className="max-w-5xl mx-auto flex items-center gap-3">
+            {avatarUrl && (
+              <img src={avatarUrl} alt="" className="w-12 h-12 rounded-xl border-2 border-white/30 object-cover" />
+            )}
+            <div>
+              <h1 className="text-xl sd:text-2xl font-bold text-white leading-tight drop-shadow-sm">{businessName}</h1>
+              <p className="text-[13px] text-white/70 capitalize mt-0.5">{businessType}</p>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="h-56 sd:h-80 w-full relative overflow-hidden" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+    <div className="h-52 sd:h-64 w-full relative overflow-hidden" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
       {gallery.map((url, i) => (
         <img key={url} src={url} alt="" className="absolute inset-0 w-full h-full object-cover transition-opacity duration-700" style={{ opacity: i === idx ? 1 : 0 }} />
       ))}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/10" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-black/20" />
+      {/* Business name overlay on the hero */}
+      <div className="absolute bottom-0 left-0 right-0 p-5 sd:p-8 z-10">
+        <div className="max-w-5xl mx-auto flex items-center gap-3">
+          {avatarUrl && (
+            <img src={avatarUrl} alt="" className="w-12 h-12 rounded-xl border-2 border-white/30 object-cover" />
+          )}
+          <div>
+            <h1 className="text-xl sd:text-2xl font-bold text-white leading-tight drop-shadow-sm">{businessName}</h1>
+            <p className="text-[13px] text-white/70 capitalize mt-0.5">{businessType}</p>
+          </div>
+        </div>
+      </div>
       {gallery.length > 1 && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+        <div className="absolute bottom-3 right-5 flex gap-1.5 z-10">
           {gallery.map((_, i) => (
-            <button key={i} onClick={() => setIdx(i)} className={`h-1.5 rounded-full transition-all ${i === idx ? 'w-6 bg-white' : 'w-1.5 bg-white/50'}`} />
+            <button key={i} onClick={() => setIdx(i)} className={`h-1.5 rounded-full transition-all ${i === idx ? 'w-5 bg-white' : 'w-1.5 bg-white/40'}`} />
           ))}
         </div>
       )}
@@ -233,7 +262,7 @@ function DateStrip({ selectedDate, onSelectDate, businessHours, accent, t }) {
 /* ================================================================
    TIME SLOT GRID
    ================================================================ */
-function TimeSlotGrid({ slots, selectedSlot, onSelectSlot, loading, accent, t }) {
+function TimeSlotGrid({ slots, selectedSlot, onSelectSlot, loading, accent, t, userBookings }) {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-10">
@@ -262,22 +291,42 @@ function TimeSlotGrid({ slots, selectedSlot, onSelectSlot, loading, accent, t })
     );
   }
 
+  const findUserBooking = (slotStart, slotEnd) => {
+    return (userBookings || []).find(b => slotStart < b.end && slotEnd > b.start);
+  };
+
   return (
     <div>
       <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-wide mb-3">{t('bp.selectTime')}</p>
       <div className="grid grid-cols-3 sd:grid-cols-4 gap-2">
         {slots.map(slot => {
           const sel = selectedSlot?.start === slot.start;
+          const matchedBooking = findUserBooking(slot.start, slot.end);
+          const userBooked = matchedBooking?.status;
+          const isBooked = !!matchedBooking;
           return (
-            <button key={slot.start} disabled={!slot.available} onClick={() => onSelectSlot(slot)}
-              className={`py-2.5 rounded-xl text-[13px] font-semibold transition-all ${
-                sel ? 'text-white shadow-lg scale-[1.02]'
+            <button key={slot.start} disabled={!slot.available || isBooked} onClick={() => onSelectSlot(slot)}
+              className={`relative py-2.5 rounded-xl text-[13px] font-semibold transition-all ${
+                isBooked
+                  ? 'bg-white border-2 cursor-not-allowed'
+                  : sel ? 'text-white shadow-lg scale-[1.02]'
                   : slot.available ? 'bg-white text-gray-700 border border-gray-200 hover:border-gray-300 hover:shadow-sm'
                   : 'bg-gray-50 text-gray-300 cursor-not-allowed line-through'
               }`}
-              style={sel ? { backgroundColor: accent.bg } : undefined}
+              style={
+                isBooked
+                  ? { borderColor: userBooked === 'confirmed' ? '#16a34a' : '#f59e0b', color: userBooked === 'confirmed' ? '#16a34a' : '#f59e0b' }
+                  : sel ? { backgroundColor: accent.bg } : undefined
+              }
             >
               {slot.start}
+              {isBooked && (
+                <span className={`block text-[9px] font-bold uppercase tracking-wider mt-0.5 ${
+                  userBooked === 'confirmed' ? 'text-green-600' : 'text-amber-500'
+                }`}>
+                  {userBooked === 'confirmed' ? t('bp.approved') : t('bp.pending')}
+                </span>
+              )}
             </button>
           );
         })}
@@ -599,6 +648,7 @@ export default function BusinessPage() {
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [bookedAppointment, setBookedAppointment] = useState(null);
   const [showBookingPanel, setShowBookingPanel] = useState(false);
+  const [userBookings, setUserBookings] = useState([]);
 
   const totalDuration = selectedServices.reduce((sum, s) => sum + s.durationMinutes, 0);
   const totalPrice = selectedServices.reduce((sum, s) => sum + (s.price || 0), 0);
@@ -621,8 +671,11 @@ export default function BusinessPage() {
     setSelectedSlot(null);
     fetch(`/api/book/available-slots?businessId=${business.id}&date=${formatDate(selectedDate)}&duration=${totalDuration}`)
       .then(res => res.json())
-      .then(data => setSlots(data.slots || []))
-      .catch(() => setSlots([]))
+      .then(data => {
+        setSlots(data.slots || []);
+        setUserBookings(data.userBookings || []);
+      })
+      .catch(() => { setSlots([]); setUserBookings([]); })
       .finally(() => setSlotsLoading(false));
   }, [selectedDate, selectedServices, business, totalDuration]);
 
@@ -664,9 +717,13 @@ export default function BusinessPage() {
   const handleBookingSuccess = (appointment) => {
     setShowBookingModal(false);
     setBookedAppointment(appointment);
+    setSelectedSlot(null);
     if (selectedDate && selectedServices.length > 0 && business) {
       fetch(`/api/book/available-slots?businessId=${business.id}&date=${formatDate(selectedDate)}&duration=${totalDuration}`)
-        .then(res => res.json()).then(data => setSlots(data.slots || [])).catch(() => {});
+        .then(res => res.json()).then(data => {
+          setSlots(data.slots || []);
+          setUserBookings(data.userBookings || []);
+        }).catch(() => {});
     }
   };
 
@@ -733,7 +790,14 @@ export default function BusinessPage() {
     <div className={`min-h-screen bg-white ${isRTL ? 'rtl' : 'ltr'}`}>
       {/* ── HERO GALLERY ──────────────────────────────────── */}
       <div className="relative">
-        <HeroGallery gallery={business.coverGallery} accent={accent} showCover={business.showCoverPhoto} />
+        <HeroGallery
+          gallery={business.coverGallery}
+          accent={accent}
+          showCover={business.showCoverPhoto}
+          businessName={business.businessName}
+          businessType={t(`home.type.${business.professionalType}`) || business.professionalType?.replace(/_/g, ' ')}
+          avatarUrl={business.showProfile ? business.avatarUrl : null}
+        />
         {/* Top nav buttons */}
         <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 z-20">
           <button onClick={() => router.back()}
@@ -749,70 +813,61 @@ export default function BusinessPage() {
         </div>
       </div>
 
-      {/* ── PROFILE HEADER ────────────────────────────────── */}
-      <div className="max-w-5xl mx-auto px-5 sd:px-8 -mt-14 relative z-10">
-        <div className="flex items-end gap-4 mb-5">
-          {/* Avatar */}
-          {business.showProfile && (
-            business.avatarUrl ? (
-              <img src={business.avatarUrl} alt={business.businessName}
-                className="w-20 h-20 sd:w-24 sd:h-24 rounded-2xl border-4 border-white shadow-lg object-cover" />
-            ) : (
-              <div className="w-20 h-20 sd:w-24 sd:h-24 rounded-2xl border-4 border-white shadow-lg bg-gray-100 flex items-center justify-center">
-                <Briefcase className="w-7 h-7 text-gray-400" />
-              </div>
-            )
-          )}
-          <div className="flex-1 min-w-0 pb-1">
-            <h1 className="text-2xl sd:text-3xl font-extrabold text-gray-900 leading-tight truncate">{business.businessName}</h1>
-            <p className="text-[14px] text-gray-400 capitalize mt-0.5">
-              {t(`home.type.${business.professionalType}`) || business.professionalType?.replace(/_/g, ' ')}
-            </p>
+      {/* ── INFO BAR ── rating, location, actions ─────────── */}
+      <div className="border-b border-gray-100">
+        <div className="max-w-5xl mx-auto px-5 sd:px-8 py-3 flex items-center justify-between gap-3">
+          {/* Left: meta chips */}
+          <div className="flex flex-wrap items-center gap-2">
+            {business.showRating && (
+              <span className="inline-flex items-center gap-1 text-[13px] font-semibold text-amber-600">
+                <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                5.0
+              </span>
+            )}
+            {business.showRating && business.showLocation && business.city && (
+              <span className="text-gray-300">·</span>
+            )}
+            {business.showLocation && business.city && (
+              <span className="inline-flex items-center gap-1 text-[13px] text-gray-500">
+                <MapPin className="w-3.5 h-3.5" />
+                {business.city}
+              </span>
+            )}
+            {business.showResponseTime && (
+              <>
+                <span className="text-gray-300">·</span>
+                <span className="inline-flex items-center gap-1 text-[13px] text-green-600 font-medium">
+                  <Clock className="w-3.5 h-3.5" />
+                  {t('businessCard.fastReply')}
+                </span>
+              </>
+            )}
           </div>
-        </div>
 
-        {/* Meta chips */}
-        <div className="flex flex-wrap items-center gap-2 mb-5">
-          {business.showRating && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 rounded-xl text-[13px] font-semibold text-amber-700">
-              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-              5.0
-            </span>
-          )}
-          {business.showLocation && business.city && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 rounded-xl text-[13px] text-gray-500">
-              <MapPin className="w-3.5 h-3.5" />
-              {business.city}
-            </span>
-          )}
-          {business.showResponseTime && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 rounded-xl text-[13px] text-green-600 font-medium">
-              <Clock className="w-3.5 h-3.5" />
-              {t('businessCard.fastReply')}
-            </span>
-          )}
-        </div>
-
-        {/* Contact action icons — Booksy-style circular */}
-        <div className="flex items-center gap-3 mb-6">
-          {business.showCallButton && business.phone && (
-            <a href={`tel:${business.phone}`}
-              className="w-12 h-12 rounded-xl bg-gray-50 hover:bg-gray-100 flex items-center justify-center text-gray-600 transition-colors">
-              <Phone className="w-5 h-5" />
-            </a>
-          )}
-          {business.showMessageButton && business.phone && (
-            <a href={`https://wa.me/${business.phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer"
-              className="w-12 h-12 rounded-xl bg-gray-50 hover:bg-gray-100 flex items-center justify-center text-gray-600 transition-colors">
-              <MessageCircle className="w-5 h-5" />
-            </a>
-          )}
-          {business.showGetDirections && directionsUrl && (
-            <a href={directionsUrl} target="_blank" rel="noopener noreferrer"
-              className="w-12 h-12 rounded-xl bg-gray-50 hover:bg-gray-100 flex items-center justify-center text-gray-600 transition-colors">
-              <Navigation className="w-5 h-5" />
-            </a>
-          )}
+          {/* Right: action buttons */}
+          <div className="flex items-center gap-2 shrink-0">
+            {business.showCallButton && business.phone && (
+              <a href={`tel:${business.phone}`}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors text-[12px] font-medium">
+                <Phone className="w-3.5 h-3.5" />
+                {t('businessCard.call')}
+              </a>
+            )}
+            {business.showMessageButton && business.phone && (
+              <a href={`https://wa.me/${business.phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors text-[12px] font-medium">
+                <MessageCircle className="w-3.5 h-3.5" />
+                {t('businessCard.message')}
+              </a>
+            )}
+            {business.showGetDirections && directionsUrl && (
+              <a href={directionsUrl} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors text-[12px] font-medium">
+                <Navigation className="w-3.5 h-3.5" />
+                {t('businessCard.getDirections')}
+              </a>
+            )}
+          </div>
         </div>
       </div>
 
@@ -851,19 +906,6 @@ export default function BusinessPage() {
                       />
                     ))}
                   </div>
-
-                  {/* Continue button when services selected */}
-                  {canBook && selectedServices.length > 0 && !showBookingPanel && (
-                    <button
-                      onClick={handleContinueBooking}
-                      className="w-full mt-4 py-3.5 rounded-xl text-[15px] font-bold text-white flex items-center justify-center gap-2 transition-all hover:opacity-90 active:scale-[0.98] shadow-lg"
-                      style={{ backgroundColor: accent.bg }}
-                    >
-                      <Calendar className="w-4 h-4" />
-                      {t('bp.continueWith')} {selectedServices.length} {selectedServices.length === 1 ? t('bp.service') : t('bp.servicesLabel')}
-                      {business.showPrices && <span className="opacity-80">· {totalPrice} {business.services[0]?.currency || 'MAD'}</span>}
-                    </button>
-                  )}
                 </div>
               ) : (
                 <div className="text-center py-16">
@@ -925,7 +967,7 @@ export default function BusinessPage() {
                     </div>
                     <DateStrip selectedDate={selectedDate} onSelectDate={setSelectedDate} businessHours={business.businessHours} accent={accent} t={t} />
                     {selectedDate && (
-                      <TimeSlotGrid slots={slots} selectedSlot={selectedSlot} onSelectSlot={setSelectedSlot} loading={slotsLoading} accent={accent} t={t} />
+                      <TimeSlotGrid slots={slots} selectedSlot={selectedSlot} onSelectSlot={setSelectedSlot} loading={slotsLoading} accent={accent} t={t} userBookings={userBookings} />
                     )}
                     {selectedSlot && (
                       <button onClick={handleBookNow}
@@ -1100,7 +1142,7 @@ export default function BusinessPage() {
 
                     {/* Time slots */}
                     {selectedDate && (
-                      <TimeSlotGrid slots={slots} selectedSlot={selectedSlot} onSelectSlot={setSelectedSlot} loading={slotsLoading} accent={accent} t={t} />
+                      <TimeSlotGrid slots={slots} selectedSlot={selectedSlot} onSelectSlot={setSelectedSlot} loading={slotsLoading} accent={accent} t={t} userBookings={userBookings} />
                     )}
 
                     {/* Confirm button */}

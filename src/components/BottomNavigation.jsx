@@ -28,6 +28,8 @@ const excludedPaths = [
   '/business/dashboard',
   '/auth',
   '/b/',
+  '/profile',
+  '/business/profile',
 ];
 
 export default function BottomNavigation() {

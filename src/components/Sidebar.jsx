@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  X, Home, Settings, LogOut, Info, Mail, Shield, LayoutDashboard, ChevronRight
+  X, Home, Settings, LogOut, Info, Mail, Shield, LayoutDashboard, ChevronRight, Calendar, Heart
 } from 'lucide-react';
 import ReactCountryFlag from 'react-country-flag';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -18,7 +18,7 @@ const languages = [
   { code: 'ar', name: 'العربية', countryCode: 'MA' },
 ];
 
-export default function ProfileSidebar({ isOpen, onClose }) {
+export default function Sidebar({ isOpen, onClose }) {
   const params = useParams();
   const pathname = usePathname();
   const locale = params.locale || 'en';
@@ -144,14 +144,34 @@ export default function ProfileSidebar({ isOpen, onClose }) {
               <Link
                 href={`/${locale}`}
                 onClick={onClose}
-                className={`flex items-center gap-3 w-full px-4 py-4 rounded-2xl transition-all ${
+                className={`flex items-center gap-3 w-full px-4 py-3.5 rounded-xl transition-all ${
                   isHomePage 
                     ? 'bg-[#244C70]/10 text-[#244C70]' 
-                    : 'text-gray-700 hover:bg-gray-50'
+                    : 'text-[#244C70] hover:bg-gray-50'
                 }`}
               >
-                <Home className="h-5 w-5" strokeWidth={2} />
-                <span className="font-semibold text-base">{t('home') || 'Home'}</span>
+                <Home className="h-5 w-5 text-[#244C70]" strokeWidth={1.5} />
+                <span className="font-medium text-base">{t('home') || 'Home'}</span>
+              </Link>
+
+              {/* My Bookings */}
+              <Link
+                href={`/${locale}/bookings`}
+                onClick={onClose}
+                className="flex items-center gap-3 w-full px-4 py-3.5 rounded-xl transition-all text-[#244C70] hover:bg-gray-50"
+              >
+                <Calendar className="h-5 w-5 text-[#244C70]" strokeWidth={1.5} />
+                <span className="font-medium text-base">{t('bookings.title') || 'My Bookings'}</span>
+              </Link>
+
+              {/* Favorites */}
+              <Link
+                href={`/${locale}/favorites`}
+                onClick={onClose}
+                className="flex items-center gap-3 w-full px-4 py-3.5 rounded-xl transition-all text-[#244C70] hover:bg-gray-50"
+              >
+                <Heart className="h-5 w-5 text-[#244C70]" strokeWidth={1.5} />
+                <span className="font-medium text-base">{t('favorites') || 'Favorites'}</span>
               </Link>
 
               {/* Divider */}
@@ -247,6 +267,42 @@ export default function ProfileSidebar({ isOpen, onClose }) {
                   </button>
                 ))}
               </div>
+
+              {/* Auth Buttons - Only show when NOT signed in */}
+              {!isLoaded ? (
+                <div className="py-4">
+                  <div className="flex-1 h-10 bg-gray-100 rounded-xl animate-pulse" />
+                </div>
+              ) : !isSignedIn && (
+                <>
+                  <div className="h-px bg-gray-200 my-4" />
+                  <div className="flex flex-col gap-3 px-2">
+                    <div className="flex gap-3">
+                      <Link 
+                        href={`/${locale}/auth/user/sign-in`}
+                        onClick={onClose}
+                        className="flex-1 rounded-full border border-gray-200 bg-white px-4 py-3 text-center text-sm font-semibold text-[#0F172A] transition-all hover:border-[#D4AF37]"
+                      >
+                        {t('login')}
+                      </Link>
+                      <Link 
+                        href={`/${locale}/auth/user/sign-up`}
+                        onClick={onClose}
+                        className="flex-1 rounded-full bg-[#0F172A] px-4 py-3 text-center text-sm font-semibold text-white transition-all hover:bg-[#1E293B]"
+                      >
+                        {t('signUp')}
+                      </Link>
+                    </div>
+                    <Link 
+                      href={`/${locale}/auth/business/sign-up`}
+                      onClick={onClose}
+                      className="flex items-center justify-center w-full rounded-full bg-gradient-to-r from-[#D4AF37] to-[#F4CF67] px-4 py-3 text-sm font-semibold text-[#0F172A] transition-all hover:brightness-110"
+                    >
+                      {t('barberSpace')}
+                    </Link>
+                  </div>
+                </>
+              )}
 
               {/* Copyright */}
               <div className="px-4 py-4 border-t border-gray-200">

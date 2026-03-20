@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { useParams, useRouter } from 'next/navigation';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { ProfileHeader, ProfileSidebar, ProfilePageNav } from '@/components/profile';
+import { ProfileHeader, ProfilePageNav } from '@/components/profile';
+import Sidebar from '@/components/Sidebar';
 import { ArrowLeft, User, Building2, Calendar, MapPin, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -86,7 +87,7 @@ export default function ViewUserProfilePage() {
           isRTL={isRTL}
           t={t}
         />
-        <ProfileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+        <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
         <div className="flex flex-col items-center justify-center pt-32 px-4">
           <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mb-4">
             <User className="w-10 h-10 text-gray-400" />
@@ -122,7 +123,7 @@ export default function ViewUserProfilePage() {
   return (
     <div className={`min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 ${isRTL ? 'rtl' : 'ltr'}`}>
       {/* Sidebar */}
-      <ProfileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
       {/* Navigation */}
       <ProfilePageNav

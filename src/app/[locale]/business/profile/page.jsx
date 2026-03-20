@@ -5,7 +5,8 @@ import { useUser } from '@clerk/nextjs';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useRole } from '@/hooks/useRole';
-import { ProfileHeader, ProfileSidebar, EditProfileDialog, ProfilePageNav } from '@/components/profile';
+import { ProfileHeader, EditProfileDialog, ProfilePageNav } from '@/components/profile';
+import Sidebar from '@/components/Sidebar';
 
 export default function BusinessProfilePage() {
   const params = useParams();
@@ -165,7 +166,7 @@ export default function BusinessProfilePage() {
           isRTL={isRTL}
           t={t}
         />
-        <ProfileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+        <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
         <div className="flex flex-col items-center justify-center pt-32 px-4">
           <div className="text-center">
             <h1 className="text-xl font-semibold text-gray-900 mb-2">
@@ -207,7 +208,7 @@ export default function BusinessProfilePage() {
   return (
     <div className={`min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 ${isRTL ? 'rtl' : 'ltr'}`}>
       {/* Sidebar */}
-      <ProfileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
       {/* Floating adaptive nav – fixed, overlays the cover photo */}
       <ProfilePageNav

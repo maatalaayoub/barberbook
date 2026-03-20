@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Heart, ArrowLeft, MapPin, Star, Clock, Scissors, Sparkles, Hand, Palette, Phone, MessageCircle, Navigation, Briefcase, Loader2 } from 'lucide-react';
-import { ProfileSidebar } from '@/components/profile';
+import Sidebar from '@/components/Sidebar';
 
 const ACCENT_COLORS = {
   slate:  { bg: '#364153', light: '#e8ecf0' },
@@ -18,6 +19,7 @@ const ACCENT_COLORS = {
 export default function FavoritesPage() {
   const router = useRouter();
   const { t, locale, isRTL } = useLanguage();
+  const { isSignedIn, isLoaded } = useUser();
   const [businesses, setBusinesses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [removedIds, setRemovedIds] = useState(new Set());
@@ -31,6 +33,12 @@ export default function FavoritesPage() {
   }, []);
 
   useEffect(() => {
+    if (!isLoaded) return;
+    if (!isSignedIn) {
+      setLoading(false);
+      return;
+    }
+
     const favs = JSON.parse(localStorage.getItem('favoriteBusinesses') || '[]');
     if (favs.length === 0) {
       setLoading(false);
@@ -46,7 +54,7 @@ export default function FavoritesPage() {
       .then(data => setBusinesses(data.businesses || []))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }, [isLoaded, isSignedIn]);
 
   const handleRemoveFavorite = (id) => {
     const favs = JSON.parse(localStorage.getItem('favoriteBusinesses') || '[]');
@@ -77,6 +85,14 @@ export default function FavoritesPage() {
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20">
             <Loader2 className="w-8 h-8 text-gray-400 animate-spin" />
+          </div>
+        ) : !isSignedIn ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+              <Heart className="w-9 h-9 text-gray-300" />
+            </div>
+            <h2 className="text-lg font-bold text-gray-800 mb-1">{t('favorites.signInTitle') || 'Sign in to see favorites'}</h2>
+            <p className="text-[14px] text-gray-400 max-w-xs">{t('favorites.signInDesc') || 'Sign in to save and view your favorite businesses.'}</p>
           </div>
         ) : visibleBusinesses.length === 0 ? (
           /* Empty state */
@@ -297,7 +313,7 @@ export default function FavoritesPage() {
       )}
 
       {/* Sidebar */}
-      <ProfileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
     </div>
   );
 }

@@ -549,8 +549,8 @@ export default function SearchPage() {
     <div className="h-screen bg-gray-50 overflow-hidden relative md:flex md:flex-col" style={{ overscrollBehavior: 'none' }}>
       {/* Top Navigation - Desktop & Mobile */}
       <header className="md:bg-white md:border-b md:border-gray-200 z-[50] md:shrink-0 md:relative fixed top-0 left-0 right-0">
-        <div className="flex items-center px-4 h-14 md:h-16 max-w-7xl mx-auto w-full gap-4">
-          <Link href={`/${locale}`} className="p-2 -ml-2 rounded-full md:hover:bg-gray-100 text-gray-700 transition-colors bg-white/80 md:bg-transparent backdrop-blur-sm md:backdrop-blur-none shadow-sm md:shadow-none">
+        <div className="flex items-center px-4 h-14 md:h-16 max-w-7xl mx-auto w-full gap-2 md:gap-4">
+          <Link href={`/${locale}`} className="hidden md:flex p-2 -ml-2 rounded-full md:hover:bg-gray-100 text-gray-700 transition-colors bg-white/80 md:bg-transparent backdrop-blur-sm md:backdrop-blur-none shadow-sm md:shadow-none">
             <ArrowLeft className={`w-5 h-5 ${isRTL ? 'rotate-180' : ''}`} />
           </Link>
           

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo, useRef } from 'react';
+import { useEffect, useState, useMemo, useRef, Component } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
@@ -8,6 +8,19 @@ import 'leaflet/dist/leaflet.css';
 import Link from 'next/link';
 import { MapPin, Star, Navigation, Phone, Scissors, CalendarCheck, MessageCircle, ExternalLink } from 'lucide-react';
 import Image from 'next/image';
+
+// Error boundary to catch react-leaflet-cluster appendChild errors during HMR
+class ClusterErrorBoundary extends Component {
+  state = { hasError: false };
+  static getDerivedStateFromError() { return { hasError: true }; }
+  componentDidCatch() {}
+  componentDidUpdate(_, prevState) {
+    if (prevState.hasError) this.setState({ hasError: false });
+  }
+  render() {
+    return this.state.hasError ? null : this.props.children;
+  }
+}
 
 const mapStyles = `
   .custom-popup .leaflet-popup-content-wrapper {
@@ -197,6 +210,7 @@ export default function PlacesMap({ businesses, locale, hoveredBusinessId, selec
       <FlyToSelected businesses={businesses} selectedBusinessId={selectedBusinessId} markerRefs={markerRefs} />
 
       {mapReady && (
+      <ClusterErrorBoundary>
       <MarkerClusterGroup
         chunkedLoading
         showCoverageOnHover={false}
@@ -343,6 +357,7 @@ export default function PlacesMap({ businesses, locale, hoveredBusinessId, selec
           </Marker>
         ))}
       </MarkerClusterGroup>
+      </ClusterErrorBoundary>
       )}
     </MapContainer>
     </>

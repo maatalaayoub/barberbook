@@ -1137,6 +1137,7 @@ const translations = {
 
     // Sidebar Menu
     home: 'Home',
+    notifications: 'Notifications',
     quickActions: 'Quick Actions',
     about: 'About',
     contact: 'Contact',
@@ -2399,6 +2400,7 @@ const translations = {
 
     // Sidebar Menu
     home: 'Accueil',
+    notifications: 'Notifications',
     quickActions: 'Actions rapides',
     about: 'À propos',
     contact: 'Contact',
@@ -3644,6 +3646,7 @@ const translations = {
 
     // Sidebar Menu
     home: 'الرئيسية',
+    notifications: 'الإشعارات',
     quickActions: 'إجراءات سريعة',
     about: 'حول',
     contact: 'اتصل بنا',

@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  X, Home, Settings, LogOut, Info, Mail, Shield, LayoutDashboard, ChevronRight, Calendar, Heart
+  X, Home, Settings, LogOut, Info, Mail, Shield, LayoutDashboard, ChevronRight, Calendar, Heart, Bell
 } from 'lucide-react';
 import ReactCountryFlag from 'react-country-flag';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -186,6 +186,18 @@ export default function Sidebar({ isOpen, onClose }) {
                 <Home className="h-5 w-5 text-[#244C70]" strokeWidth={1.5} />
                 <span className="font-medium text-base">{t('home') || 'Home'}</span>
               </Link>
+
+              {/* Notifications */}
+              {isLoaded && isSignedIn && (
+                <Link
+                  href={`/${locale}/notifications`}
+                  onClick={onClose}
+                  className="flex items-center gap-3 w-full px-4 py-3.5 rounded-xl transition-all text-[#244C70] hover:bg-gray-50"
+                >
+                  <Bell className="h-5 w-5 text-[#244C70]" strokeWidth={1.5} />
+                  <span className="font-medium text-base">{t('notifications') || 'Notifications'}</span>
+                </Link>
+              )}
 
               {/* My Bookings */}
               <Link

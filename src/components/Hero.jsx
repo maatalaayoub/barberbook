@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, MapPin, Menu, ChevronDown, User } from 'lucide-react';
+import { Search, MapPin, Menu, ChevronDown, User, Bell } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import ReactCountryFlag from 'react-country-flag';
@@ -213,8 +213,16 @@ export default function Hero() {
               </div>
 
               {/* Right: Profile icon (signed in) or Auth buttons (signed out) - desktop */}
-              <div className="hidden sd:flex items-center justify-end shrink-0">
+              <div className="hidden sd:flex items-center justify-end gap-3 shrink-0">
                 {isSignedIn ? (
+                  <>
+                  <Link
+                    href={`/${locale}/notifications`}
+                    className="flex h-9 w-9 items-center justify-center rounded-full bg-[#1E293B]/50 border border-[#364153]/50 text-gray-300 transition-all hover:bg-[#364153]/50 hover:text-white"
+                    aria-label="Notifications"
+                  >
+                    <Bell className="h-4.5 w-4.5" />
+                  </Link>
                   <button
                     onClick={() => setIsDesktopSideMenuOpen(!isDesktopSideMenuOpen)}
                     className="flex h-9 w-9 items-center justify-center rounded-full overflow-hidden border-2 border-[#364153]/50 transition-all hover:border-[#D4AF37] hover:scale-105"
@@ -225,6 +233,7 @@ export default function Hero() {
                       <User className="h-5 w-5 text-white" />
                     )}
                   </button>
+                  </>
                 ) : (
                   <div className="flex items-center gap-1 rounded-full bg-[#1E293B]/50 border border-[#364153]/50 p-1 backdrop-blur-md whitespace-nowrap">
                     <Link
@@ -309,7 +318,17 @@ export default function Hero() {
           </motion.div>
           
           {/* Mobile Menu Button & Icons */}
-          <div className="flex items-center gap-2 sd:hidden">
+          <div className="flex items-center gap-3 sd:hidden">
+            {/* Notification bell for signed-in users */}
+            {isLoaded && isSignedIn && (
+              <Link
+                href={`/${locale}/notifications`}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-[#1E293B]/50 border border-[#364153]/50 text-gray-300 transition-all hover:text-white"
+                aria-label="Notifications"
+              >
+                <Bell className="h-5 w-5" />
+              </Link>
+            )}
             {/* Profile link for signed-in users */}
             {isLoaded && isSignedIn && user && (
               <Link
@@ -331,13 +350,21 @@ export default function Hero() {
             className="hidden items-center sd:flex"
           >
             {/* Auth Buttons Group */}
-            <div className="flex items-center gap-2 mr-3">
+            <div className="flex items-center gap-3 mr-3">
               {!isLoaded ? (
                 // Loading state
                 <div className="w-24 h-10 bg-gray-800/50 rounded-[15px] animate-pulse" />
               ) : isSignedIn ? (
                 // Signed in state
                 <>
+                  {/* Notification Bell */}
+                  <Link
+                    href={`/${locale}/notifications`}
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-[#1E293B]/50 border border-[#364153]/50 text-gray-300 transition-all hover:bg-[#364153]/50 hover:text-white backdrop-blur-md"
+                    aria-label="Notifications"
+                  >
+                    <Bell className="h-5 w-5" />
+                  </Link>
                   {/* Profile Button - Direct Link */}
                   <Link
                     href={isBusiness ? `/${locale}/business/profile` : `/${locale}/profile`}

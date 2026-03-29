@@ -245,7 +245,7 @@ function DateStrip({ selectedDate, onSelectDate, businessHours, accent, t }) {
               }`}
               style={sel ? { backgroundColor: accent.bg, borderColor: accent.bg } : undefined}
             >
-              <span className="text-[10px] font-bold uppercase tracking-wider">
+              <span className="text-[10px] font-bold uppercase tracking-wider max-w-full truncate px-0.5">
                 {isToday ? t('bp.today') : t(`bp.day.${DAY_NAMES[day.getDay()].toLowerCase()}`)}
               </span>
               <span className="text-xl font-extrabold leading-tight">{day.getDate()}</span>
@@ -262,7 +262,7 @@ function DateStrip({ selectedDate, onSelectDate, businessHours, accent, t }) {
 /* ================================================================
    TIME SLOT GRID
    ================================================================ */
-function TimeSlotGrid({ slots, selectedSlot, onSelectSlot, loading, accent, t, userBookings, totalDuration }) {
+function TimeSlotGrid({ slots, selectedSlot, onSelectSlot, loading, accent, t, userBookings, crossBusinessBookings, totalDuration }) {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-10">
@@ -295,11 +295,18 @@ function TimeSlotGrid({ slots, selectedSlot, onSelectSlot, loading, accent, t, u
     return (userBookings || []).find(b => slotStart >= b.start && slotStart < b.end);
   };
 
+  const findCrossBusinessConflict = (slotStart, slotEnd) => {
+    return (crossBusinessBookings || []).find(b => slotStart < b.end && slotEnd > b.start);
+  };
+
   // Determine if a slot falls within the selected appointment range
   const isInSelectedRange = (slotStart) => {
     if (!selectedSlot) return false;
-    const selEnd = selectedSlot.end;
-    return slotStart >= selectedSlot.start && slotStart < selEnd;
+    const toMin = (t) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+    const startMin = toMin(selectedSlot.start);
+    const endMin = toMin(selectedSlot.end);
+    const slotMin = toMin(slotStart);
+    return slotMin >= startMin && slotMin <= endMin;
   };
 
   return (
@@ -321,11 +328,15 @@ function TimeSlotGrid({ slots, selectedSlot, onSelectSlot, loading, accent, t, u
           const matchedBooking = findUserBooking(slot.start, slot.end);
           const userBooked = matchedBooking?.status;
           const isBooked = !!matchedBooking;
+          const crossConflict = !isBooked && findCrossBusinessConflict(slot.start, slot.end);
+          const isDisabled = !slot.available || isBooked || !!crossConflict;
           return (
-            <button key={slot.start} disabled={!slot.available || isBooked} onClick={() => onSelectSlot(slot)}
+            <button key={slot.start} disabled={isDisabled} onClick={() => onSelectSlot(slot)}
               className={`relative py-2.5 rounded-xl text-[13px] font-semibold transition-all ${
                 isBooked
                   ? 'bg-white border-2 cursor-not-allowed'
+                  : crossConflict
+                  ? 'bg-red-50 border-2 border-red-300 text-red-400 cursor-not-allowed'
                   : sel ? 'text-white shadow-lg scale-[1.02]'
                   : inRange ? 'text-white/90 scale-[1.01]'
                   : slot.available ? 'bg-white text-gray-700 border border-gray-200 hover:border-gray-300 hover:shadow-sm'
@@ -338,6 +349,7 @@ function TimeSlotGrid({ slots, selectedSlot, onSelectSlot, loading, accent, t, u
                   : inRange ? { backgroundColor: accent.bg + 'B3' }
                   : undefined
               }
+              title={crossConflict ? t('bp.crossBusinessConflict') : undefined}
             >
               {slot.start}
               {isBooked && (
@@ -350,10 +362,21 @@ function TimeSlotGrid({ slots, selectedSlot, onSelectSlot, loading, accent, t, u
                   }
                 </span>
               )}
+              {crossConflict && (
+                <span className="absolute top-1 right-1 text-red-400">
+                  <AlertCircle className="w-3.5 h-3.5" />
+                </span>
+              )}
             </button>
           );
         })}
       </div>
+      {crossBusinessBookings && crossBusinessBookings.length > 0 && (
+        <p className="text-[11px] text-red-400 mt-2 flex items-center gap-1">
+          <AlertCircle className="w-3 h-3 flex-shrink-0" />
+          {t('bp.crossBusinessConflictHint')}
+        </p>
+      )}
     </div>
   );
 }
@@ -672,6 +695,7 @@ export default function BusinessPage() {
   const [bookedAppointment, setBookedAppointment] = useState(null);
   const [showBookingPanel, setShowBookingPanel] = useState(false);
   const [userBookings, setUserBookings] = useState([]);
+  const [crossBusinessBookings, setCrossBusinessBookings] = useState([]);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [showCopiedToast, setShowCopiedToast] = useState(false);
   const [isFavorited, setIsFavorited] = useState(false);
@@ -713,8 +737,9 @@ export default function BusinessPage() {
       .then(data => {
         setSlots(data.slots || []);
         setUserBookings(data.userBookings || []);
+        setCrossBusinessBookings(data.crossBusinessBookings || []);
       })
-      .catch(() => { setSlots([]); setUserBookings([]); })
+      .catch(() => { setSlots([]); setUserBookings([]); setCrossBusinessBookings([]); })
       .finally(() => setSlotsLoading(false));
   }, [selectedDate, selectedServices, business, totalDuration]);
 
@@ -762,6 +787,7 @@ export default function BusinessPage() {
         .then(res => res.json()).then(data => {
           setSlots(data.slots || []);
           setUserBookings(data.userBookings || []);
+          setCrossBusinessBookings(data.crossBusinessBookings || []);
         }).catch(() => {});
     }
   };
@@ -1099,7 +1125,7 @@ export default function BusinessPage() {
                     </div>
                     <DateStrip selectedDate={selectedDate} onSelectDate={setSelectedDate} businessHours={business.businessHours} accent={accent} t={t} />
                     {selectedDate && (
-                      <TimeSlotGrid slots={slots} selectedSlot={selectedSlot} onSelectSlot={setSelectedSlot} loading={slotsLoading} accent={accent} t={t} userBookings={userBookings} totalDuration={totalDuration} />
+                      <TimeSlotGrid slots={slots} selectedSlot={selectedSlot} onSelectSlot={setSelectedSlot} loading={slotsLoading} accent={accent} t={t} userBookings={userBookings} crossBusinessBookings={crossBusinessBookings} totalDuration={totalDuration} />
                     )}
                     {selectedSlot && (
                       <button onClick={handleBookNow}
@@ -1270,7 +1296,7 @@ export default function BusinessPage() {
 
                     {/* Time slots */}
                     {selectedDate && (
-                      <TimeSlotGrid slots={slots} selectedSlot={selectedSlot} onSelectSlot={setSelectedSlot} loading={slotsLoading} accent={accent} t={t} userBookings={userBookings} totalDuration={totalDuration} />
+                      <TimeSlotGrid slots={slots} selectedSlot={selectedSlot} onSelectSlot={setSelectedSlot} loading={slotsLoading} accent={accent} t={t} userBookings={userBookings} crossBusinessBookings={crossBusinessBookings} totalDuration={totalDuration} />
                     )}
 
                     {/* Confirm button */}

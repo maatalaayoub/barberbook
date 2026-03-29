@@ -91,16 +91,20 @@ export async function GET(request) {
       0
     );
 
-    // ── Upcoming bookings ───────────────────────────────
-    const now = new Date().toISOString();
+    // ── Upcoming bookings (next 30 days) ───────────────
+    const nowDate = new Date();
+    nowDate.setUTCHours(0, 0, 0, 0);
+    const monthAhead = new Date(nowDate);
+    monthAhead.setUTCDate(monthAhead.getUTCDate() + 29);
+    monthAhead.setUTCHours(23, 59, 59, 999);
     const { data: upcomingBookings } = await supabase
       .from('appointments')
       .select('*')
       .eq('business_info_id', businessInfoId)
-      .gte('start_time', now)
+      .gte('start_time', nowDate.toISOString())
+      .lte('start_time', monthAhead.toISOString())
       .neq('status', 'cancelled')
-      .order('start_time', { ascending: true })
-      .limit(5);
+      .order('start_time', { ascending: true });
 
     // ── Category-specific stats ─────────────────────────
     let categoryStats = {};

@@ -167,6 +167,7 @@ export async function GET(request) {
 
     // Check if the user is authenticated and fetch their existing bookings
     let userBookings = [];
+    let crossBusinessBookings = [];
     try {
       const { userId: clerkId } = await auth();
       if (clerkId) {
@@ -188,6 +189,27 @@ export async function GET(request) {
             status: apt.status,
           };
         });
+
+        // Fetch confirmed bookings at OTHER businesses (cross-business conflicts)
+        const { data: crossBookings } = await supabase
+          .from('appointments')
+          .select('start_time, end_time, status')
+          .eq('clerk_id', clerkId)
+          .neq('business_info_id', businessId)
+          .eq('status', 'confirmed')
+          .gte('start_time', dayStart)
+          .lte('start_time', dayEnd);
+
+        crossBusinessBookings = (crossBookings || []).map(apt => {
+          const s = new Date(apt.start_time);
+          const e = new Date(apt.end_time);
+          return {
+            start: `${String(s.getUTCHours()).padStart(2, '0')}:${String(s.getUTCMinutes()).padStart(2, '0')}`,
+            end: `${String(e.getUTCHours()).padStart(2, '0')}:${String(e.getUTCMinutes()).padStart(2, '0')}`,
+            status: 'confirmed',
+            crossBusiness: true,
+          };
+        });
       }
     } catch (_) {
       // Auth not available — public access, skip user bookings
@@ -200,6 +222,7 @@ export async function GET(request) {
       closeTime,
       date: dateStr,
       userBookings,
+      crossBusinessBookings,
     });
   } catch (err) {
     console.error('[available-slots GET]', err);

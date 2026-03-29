@@ -263,6 +263,32 @@ export async function PUT(request) {
     if (sanitizedFields.service) sanitizedFields.service = sanitizeText(sanitizedFields.service);
     if (sanitizedFields.notes) sanitizedFields.notes = sanitizeText(sanitizedFields.notes);
 
+    // If time is being changed, validate against schedule and check for overlapping appointments
+    if (sanitizedFields.start_time && sanitizedFields.end_time) {
+      const scheduleError = await validateAgainstSchedule(supabase, businessInfoId, sanitizedFields.start_time, sanitizedFields.end_time);
+      if (scheduleError) {
+        return NextResponse.json({ error: scheduleError.message, code: scheduleError.code }, { status: 400 });
+      }
+
+      // Check for overlapping confirmed appointments (exclude the appointment being updated)
+      const { data: conflicts } = await supabase
+        .from('appointments')
+        .select('id, start_time, end_time, client_name, service')
+        .eq('business_info_id', businessInfoId)
+        .eq('status', 'confirmed')
+        .neq('id', id)
+        .lt('start_time', sanitizedFields.end_time)
+        .gt('end_time', sanitizedFields.start_time);
+
+      if (conflicts && conflicts.length > 0) {
+        const conflictTime = new Date(conflicts[0].start_time).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC' });
+        return NextResponse.json({
+          error: `This time overlaps with a confirmed appointment at ${conflictTime} (${conflicts[0].client_name} - ${conflicts[0].service}). Please choose a different time.`,
+          code: 'APPOINTMENT_CONFLICT',
+        }, { status: 409 });
+      }
+    }
+
     // Only allow updating own appointments
     const { data: appointment, error } = await supabase
       .from('appointments')

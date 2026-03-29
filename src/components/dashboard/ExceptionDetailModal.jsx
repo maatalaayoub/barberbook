@@ -17,6 +17,7 @@ import {
   RotateCw,
   MessageSquare,
   Loader2,
+  Pencil,
 } from 'lucide-react';
 
 const EXCEPTION_ICONS = {
@@ -39,7 +40,7 @@ const EXCEPTION_COLORS = {
 
 const DAY_KEYS = ['days.sunday', 'days.monday', 'days.tuesday', 'days.wednesday', 'days.thursday', 'days.friday', 'days.saturday'];
 
-export default function ExceptionDetailModal({ isOpen, onClose, exception, onDelete }) {
+export default function ExceptionDetailModal({ isOpen, onClose, exception, onDelete, onEdit }) {
   const [deleting, setDeleting] = useState(false);
   const { t } = useLanguage();
 
@@ -202,14 +203,23 @@ export default function ExceptionDetailModal({ isOpen, onClose, exception, onDel
             <div className="px-5 py-4 border-t border-gray-100 flex flex-col sm:flex-row gap-2">
               <button
                 onClick={handleClose}
-                className="w-full sm:flex-1 px-4 py-3 sm:py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-[5px] font-medium text-sm transition-colors order-2 sm:order-1"
+                className="w-full sm:flex-1 px-4 py-3 sm:py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-[5px] font-medium text-sm transition-colors order-3 sm:order-1"
               >
                 {t('exceptionDetail.close')}
               </button>
+              {onEdit && (
+                <button
+                  onClick={() => { onEdit(exception); handleClose(); }}
+                  className="w-full sm:flex-1 px-4 py-3 sm:py-2.5 rounded-[5px] font-medium text-sm transition-colors shadow-sm order-1 sm:order-2 flex items-center justify-center gap-2 bg-[#364153] hover:bg-[#2a3444] text-white"
+                >
+                  <Pencil className="w-4 h-4" />
+                  {t('exceptionDetail.editException') || 'Edit'}
+                </button>
+              )}
               <button
                 onClick={handleDelete}
                 disabled={deleting}
-                className="w-full sm:flex-1 px-4 py-3 sm:py-2.5 rounded-[5px] font-medium text-sm transition-colors shadow-sm order-1 sm:order-2 flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white disabled:opacity-50"
+                className="w-full sm:flex-1 px-4 py-3 sm:py-2.5 rounded-[5px] font-medium text-sm transition-colors shadow-sm order-2 sm:order-3 flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white disabled:opacity-50"
               >
                 {deleting ? (
                   <Loader2 className="w-4 h-4 animate-spin" />

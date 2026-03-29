@@ -175,7 +175,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'This time slot is no longer available. Please choose another time.' }, { status: 409 });
     }
 
-    // Check if this user already has a pending or confirmed booking that overlaps
+    // Check if this user already has a pending or confirmed booking that overlaps (same business)
     const { data: userConflicts } = await supabase
       .from('appointments')
       .select('id, status, start_time')
@@ -190,6 +190,25 @@ export async function POST(request) {
       const existingTime = new Date(userConflicts[0].start_time).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC' });
       return NextResponse.json({
         error: `You already have a ${existingStatus} booking at ${existingTime}. You cannot book the same time slot twice.`,
+      }, { status: 409 });
+    }
+
+    // Check if this user has a confirmed booking at a DIFFERENT business that overlaps
+    const { data: crossBizConflicts } = await supabase
+      .from('appointments')
+      .select('id, start_time, end_time, service, business_info_id')
+      .eq('clerk_id', clerkId)
+      .neq('business_info_id', businessId)
+      .eq('status', 'confirmed')
+      .lt('start_time', endISO)
+      .gt('end_time', startISO);
+
+    if (crossBizConflicts && crossBizConflicts.length > 0) {
+      const conflictTime = new Date(crossBizConflicts[0].start_time).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC' });
+      const conflictEndTime = new Date(crossBizConflicts[0].end_time).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC' });
+      return NextResponse.json({
+        error: `You already have a confirmed booking from ${conflictTime} to ${conflictEndTime} with another provider. Please choose a different time.`,
+        code: 'CROSS_BUSINESS_CONFLICT',
       }, { status: 409 });
     }
 

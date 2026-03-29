@@ -220,3 +220,64 @@ export async function DELETE(request) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+
+// ─── PATCH: Update a schedule exception ─────────────────────
+export async function PATCH(request) {
+  try {
+    const clerkId = await getUserId(request);
+    if (!clerkId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const supabase = createServerSupabaseClient();
+    const ctx = await getBusinessContext(supabase, clerkId);
+    if (!ctx) return NextResponse.json({ error: 'Business not found' }, { status: 404 });
+
+    const body = await request.json();
+    const { id, title, type, date, endDate, startTime, endTime, isFullDay, recurring, recurringDay, notes } = body;
+
+    if (!id) {
+      return NextResponse.json({ error: 'Exception id is required' }, { status: 400 });
+    }
+    if (!title || !type || !date) {
+      return NextResponse.json({ error: 'title, type, and date are required' }, { status: 400 });
+    }
+
+    const validTypes = ['break', 'lunch_break', 'closure', 'holiday', 'vacation', 'other'];
+    if (!validTypes.includes(type)) {
+      return NextResponse.json({ error: 'Invalid type', validTypes }, { status: 400 });
+    }
+
+    const fullDay = isFullDay === true || (!startTime && !endTime);
+
+    const updateData = {
+      title: sanitizeText(title),
+      type,
+      date,
+      end_date: fullDay && endDate ? endDate : null,
+      start_time: fullDay ? null : (startTime || null),
+      end_time: fullDay ? null : (endTime || null),
+      is_full_day: fullDay,
+      recurring: recurring || false,
+      recurring_day: recurring ? recurringDay : null,
+      notes: sanitizeText(notes) || null,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data, error } = await supabase
+      .from('schedule_exceptions')
+      .update(updateData)
+      .eq('id', id)
+      .eq('business_info_id', ctx.businessInfoId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('[schedule PATCH] Error:', error);
+      return NextResponse.json({ error: 'Failed to update exception', details: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, exception: data });
+  } catch (error) {
+    console.error('[schedule PATCH] Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

@@ -23,6 +23,7 @@ import {
   List,
   Check,
   AlertTriangle,
+  Pencil,
 } from 'lucide-react';
 import AddExceptionModal from '@/components/dashboard/AddExceptionModal';
 import ExceptionDetailModal from '@/components/dashboard/ExceptionDetailModal';
@@ -96,6 +97,7 @@ export default function SchedulePage() {
   const [saved, setSaved] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalDefaultDate, setModalDefaultDate] = useState(null);
+  const [editingException, setEditingException] = useState(null);
   const [activeTab, setActiveTab] = useState('hours'); // 'hours' | 'calendar'
   const [currentView, setCurrentView] = useState('dayGridMonth');
   const [deletingId, setDeletingId] = useState(null);
@@ -220,19 +222,42 @@ export default function SchedulePage() {
     if (url) router.push(url);
   };
 
-  // ── Add exception via API ──
+  // ── Add or update exception via API ──
   const addException = async (exceptionData) => {
-    const res = await fetch('/api/business/schedule', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(exceptionData),
-    });
-    if (res.ok) {
-      const { exception } = await res.json();
-      setExceptions((prev) => [...prev, exception]);
+    if (exceptionData.id) {
+      // Update existing
+      const res = await fetch('/api/business/schedule', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(exceptionData),
+      });
+      if (res.ok) {
+        const { exception } = await res.json();
+        setExceptions((prev) => prev.map((e) => e.id === exception.id ? exception : e));
+      } else {
+        throw new Error('Failed to update exception');
+      }
     } else {
-      throw new Error('Failed to add exception');
+      // Create new
+      const res = await fetch('/api/business/schedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(exceptionData),
+      });
+      if (res.ok) {
+        const { exception } = await res.json();
+        setExceptions((prev) => [...prev, exception]);
+      } else {
+        throw new Error('Failed to add exception');
+      }
     }
+  };
+
+  // ── Open edit modal for an exception ──
+  const openEditModal = (exc) => {
+    setEditingException(exc);
+    setModalDefaultDate(null);
+    setIsModalOpen(true);
   };
 
   // ── Delete exception via API ──
@@ -338,6 +363,7 @@ export default function SchedulePage() {
 
   // ── Date click => open exception modal ──
   const handleDateClick = useCallback((info) => {
+    setEditingException(null);
     setModalDefaultDate(info.dateStr);
     setIsModalOpen(true);
   }, []);
@@ -436,6 +462,7 @@ export default function SchedulePage() {
         </div>
         <button
           onClick={() => {
+            setEditingException(null);
             setModalDefaultDate(null);
             setIsModalOpen(true);
           }}
@@ -611,6 +638,12 @@ export default function SchedulePage() {
                         </p>
                       </div>
                       <button
+                        onClick={() => openEditModal(ex)}
+                        className="p-1.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-[5px] transition-colors flex-shrink-0"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button
                         onClick={() => deleteException(ex.id)}
                         disabled={deletingId === ex.id}
                         className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-[5px] transition-colors flex-shrink-0 disabled:opacity-50"
@@ -717,9 +750,11 @@ export default function SchedulePage() {
       {/* ── Exception Modal ── */}
       <AddExceptionModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => { setIsModalOpen(false); setEditingException(null); }}
         onSave={addException}
         defaultDate={modalDefaultDate}
+        editException={editingException}
+        businessHours={businessHours}
       />
 
       {/* ── Exception Detail Modal ── */}
@@ -731,6 +766,7 @@ export default function SchedulePage() {
         }}
         exception={selectedExc}
         onDelete={deleteFromDetail}
+        onEdit={(exc) => openEditModal(exc)}
       />
 
       {/* ── Unsaved Changes Dialog ── */}
